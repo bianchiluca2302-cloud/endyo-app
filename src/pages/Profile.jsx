@@ -356,6 +356,8 @@ export function ProfileContent() {
 
   const [analyzingArmocromia, setAnalyzingArmocromia] = useState(false)
   const [armocromiaErr,       setArmocromiaErr]       = useState(null)
+  // Risultato locale per visualizzazione immediata post-analisi
+  const [localArmocromia,    setLocalArmocromia]     = useState(null)
 
   const picRef   = useRef(null)
   const face1Ref = useRef(null)
@@ -448,9 +450,12 @@ export function ProfileContent() {
     setArmocromiaErr(null)
     try {
       const res = await analyzeArmocromia()
-      // Il backend /profile/armocromia-analyze salva già i dati nel DB e li ritorna.
-      // Usiamo patchProfile per aggiornare solo lo store locale senza chiamare POST /profile
-      // (che non gestisce i campi armocromia e causerebbe un'ulteriore chiamata inutile).
+      // 1) Salva in stato locale — visualizzazione immediata garantita
+      setLocalArmocromia({
+        season: res.armocromia_season,
+        notes:  res.armocromia_notes,
+      })
+      // 2) Aggiorna lo store (senza chiamare POST /profile che non gestisce questi campi)
       patchProfile({
         armocromia_season: res.armocromia_season,
         armocromia_notes:  res.armocromia_notes,
@@ -464,6 +469,10 @@ export function ProfileContent() {
       setAnalyzingArmocromia(false)
     }
   }
+
+  // Stagione e note da mostrare: locale (post-analisi) oppure da store (caricato da server)
+  const displaySeason = localArmocromia?.season || profile.armocromia_season || ''
+  const displayNotes  = localArmocromia?.notes  || profile.armocromia_notes  || ''
 
   return (
     <div>
@@ -785,10 +794,10 @@ export function ProfileContent() {
 
                   {/* Risultato + tasto */}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {profile.armocromia_season ? (
+                    {displaySeason ? (
                       <ArmocromiaResultCard
-                        season={profile.armocromia_season}
-                        notes={profile.armocromia_notes}
+                        season={displaySeason}
+                        notes={displayNotes}
                         lang={lang}
                         compact
                       />
@@ -813,7 +822,7 @@ export function ProfileContent() {
                     >
                       {analyzingArmocromia
                         ? t('profileArmocromiaAnalyzing')
-                        : profile.armocromia_season
+                        : displaySeason
                           ? t('profileArmocromiaReanalyze')
                           : t('profileArmocromiaAnalyzeBtn')
                       }
@@ -838,10 +847,10 @@ export function ProfileContent() {
                       onChange={f => handleUpload('face1', f)}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {profile.armocromia_season && (
+                      {displaySeason && (
                         <ArmocromiaResultCard
-                          season={profile.armocromia_season}
-                          notes={profile.armocromia_notes}
+                          season={displaySeason}
+                          notes={displayNotes}
                           lang={lang}
                         />
                       )}
@@ -859,7 +868,7 @@ export function ProfileContent() {
                       >
                         {analyzingArmocromia
                           ? t('profileArmocromiaAnalyzing')
-                          : profile.armocromia_season
+                          : displaySeason
                             ? t('profileArmocromiaReanalyze')
                             : t('profileArmocromiaAnalyzeBtn')
                         }
