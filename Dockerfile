@@ -1,6 +1,11 @@
 # ── Stage 1: build React frontend ────────────────────────────────────────────
 FROM node:20-slim AS frontend
 WORKDIR /app
+
+# Dichiara l'ARG e lo esporta come ENV così Vite lo vede durante il build
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY package.json ./
 RUN npm install --ignore-scripts
 COPY . .
