@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # ── Stage 2: run Python backend ───────────────────────────────────────────────
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 WORKDIR /app
 
 # Dipendenze Python
