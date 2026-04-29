@@ -1,0 +1,70 @@
+MIRRORFIT — IL TUO GUARDAROBA INTELLIGENTE
+==========================================
+
+Hai un armadio pieno ma non sai mai cosa mettere?
+MirrorFit cataloga i tuoi vestiti e usa l'AI per dirti esattamente cosa ti manca
+— e cosa vale la pena comprare, basandosi su quello che hai già.
+
+
+COSA FA IN CONCRETO
+-------------------
+
+CATALOGA IL TUO GUARDAROBA IN POCHI MINUTI
+Fotografa ogni capo fronte, retro ed etichetta. L'AI legge automaticamente
+marca, taglia, colore, tessuto e categoria. Niente inserimento manuale.
+Il risultato è un guardaroba digitale sempre aggiornato, accessibile in un secondo.
+
+SCOPRI COSA TI MANCA PER COMPLETARE UN LOOK
+Seleziona i capi che hai, chiedi allo Stylist AI cosa aggiungere.
+L'AI conosce il tuo guardaroba, sa il meteo di oggi e l'occasione per cui ti stai
+vestendo — e ti dice esattamente il pezzo che sblocca più outfit con un solo acquisto.
+Non articoli a caso: il capo specifico che si integra con quello che possiedi già.
+
+STYLIST AI SEMPRE DISPONIBILE
+Una chat con il tuo stilista personale, dentro l'app.
+Gli dici l'occasione (lavoro, serata, viaggio, sport), lui ti propone l'outfit
+completo pescando dal tuo armadio. Conosce il meteo in tempo reale — sa se fuori
+ci sono 8°C e pioggia e ti suggerisce di conseguenza.
+Puoi chiedergli qualsiasi cosa: "cosa abbino a questa giacca?",
+"ho un matrimonio informale, cosa metto?", "quali capi non sto mai usando?".
+
+MIXER VISIVO 3D
+Trascina i capi in un canvas interattivo per vedere come si combinano prima di
+indossarli. Ridimensiona, sposta, sovrapponi — un camerino digitale sempre disponibile.
+
+TIENI TRACCIA DI COSA INDOSSI
+Segna "indossato oggi" su ogni outfit salvato. Nel tempo accumuli dati reali:
+quali capi non esci mai dal guardaroba, costo per utilizzo, pattern stagionali.
+L'AI usa queste informazioni per consigliarti meglio — se non indossi mai la
+camicia bianca da tre mesi, te lo fa notare e suggerisce come sfruttarla.
+
+SUGGERIMENTI DI ACQUISTO CONTESTUALI
+Quando l'AI identifica un pezzo mancante, può mostrarti prodotti reali da brand
+partner — non pubblicità generica, ma esattamente il tipo di capo che completa
+il tuo guardaroba specifico. Prezzi, link diretto all'acquisto, stile coerente.
+
+
+PER CHI È
+---------
+Per chi ha tanti vestiti ma la mattina non sa mai cosa mettere.
+Per chi vuole comprare meno ma meglio — capendo cosa aggiunge davvero valore
+al guardaroba che ha già.
+Per chi vuole un consiglio di stile basato sulla realtà, non su foto patinate.
+
+
+IN BREVE
+--------
+MirrorFit non ti dice come vestirti. Ti dice cosa ti manca per vestirti come vuoi.
+
+
+FUNZIONALITÀ COMPLETE
+---------------------
+· Catalogo digitale con riconoscimento AI (foto fronte/retro + etichetta)
+· Chat stylist AI con contesto meteo e occasione in tempo reale
+· Completamento outfit — AI identifica i capi mancanti dal tuo guardaroba
+· Mixer visivo interattivo per provare combinazioni
+· Wear tracking — storico di cosa hai indossato e con quale frequenza
+· Suggerimenti acquisto da brand partner coerenti con il tuo stile
+· Vetrina social — mostra i tuoi outfit migliori, segui altri utenti
+· Supporto IT / EN
+· App desktop (Windows, macOS) — il guardaroba sempre sul computer

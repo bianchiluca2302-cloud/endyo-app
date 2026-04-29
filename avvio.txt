@@ -1,0 +1,142 @@
+══════════════════════════════════════════════════════
+  Endyo — Guida all'avvio
+══════════════════════════════════════════════════════
+
+
+── Test automatici ───────────────────────────────────
+
+  Dalla cartella wardrobe-ai-app/ esegui:
+
+    Windows:       esegui_test.bat
+    macOS/Linux:   ./esegui_test.sh
+
+  Lo script:
+  - Attiva il venv Python
+  - Installa dipendenze test (pytest, httpx, ecc.)
+  - Crea un DB di test temporaneo isolato
+  - Esegue tutti i test (~60 test automatici)
+  - Mostra PASSATO ✓ o FALLITO ✗ per ogni test
+  - Non tocca il database reale
+
+  Copertura test:
+    • Auth (register, login, token, email, reset)
+    • Capi (CRUD, analyze AI, confirm, reenrich, bg)
+    • Outfit (CRUD)
+    • AI (chat, streaming, quota, rate limit)
+    • Profilo utente
+    • Social (follow, showcase)
+    • Brand portal (auth, prodotti, analytics, tracking)
+
+
+── Avvio normale (app desktop) ───────────────────────
+
+  1. Apri un terminale nella cartella del progetto
+     (wardrobe-ai-app/)
+
+  2. Esegui:
+       npm start
+
+  L'app si compila e si apre come finestra Electron.
+  Il backend Python parte automaticamente in background.
+
+
+── Avvio in modalità sviluppo ────────────────────────
+
+  Apri DUE terminali:
+
+  Terminale 1 — Backend Python:
+  ─────────────────────────────
+    cd backend
+    venv\Scripts\activate          (Windows)
+    source venv/bin/activate       (macOS/Linux)
+    uvicorn main:app --reload
+
+  Terminale 2 — Frontend React:
+  ───────────────────────────────
+    npm run dev
+
+  Poi apri il browser su:
+    http://localhost:5173
+
+
+── Caricare un capo ──────────────────────────────────
+
+  Dalla barra laterale clicca ➕ (Aggiungi).
+
+  A) Scansione AI
+     Carica 1–3 foto → "Analizza con AI" → conferma.
+
+  B) Inserimento manuale
+     Compila il form e salva.
+
+  Lo sfondo delle foto viene rimosso automaticamente.
+
+
+── Stylist AI (chat) ─────────────────────────────────
+
+  Nella pagina "Crea Outfit", in basso a sinistra
+  trovi la barra "Stylist AI". Cliccala per aprirla.
+
+  Lo stylist può:
+  - Creare outfit dall'armadio → pulsante "Applica"
+  - Suggerire prodotti brand quando mancano capi
+  - Adattarsi ai tuoi gusti nel tempo (like/dislike)
+
+  Limite richieste:
+    Piano free    → 20 richieste al giorno
+    Piano premium → illimitato
+
+
+── Pannello Brand (portale web separato) ─────────────
+
+  Apri nel browser (NON nell'app Electron):
+
+    http://localhost:8000/brand-portal
+
+  Da qui i brand partner possono:
+  - Registrarsi e accedere
+  - Gestire il catalogo prodotti
+  - Vedere statistiche (impressioni, click, CTR)
+  - Recuperare la password via email
+
+
+── Accesso da altri dispositivi in rete ──────────────
+
+  1. Avvia il backend con:
+       uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+  2. Trova il tuo IP locale:
+       Windows:  ipconfig  →  "Indirizzo IPv4"
+       macOS:    ifconfig  →  "inet" sotto en0
+
+  3. Nel file .env (cartella principale) imposta:
+       VITE_API_URL=http://<TUO-IP>:8000
+
+  4. Avvia il frontend:
+       npm run dev
+
+  5. Sull'altro dispositivo apri:
+       http://<TUO-IP>:5173
+
+
+── Variabili d'ambiente (.env) ───────────────────────
+
+  Crea backend/.env con:
+
+    OPENAI_API_KEY=sk-...
+    VITE_API_URL=http://127.0.0.1:8000    ← cambia per rete locale
+
+  Per le email reali (reset password, verifica):
+    SMTP_HOST=smtp.gmail.com
+    SMTP_PORT=587
+    SMTP_USER=tua@email.com
+    SMTP_PASSWORD=app-password
+    SMTP_FROM=noreply@endyo.app
+    APP_URL=http://localhost:5173
+    BACKEND_URL=http://localhost:8000
+
+  Senza SMTP_HOST configurato le email vengono
+  stampate nel log del terminale (modalità dev).
+
+
+══════════════════════════════════════════════════════

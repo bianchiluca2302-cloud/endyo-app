@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookie Policy — Endyo</title>
+  <link rel="canonical" href="https://endyo.it/cookie" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0f0; line-height: 1.7; }
+    a { color: #a78bfa; }
+    nav { position: sticky; top: 0; background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 16px 32px; display: flex; align-items: center; gap: 12px; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.04em; color: #f0f0f8; text-decoration: none; }
+    .logo-icon { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #7c3aed, #4f46e5); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .container { max-width: 780px; margin: 0 auto; padding: 60px 24px 100px; }
+    h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 8px; }
+    .updated { font-size: 13px; color: #6b7280; margin-bottom: 40px; }
+    h2 { font-size: 18px; font-weight: 700; margin: 36px 0 12px; color: #c4b5fd; }
+    p, li { font-size: 15px; color: #c4c4d8; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th { background: rgba(124,58,237,0.15); color: #c4b5fd; padding: 10px 14px; text-align: left; }
+    td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #c4c4d8; }
+    tr:last-child td { border-bottom: none; }
+    .btn-revoke { margin-top: 12px; padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    footer { border-top: 1px solid rgba(255,255,255,0.07); padding: 24px; text-align: center; font-size: 12px; color: #4a4565; }
+    footer a { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">
+      <div class="logo-icon">✦</div>
+      endyo
+    </a>
+  </nav>
+
+  <div class="container">
+    <h1>Cookie Policy</h1>
+    <p class="updated">Ultimo aggiornamento: 1 gennaio 2025</p>
+
+    <p>Questa pagina descrive i cookie e le tecnologie di tracciamento utilizzate da Endyo (endyo.it), in conformità alla Direttiva ePrivacy (2002/58/CE) recepita in Italia con il D.Lgs. 69/2012 e alle Linee Guida del Garante per la Protezione dei Dati Personali.</p>
+
+    <h2>1. Cosa sono i cookie</h2>
+    <p>I cookie sono piccoli file di testo salvati nel tuo browser quando visiti un sito web. Permettono al sito di ricordare le tue preferenze, lo stato di login e altri dati utili alla navigazione.</p>
+
+    <h2>2. Cookie tecnici (necessari)</h2>
+    <p>Questi cookie sono indispensabili per il funzionamento del Servizio e non richiedono il tuo consenso:</p>
+    <table>
+      <tr><th>Nome</th><th>Scopo</th><th>Durata</th></tr>
+      <tr><td>endyo_token</td><td>Token di autenticazione (JWT)</td><td>7 giorni</td></tr>
+      <tr><td>endyo_refresh</td><td>Token di rinnovo sessione</td><td>30 giorni</td></tr>
+      <tr><td>endyo_cookie_consent</td><td>Memorizza il tuo consenso ai cookie</td><td>12 mesi</td></tr>
+      <tr><td>endyo_settings</td><td>Preferenze app (tema, lingua)</td><td>Persistente</td></tr>
+    </table>
+
+    <h2>3. Cookie analitici (con consenso)</h2>
+    <p>Utilizziamo Google Analytics per analisi aggregate anonimizzate del traffico. Attivati solo dopo il tuo consenso.</p>
+    <table>
+      <tr><th>Nome</th><th>Provider</th><th>Scopo</th><th>Durata</th></tr>
+      <tr><td>_ga, _ga_*</td><td>Google Analytics</td><td>Analisi comportamento utenti (anonimizzato)</td><td>2 anni</td></tr>
+    </table>
+
+    <h2>4. Cookie pubblicitari (con consenso)</h2>
+    <p>Utilizziamo Google AdSense per mostrare annunci pertinenti. Questi cookie raccolgono dati anonimi per ottimizzare la pubblicità. Attivati solo dopo il tuo consenso.</p>
+    <table>
+      <tr><th>Nome</th><th>Provider</th><th>Scopo</th><th>Durata</th></tr>
+      <tr><td>__gads, __gpi</td><td>Google AdSense</td><td>Targeting pubblicitario e frequenza annunci</td><td>13 mesi</td></tr>
+      <tr><td>IDE</td><td>Google DoubleClick</td><td>Tracciamento conversioni annunci</td><td>13 mesi</td></tr>
+    </table>
+
+    <h2>5. Come gestire i cookie</h2>
+    <p>Puoi revocare o modificare il tuo consenso in qualsiasi momento:</p>
+    <button class="btn-revoke" onclick="revokeCookieConsent()">Revoca consenso cookie</button>
+    <p style="margin-top:16px;">Puoi anche gestire i cookie direttamente dal tuo browser:</p>
+    <ul>
+      <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Chrome</a></li>
+      <li><a href="https://support.mozilla.org/it/kb/Attivare%20e%20disattivare%20i%20cookie" target="_blank">Firefox</a></li>
+      <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+      <li><a href="https://support.microsoft.com/it-it/windows/eliminare-e-gestire-i-cookie" target="_blank">Edge</a></li>
+    </ul>
+    <p>Per opt-out dalla pubblicità Google: <a href="https://adssettings.google.com" target="_blank">adssettings.google.com</a></p>
+
+    <h2>6. Contatti</h2>
+    <p>Per domande sui cookie: <a href="mailto:privacy@endyo.it">privacy@endyo.it</a></p>
+  </div>
+
+  <footer>
+    <a href="/">endyo.it</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Termini</a> · <a href="mailto:privacy@endyo.it">privacy@endyo.it</a>
+  </footer>
+
+  <script>
+    function revokeCookieConsent() {
+      localStorage.removeItem('endyo_cookie_consent')
+      alert('Consenso revocato. La pagina si ricaricherà per applicare le modifiche.')
+      window.location.href = '/'
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+.env
+backend/.env
+backend/endyo.db
+backend/wardrobe.db
+backend/uploads/
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+node_modules/
+dist/

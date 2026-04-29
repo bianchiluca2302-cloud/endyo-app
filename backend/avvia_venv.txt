@@ -1,0 +1,40 @@
+Comando per attivare il virtual environment:
+
+Windows (PowerShell):
+  venv\Scripts\Activate.ps1
+
+Windows (Command Prompt):
+  venv\Scripts\activate.bat
+
+macOS / Linux:
+  source venv/bin/activate
+
+
+── Avvio backend ──────────────────────────────────────────
+
+Solo uso locale (questo PC):
+  uvicorn main:app --reload
+
+Accessibile da altri dispositivi in rete locale:
+  uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+
+── Accesso da un altro dispositivo ───────────────────────
+
+1. Trova l'IP locale di questa macchina:
+     Windows:  ipconfig  → cerca "Indirizzo IPv4" (es. 192.168.1.10)
+     macOS:    ifconfig  → cerca "inet" sotto en0
+     Linux:    hostname -I
+
+2. Avvia il backend con --host 0.0.0.0 (vedi sopra)
+
+3. Sull'altro dispositivo, apri il browser e vai su:
+     http://<IP-SERVER>:5173
+
+   oppure modifica il file .env nella cartella principale:
+     VITE_API_URL=http://<IP-SERVER>:8000
+
+4. Avvia il frontend (nella cartella principale del progetto):
+     npm run dev
+   Vite mostrerà anche l'indirizzo di rete (Network: http://...)
+   che puoi aprire direttamente dall'altro dispositivo.

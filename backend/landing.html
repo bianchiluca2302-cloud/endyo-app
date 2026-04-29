@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endyo</title>
+  <meta name="description" content="Endyo trasforma il tuo armadio in un'esperienza intelligente. Carica i tuoi capi, lascia che l'AI crei outfit perfetti e connettiti con il tuo stile." />
+  <meta name="theme-color" content="#fffcf0" />
+  <link rel="canonical" href="https://endyo.it" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Endyo — Il tuo armadio digitale con Stylist AI" />
+  <meta property="og:description" content="Gestisci il tuo armadio con l\'AI. Crea outfit perfetti, analizza i tuoi acquisti e connettiti con chi condivide il tuo stile." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://endyo.it" />
+  <meta property="og:image" content="https://endyo.it/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Endyo — Il tuo armadio digitale" />
+  <meta name="twitter:description" content="Stylist AI, armadio digitale, social del guardaroba." />
+
+  <!-- Google AdSense (sostituire con il tuo Publisher ID dopo approvazione) -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
+  <!-- Structured Data (SEO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Endyo",
+    "url": "https://endyo.it",
+    "description": "Armadio digitale con Stylist AI, social del guardaroba e Shopping Advisor.",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "Web, iOS, Android, Windows, macOS",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    }
+  }
+  </script>
+
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #fffcf0;
+      --bg2:       #fef9e7;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.08);
+      --primary:   #f59e0b;
+      --primary-l: #d97706;
+      --primary-d: #92400e;
+      --text:      #1a1208;
+      --muted:     #6b5b3e;
+      --dim:       #a08060;
+      --radius:    18px;
+      --app-url:   'https://endyo.it';
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 3px; }
+
+    /* ── Navbar ─────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(255,252,240,0.88);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
+    }
+    .nav-logo-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), #e8810a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .nav-logo-text { display: inline; }
+
+    /* ── Nome app mobile (hero) ─────────────────────────────────────────────── */
+    .mobile-app-name {
+      display: none; /* nascosto su desktop */
+    }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-ctas {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .btn-nav-ghost {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text); cursor: pointer; transition: all 0.2s;
+    }
+    .btn-nav-ghost:hover { background: rgba(0,0,0,0.04); }
+
+    .btn-nav-primary {
+      padding: 7px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: none; background: var(--primary);
+      color: white; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-nav-primary:hover { background: #d97706; }
+
+    /* ── Hero ───────────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative; overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 900px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(245,158,11,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 200px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 99px; margin-bottom: 28px;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      font-size: 12px; font-weight: 600; color: var(--primary-l);
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-size: clamp(42px, 8vw, 88px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      background: linear-gradient(160deg, #1a1208 20%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 21px);
+      color: var(--muted);
+      max-width: 600px;
+      line-height: 1.6;
+      margin-bottom: 44px;
+    }
+
+    .hero-ctas {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 99px; font-size: 16px; font-weight: 600;
+      background: var(--primary); color: white; border: none; cursor: pointer;
+      transition: all 0.25s; box-shadow: 0 0 40px rgba(245,158,11,0.4);
+    }
+    .btn-primary:hover {
+      background: #d97706;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(245,158,11,0.5);
+    }
+
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 99px; font-size: 16px; font-weight: 600;
+      background: rgba(0,0,0,0.04); color: var(--text);
+      border: 1px solid var(--border); cursor: pointer;
+      transition: all 0.25s;
+    }
+    .btn-secondary:hover {
+      background: rgba(0,0,0,0.07);
+      transform: translateY(-2px);
+    }
+
+    /* download nascosto su mobile */
+    .desktop-only { display: inline-flex; }
+    .mobile-only  { display: none; }
+
+    /* ── App mockup hero — phone frame ─────────────────────────────────────── */
+    @keyframes phoneFloat {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50%       { transform: translateY(-18px) rotate(-2deg); }
+    }
+    @keyframes phoneGlow {
+      0%, 100% { opacity: 0.45; transform: translate(-50%,-50%) scale(1); }
+      50%       { opacity: 0.75; transform: translate(-50%,-50%) scale(1.1); }
+    }
+
+    .hero-mockup {
+      margin-top: 64px;
+      position: relative; z-index: 1;
+      display: flex; justify-content: center; align-items: flex-start;
+      height: 560px;
+    }
+    .hero-mockup::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 420px; height: 420px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(245,158,11,0.24) 0%, transparent 68%);
+      animation: phoneGlow 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* ── Phone shell ────────────────────────────────────────────────────────── */
+    .phone-frame {
+      width: 270px; height: 540px;
+      border-radius: 46px;
+      background: #1a1208;
+      border: 1.5px solid rgba(0,0,0,0.5);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.3),
+        0 60px 120px rgba(0,0,0,0.25),
+        0 16px 48px rgba(245,158,11,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      position: relative; overflow: hidden;
+      animation: phoneFloat 6s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    /* Dynamic island */
+    .phone-island {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      width: 96px; height: 26px;
+      background: #111; border-radius: 99px; z-index: 10;
+    }
+
+    .phone-screen {
+      position: absolute; inset: 0;
+      background: #0d0d14; border-radius: 46px;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+
+    /* Status bar */
+    .phone-status {
+      height: 50px; flex-shrink: 0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 22px 7px;
+      font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.85);
+    }
+    .phone-status-icons { display: flex; gap: 5px; align-items: center; }
+    .phone-status-icon {
+      width: 14px; height: 8px; border-radius: 2px;
+      background: rgba(255,255,255,0.55);
+    }
+    .phone-status-icon.batt {
+      width: 18px; height: 9px; border: 1.5px solid rgba(255,255,255,0.45);
+      border-radius: 2px; background: none; position: relative;
+    }
+    .phone-status-icon.batt::after {
+      content: ''; position: absolute; left: 2px; top: 1.5px; bottom: 1.5px; width: 60%;
+      background: rgba(255,255,255,0.65); border-radius: 1px;
+    }
+
+    /* App top bar */
+    .phone-app-bar {
+      padding: 2px 16px 6px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .phone-app-title { font-size: 14.5px; font-weight: 800; color: rgba(255,255,255,0.92); }
+    .phone-search-btn {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .phone-search-btn svg {
+      width: 12px; height: 12px;
+      stroke: var(--muted); fill: none; stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    /* Category chips */
+    .phone-chips {
+      display: flex; gap: 5px; padding: 0 14px 7px;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .phone-chip {
+      padding: 3px 9px; border-radius: 99px;
+      font-size: 9px; font-weight: 700;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.07); white-space: nowrap;
+    }
+    .phone-chip.active { background: var(--primary); color: white; border-color: transparent; }
+
+    /* Garment grid */
+    .phone-grid {
+      flex: 1; display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 5px; padding: 0 12px; overflow: hidden;
+    }
+    .phone-gcard {
+      border-radius: 9px;
+      background: linear-gradient(160deg, var(--c1,#f5f0e0), var(--c2,#fef9e7));
+      aspect-ratio: 2/3; position: relative; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .phone-gcard img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .phone-gcard-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 14px 4px 5px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.75));
+      font-size: 6.5px; font-weight: 700; color: rgba(255,255,255,0.9);
+      text-align: center; z-index: 1;
+    }
+
+    /* Bottom nav */
+    .phone-nav {
+      height: 55px; flex-shrink: 0;
+      background: rgba(13,13,20,0.97);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 6px 4px;
+    }
+    .phone-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      flex: 1; font-size: 7px; color: var(--muted); font-weight: 600;
+    }
+    .phone-nav-item.active { color: var(--primary-l); }
+    .phone-nav-icon {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .phone-nav-item.active .phone-nav-icon { background: rgba(245,158,11,0.18); }
+    .phone-nav-icon svg { width: 12px; height: 12px; fill: currentColor; }
+    .phone-home-pill {
+      position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+      width: 70px; height: 4px; border-radius: 99px;
+      background: rgba(0,0,0,0.14);
+    }
+
+    /* ── Stats strip ────────────────────────────────────────────────────────── */
+    .stats-strip {
+      display: flex; justify-content: center; gap: 64px;
+      padding: 48px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item { text-align: center; }
+    .stat-number {
+      font-size: 36px; font-weight: 800; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--text), var(--primary-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Feature sections ───────────────────────────────────────────────────── */
+    .feature {
+      display: grid; grid-template-columns: 1fr 1fr;
+      align-items: center; gap: 80px;
+      padding: 120px 80px;
+      max-width: 1200px; margin: 0 auto;
+    }
+
+    .feature.reverse { direction: rtl; }
+    .feature.reverse > * { direction: ltr; }
+
+    .feature-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--primary-l);
+      margin-bottom: 16px;
+    }
+
+    .feature-title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 20px;
+    }
+
+    .feature-desc {
+      font-size: 16px; color: var(--muted);
+      line-height: 1.7; margin-bottom: 28px;
+    }
+
+    .feature-pills {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+
+    .pill {
+      padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);
+      color: var(--primary-l);
+    }
+
+    /* ── Feature visual ─────────────────────────────────────────────────────── */
+    .feature-visual {
+      border-radius: 24px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(26,18,8,0.12), 0 4px 16px rgba(245,158,11,0.08);
+      position: relative;
+      aspect-ratio: 4/3;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .visual-wardrobe {
+      background: linear-gradient(135deg, #fff8e1 0%, #fffdf5 100%);
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 24px;
+      width: 100%; height: 100%;
+    }
+
+    .visual-card {
+      border-radius: 10px; aspect-ratio: 2/3;
+      background: linear-gradient(160deg, var(--c1,#fef3c7), var(--c2,#fde68a));
+      position: relative; overflow: hidden;
+    }
+    .visual-card img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .visual-card::after {
+      content: attr(data-label);
+      position: absolute; bottom: 8px; left: 8px; right: 8px;
+      font-size: 9px; font-weight: 700;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      padding: 3px 6px; border-radius: 5px; color: white;
+      text-align: center; z-index: 1;
+    }
+
+    .visual-chat {
+      background: linear-gradient(135deg, #fff8e1 0%, #fffdf5 100%);
+      width: 100%; height: 100%; padding: 20px;
+      display: flex; flex-direction: column; gap: 12px; justify-content: flex-end;
+    }
+
+    .chat-bubble {
+      max-width: 80%; padding: 10px 14px; border-radius: 14px;
+      font-size: 12px; line-height: 1.5;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: var(--primary); color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.ai {
+      align-self: flex-start;
+      background: rgba(0,0,0,0.04); color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-ai-label {
+      font-size: 10px; color: var(--primary-l); font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .visual-social {
+      background: linear-gradient(135deg, #fff8e1 0%, #fffdf5 100%);
+      width: 100%; height: 100%; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .social-post {
+      background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .social-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+    }
+    .social-content { flex: 1; min-width: 0; }
+    .social-name { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+    .social-text { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .social-likes { font-size: 10px; color: var(--dim); margin-top: 6px; }
+
+    .visual-shopping {
+      background: linear-gradient(135deg, #fff8e1 0%, #fffdf5 100%);
+      width: 100%; height: 100%; padding: 24px;
+      display: flex; flex-direction: column; gap: 16px; justify-content: center;
+    }
+
+    .score-ring-wrapper {
+      display: flex; align-items: center; gap: 20px;
+    }
+    .score-ring {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: conic-gradient(#4ade80 0% 82%, rgba(0,0,0,0.06) 82% 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; flex-shrink: 0;
+    }
+    .score-ring::before {
+      content: '';
+      position: absolute; inset: 8px; border-radius: 50%;
+      background: #fff8e1;
+    }
+    .score-num {
+      position: relative; z-index: 1;
+      font-size: 20px; font-weight: 800; color: #4ade80;
+    }
+    .score-info { flex: 1; }
+    .score-verdict {
+      font-size: 16px; font-weight: 800; color: #4ade80; margin-bottom: 4px;
+    }
+    .score-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    .compat-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .compat-tag {
+      padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: 600;
+      background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2);
+      color: #4ade80;
+    }
+
+    /* ── Divider ────────────────────────────────────────────────────────────── */
+    .section-divider {
+      height: 1px; background: var(--border);
+      max-width: 1200px; margin: 0 auto;
+    }
+
+    /* ── Download section ───────────────────────────────────────────────────── */
+    .download-section {
+      padding: 120px 24px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+
+    .download-section::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 800px; height: 800px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(245,158,11,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .download-title {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 800; letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .download-sub {
+      font-size: 18px; color: var(--muted);
+      max-width: 520px; margin: 0 auto 48px; line-height: 1.6;
+    }
+
+    .download-buttons {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .btn-download {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 36px; border-radius: 99px; font-size: 16px; font-weight: 700;
+      background: var(--text); color: #fffcf0; border: none; cursor: pointer;
+      transition: all 0.25s; box-shadow: 0 4px 20px rgba(26,18,8,0.18);
+    }
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(26,18,8,0.28);
+    }
+    .btn-download svg { width: 20px; height: 20px; }
+
+    .download-sysreq {
+      font-size: 12px; color: var(--dim);
+    }
+
+    /* ── PWA instructions (mobile only) ────────────────────────────────────── */
+    .pwa-section { display: none; }
+
+    .pwa-steps {
+      display: flex; flex-direction: column; gap: 20px;
+      max-width: 400px; margin: 0 auto 40px;
+      text-align: left;
+    }
+
+    .pwa-step {
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+
+    .pwa-step-num {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: var(--primary-l);
+    }
+
+    .pwa-step-body { padding-top: 6px; }
+    .pwa-step-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .pwa-step-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    .pwa-icon-inline {
+      display: inline-block; width: 18px; height: 18px;
+      vertical-align: middle; margin: 0 2px;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 40px 40px;
+    }
+
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 40px; flex-wrap: wrap;
+    }
+
+    .footer-brand { max-width: 260px; }
+    .footer-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 700; margin-bottom: 10px;
+    }
+    .footer-logo-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--primary), #e8810a);
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .footer-tagline { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    .footer-links { display: flex; gap: 60px; flex-wrap: wrap; }
+    .footer-col h4 {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--dim); margin-bottom: 14px;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a { font-size: 13px; color: var(--muted); transition: color 0.2s; }
+    .footer-col a:hover { color: var(--text); }
+
+    .footer-bottom {
+      max-width: 1200px; margin: 32px auto 0;
+      padding-top: 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--dim); flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ── Bottom mobile nav ──────────────────────────────────────────────────── */
+    .mobile-bottom-nav { display: none; }
+
+    /* ── Chat typewriter ────────────────────────────────────────────────────── */
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+      30%           { transform: translateY(-5px); opacity: 1; }
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0; }
+    }
+    .chat-cursor-blink {
+      display: inline-block; width: 1.5px; height: 0.82em;
+      background: #d97706; margin-left: 1px; vertical-align: text-bottom;
+      animation: cursorBlink 0.55s step-end infinite;
+    }
+    .typing-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      display: inline-block;
+      animation: typingBounce 1s ease infinite;
+    }
+
+    /* ── Landscape lock (smartphones) ──────────────────────────────────────── */
+    .landscape-lock {
+      display: none;
+      position: fixed; inset: 0; z-index: 99999;
+      background: #fffcf0;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; padding: 32px; text-align: center;
+    }
+    @media (orientation: landscape) and (max-height: 600px) {
+      .landscape-lock { display: flex; }
+    }
+
+    /* ── Animations ─────────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      opacity: 0;
+      animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .fade-up.delay-1 { animation-delay: 0.1s; }
+    .fade-up.delay-2 { animation-delay: 0.2s; }
+    .fade-up.delay-3 { animation-delay: 0.3s; }
+    .fade-up.delay-4 { animation-delay: 0.4s; }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .feature {
+        grid-template-columns: 1fr;
+        padding: 64px 24px;
+        gap: 40px;
+      }
+      .feature.reverse { direction: ltr; }
+      .feature-visual { max-width: 480px; width: 100%; }
+
+      .stats-strip { gap: 32px; flex-wrap: wrap; }
+
+      /* Phone mockup slightly smaller on tablet */
+      .phone-frame { width: 240px; height: 480px; }
+      .hero-mockup { height: 500px; }
+    }
+
+    @media (max-width: 640px) {
+      /* Navbar: nascondi links, tieni solo logo e CTA "Login" */
+      .nav-links { display: none; }
+      .btn-nav-ghost { display: none; }
+      nav { padding: 0 20px; }
+      .nav-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
+      .nav-logo-text { display: inline !important; }
+
+      /* Nome app in cima all'hero */
+      .mobile-app-name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--text);
+        margin-bottom: 28px;
+      }
+      .mobile-app-name-icon {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: linear-gradient(135deg, var(--primary), #e8810a);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+      }
+
+      /* Bottom nav */
+      .mobile-bottom-nav {
+        display: flex;
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+        background: rgba(255,252,240,0.85));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border);
+        padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+      }
+      .bottom-nav-item {
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        gap: 4px; cursor: pointer; text-decoration: none;
+        color: var(--muted); transition: color 0.2s;
+        font-size: 10px; font-weight: 600;
+      }
+      .bottom-nav-item:hover, .bottom-nav-item.active { color: var(--primary-l); }
+      .bottom-nav-icon {
+        width: 22px; height: 22px;
+        display: flex; align-items: center; justify-content: center;
+      }
+
+      /* Body padding for bottom nav */
+      body { padding-bottom: 70px; }
+
+      /* Hide desktop download, show PWA */
+      .desktop-only { display: none !important; }
+      .mobile-only  { display: inline-flex !important; }
+      .pwa-section  { display: block; }
+      .download-desktop { display: none; }
+
+      /* Stats strip: vertical */
+      .stats-strip { flex-direction: column; gap: 28px; padding: 40px 24px; }
+
+      .hero { padding: 100px 20px 40px; }
+      .hero-title { font-size: 38px; }
+      .hero-sub { font-size: 15px; }
+      .btn-primary, .btn-secondary { padding: 12px 24px; font-size: 14px; }
+
+      /* Smaller phone on mobile */
+      .phone-frame { width: 220px; height: 440px; border-radius: 38px; }
+      .phone-screen { border-radius: 38px; }
+      .phone-island { width: 80px; height: 22px; top: 12px; }
+      .hero-mockup { height: 460px; margin-top: 48px; }
+      .hero-mockup::before { width: 300px; height: 300px; }
+
+      .download-section { padding: 80px 24px; }
+
+      footer { padding: 40px 20px 24px; }
+      .footer-inner { flex-direction: column; }
+      .footer-links { gap: 32px; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+
+      .feature-title { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Landscape lock overlay ────────────────────────────────────────────── -->
+  <div class="landscape-lock">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="rgba(245,158,11,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="2"/>
+      <path d="M8 22v-2M16 22v-2M12 18h.01"/>
+      <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="90 12 12" dur="1.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1" keyTimes="0;1"/>
+    </svg>
+    <div>
+      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px;">Ruota il telefono</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.5;">Endyo è ottimizzato<br>per la modalità verticale</div>
+    </div>
+  </div>
+
+  <!-- ── Navbar ─────────────────────────────────────────────────────────────── -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">✦</div>
+      <span class="nav-logo-text">Endyo</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#features">Funzionalità</a></li>
+      <li><a href="#download">Download</a></li>
+      <li><a href="/brand-portal" target="_blank">Brand Portal</a></li>
+    </ul>
+
+    <div class="nav-ctas">
+      <a href="/portal/index.html" class="btn-nav-ghost">Login</a>
+      <a href="#download" class="btn-nav-primary desktop-only">Scarica</a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+  <section class="hero" id="home">
+
+    <!-- Nome app visibile solo su mobile, sopra il badge -->
+    <div class="mobile-app-name">
+      <div class="mobile-app-name-icon">✦</div>
+      Endyo
+    </div>
+
+    <div class="hero-badge fade-up">
+      ✦ &nbsp; Stylist AI · Armadio Digitale · Social
+    </div>
+
+    <h1 class="hero-title fade-up delay-1">
+      Il tuo armadio.<br>Reinventato.
+    </h1>
+
+    <p class="hero-sub fade-up delay-2">
+      Endyo trasforma i tuoi vestiti in un guardaroba intelligente.
+      L'AI analizza il tuo armadio e ti aiuta a scegliere cosa comprare davvero, evitando acquisti inutili.
+    </p>
+
+    <div class="hero-ctas fade-up delay-3">
+      <a href="/download/Endyo-Setup.exe" class="btn-primary desktop-only" download>
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        Scarica per Windows
+      </a>
+      <a href="#pwa" class="btn-primary mobile-only">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        Aggiungi alla home
+      </a>
+      <a href="/portal/index.html" class="btn-secondary">
+        Login
+      </a>
+    </div>
+
+    <!-- Phone frame mockup -->
+    <div class="hero-mockup fade-up delay-4">
+      <div class="phone-frame">
+        <!-- Dynamic island -->
+        <div class="phone-island"></div>
+
+        <div class="phone-screen">
+          <!-- Status bar -->
+          <div class="phone-status">
+            <span>9:41</span>
+            <div class="phone-status-icons">
+              <div class="phone-status-icon" style="width:10px;height:8px;background:none;border:1.5px solid rgba(255,255,255,0.5);border-radius:1px;"></div>
+              <div class="phone-status-icon"></div>
+              <div class="phone-status-icon batt"></div>
+            </div>
+          </div>
+
+          <!-- App header -->
+          <div class="phone-app-bar">
+            <span class="phone-app-title">Il mio armadio</span>
+            <div class="phone-search-btn">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            </div>
+          </div>
+
+          <!-- Category chips -->
+          <div class="phone-chips">
+            <span class="phone-chip active">Tutti</span>
+            <span class="phone-chip">Top</span>
+            <span class="phone-chip">Pantaloni</span>
+            <span class="phone-chip">Scarpe</span>
+            <span class="phone-chip">Giacche</span>
+          </div>
+
+          <!-- Garment grid -->
+          <div class="phone-grid">
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=200&h=300&fit=crop&auto=format&q=80" alt="Felpa Nike" loading="lazy">
+              <div class="phone-gcard-label">Felpa Nike</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=200&h=300&fit=crop&auto=format&q=80" alt="Chinos Zara" loading="lazy">
+              <div class="phone-gcard-label">Chinos Zara</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&h=300&fit=crop&auto=format&q=80" alt="Sneakers" loading="lazy">
+              <div class="phone-gcard-label">Sneakers</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&h=300&fit=crop&auto=format&q=80" alt="Jeans slim" loading="lazy">
+              <div class="phone-gcard-label">Jeans slim</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=200&h=300&fit=crop&auto=format&q=80" alt="Giacchetto" loading="lazy">
+              <div class="phone-gcard-label">Giacchetto</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=200&h=300&fit=crop&auto=format&q=80" alt="Camicia" loading="lazy">
+              <div class="phone-gcard-label">Camicia</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=200&h=300&fit=crop&auto=format&q=80" alt="Borsa" loading="lazy">
+              <div class="phone-gcard-label">Borsa</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=300&fit=crop&auto=format&q=80" alt="Orologio" loading="lazy">
+              <div class="phone-gcard-label">Orologio</div>
+            </div>
+            <div class="phone-gcard">
+              <img src="https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=200&h=300&fit=crop&auto=format&q=80" alt="Cardigan" loading="lazy">
+              <div class="phone-gcard-label">Cardigan</div>
+            </div>
+          </div>
+
+          <!-- Bottom nav -->
+          <div class="phone-nav">
+            <div class="phone-nav-item active">
+              <div class="phone-nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>
+              </div>
+              Armadio
+            </div>
+            <div class="phone-nav-item">
+              <div class="phone-nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
+              </div>
+              Aggiungi
+            </div>
+            <div class="phone-nav-item">
+              <div class="phone-nav-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+              </div>
+              Outfit
+            </div>
+            <div class="phone-nav-item">
+              <div class="phone-nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93V18a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 13H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 4.07V6a1 1 0 002 0V4.07A8.001 8.001 0 0119.93 11H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 19.93z" opacity=".4"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              Stylist
+            </div>
+            <div class="phone-nav-item">
+              <div class="phone-nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              Amici
+            </div>
+          </div>
+
+          <!-- Home pill -->
+          <div class="phone-home-pill"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats strip ───────────────────────────────────────────────────────── -->
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-number">GPT-4o</div>
+      <div class="stat-label">Analisi AI dei capi</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Capi nel tuo armadio</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">100%</div>
+      <div class="stat-label">Privato e locale</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">3 sec</div>
+      <div class="stat-label">Per aggiungere un capo</div>
+    </div>
+  </div>
+
+  <!-- ── Features ──────────────────────────────────────────────────────────── -->
+  <div id="features"></div>
+
+  <!-- Feature 1: Armadio digitale -->
+  <section class="feature" id="armadio">
+    <div class="feature-text">
+      <div class="feature-tag">✦ &nbsp; Armadio Digitale</div>
+      <h2 class="feature-title">Ogni capo al suo posto.<br>Sempre.</h2>
+      <p class="feature-desc">
+        Fotografa fronte, retro ed etichetta. GPT-4 Vision riconosce automaticamente brand, taglia, colore, materiale e stagione. In pochi secondi il capo è nel tuo armadio digitale, organizzato e ricercabile.
+      </p>
+      <div class="feature-pills">
+        <span class="pill">Riconoscimento AI</span>
+        <span class="pill">Rimozione sfondo</span>
+        <span class="pill">Ricerca avanzata</span>
+        <span class="pill">Filtri per categoria</span>
+      </div>
+    </div>
+    <div class="feature-visual">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,#fff8e1 0%,#1a1208 100%);overflow:hidden;">
+
+        <!-- Foto capo -->
+        <div style="flex:1;min-height:0;position:relative;background:#12111e;display:flex;align-items:center;justify-content:center;">
+          <img
+            src="https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=600&h=480&fit=crop&auto=format&q=85"
+            alt="Nike Air Force 1"
+            style="width:100%;height:100%;object-fit:cover;object-position:center;"
+            loading="lazy"
+          >
+          <!-- Overlay gradiente basso -->
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(10,8,22,0.85) 100%);pointer-events:none;"></div>
+          <!-- Brand pill -->
+          <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,0,0,0.10);border-radius:99px;padding:4px 11px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.92);letter-spacing:.03em;">
+            Nike
+          </div>
+          <!-- AI badge -->
+          <div style="position:absolute;top:12px;right:12px;background:rgba(245,158,11,0.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(245,158,11,0.35);border-radius:99px;padding:4px 11px;font-size:9px;font-weight:700;color:#d97706;letter-spacing:.03em;">
+            ✦ Analizzato AI
+          </div>
+          <!-- Nome sopra il bordo inferiore -->
+          <div style="position:absolute;bottom:14px;left:16px;right:16px;">
+            <div style="font-size:16px;font-weight:800;color:white;margin-bottom:6px;text-shadow:0 2px 8px rgba(0,0,0,0.6);">Nike Air Force 1 '07</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              <span style="background:rgba(0,0,0,0.07);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:2px 9px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">Sneakers</span>
+              <span style="background:rgba(0,0,0,0.07);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:2px 9px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">Bianco</span>
+              <span style="background:rgba(0,0,0,0.07);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:2px 9px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">Pelle</span>
+              <span style="background:rgba(0,0,0,0.07);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:2px 9px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">42</span>
+              <span style="background:rgba(0,0,0,0.07);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:2px 9px;font-size:9px;font-weight:600;color:rgba(255,255,255,0.8);">P/E</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pannello info -->
+        <div style="padding:14px 16px 16px;border-top:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25);">
+          <!-- Descrizione AI -->
+          <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:10px;">
+            <span style="font-size:10px;color:#d97706;font-weight:700;flex-shrink:0;margin-top:1px;">✦</span>
+            <p style="font-size:10.5px;color:rgba(255,255,255,0.55);line-height:1.55;margin:0;">
+              Sneaker iconica in pelle bianca, senza tempo e versatile. Si abbina perfettamente con jeans slim, chinos e outfit casual streetwear. Un classico imprescindibile per ogni armadio.
+            </p>
+          </div>
+          <!-- Stats riga -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(0,0,0,0.04);">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;"></div>
+              <span style="font-size:10px;color:#4ade80;font-weight:600;">18 capi abbinabili</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:10px;color:rgba(255,255,255,0.35);">Indossato</span>
+              <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);">3 volte</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- Feature 2: Stylist AI -->
+  <section class="feature reverse" id="stylist">
+    <div class="feature-text">
+      <div class="feature-tag">🤖 &nbsp; Stylist AI</div>
+      <h2 class="feature-title">Il tuo stilista personale.<br>Disponibile 24/7.</h2>
+      <p class="feature-desc">
+        Chiedi un outfit per un'occasione specifica, per il meteo di oggi o per un tuo stile preferito. Lo Stylist AI conosce il tuo armadio e combina i capi in modi che non avresti mai pensato.
+      </p>
+      <div class="feature-pills">
+        <span class="pill">Chat in linguaggio naturale</span>
+        <span class="pill">Contesto meteo</span>
+        <span class="pill">Suggerimenti brand</span>
+        <span class="pill">Outfit automatici</span>
+      </div>
+    </div>
+    <div class="feature-visual">
+      <div class="visual-chat" style="justify-content:flex-start;padding-top:24px;">
+        <div class="chat-bubble user">Outfit casual per oggi, fa un po' fresco ☁️</div>
+        <div>
+          <div class="chat-ai-label">✦ Endyo Stylist</div>
+          <div class="chat-bubble ai">
+            Perfetto! Ti propongo:<br>
+            🧥 <strong>Felpa Nike</strong> + 👖 <strong>Jeans slim</strong> + 👟 <strong>Sneakers bianche</strong><br>
+            Casual ma curato. Applico l'outfit?
+          </div>
+        </div>
+        <div class="chat-bubble user">Sì, applicalo!</div>
+        <div>
+          <div class="chat-ai-label">✦ Endyo Stylist</div>
+          <div class="chat-bubble ai">Outfit applicato ✓ Buona giornata!</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- Feature 3: Social -->
+  <section class="feature" id="social">
+    <div class="feature-text">
+      <div class="feature-tag">👥 &nbsp; Social del Guardaroba</div>
+      <h2 class="feature-title">Condividi il tuo stile.<br>Ispira chi ti segue.</h2>
+      <p class="feature-desc">
+        Aggiungi amici, esplora le loro vetrine e pubblica i tuoi outfit migliori nel feed. Una comunità di appassionati di moda che si ispirano a vicenda — senza algoritmi invasivi.
+      </p>
+      <div class="feature-pills">
+        <span class="pill">Feed sociale</span>
+        <span class="pill">Vetrina personale</span>
+        <span class="pill">Segui amici</span>
+        <span class="pill">Like e commenti</span>
+      </div>
+    </div>
+    <div class="feature-visual">
+      <div class="visual-social">
+        <!-- Feed header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:2px;">
+          <span style="font-size:12px;font-weight:800;color:var(--text);">Feed</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        </div>
+        <!-- Post 1: outfit post -->
+        <div class="social-post">
+          <div class="social-avatar" style="background:linear-gradient(135deg,#f59e0b,#e8810a);"></div>
+          <div class="social-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div class="social-name">@marco_r</div>
+              <span style="font-size:9px;color:var(--dim);">2h fa</span>
+            </div>
+            <div class="social-text">Look da lavoro 💼 giacca + chinos grigi</div>
+            <!-- Garment thumbnails -->
+            <div style="display:flex;gap:4px;margin:6px 0 4px;">
+              <div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+                <img src="https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=60&h=80&fit=crop&auto=format&q=60" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+              </div>
+              <div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+                <img src="https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=60&h=80&fit=crop&auto=format&q=60" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+              </div>
+              <div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=60&h=80&fit=crop&auto=format&q=60" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+              </div>
+            </div>
+            <div class="social-likes">❤️ 24 · 💬 3 · 🔖 8</div>
+          </div>
+        </div>
+        <!-- Post 2 -->
+        <div class="social-post">
+          <div class="social-avatar" style="background:linear-gradient(135deg,#92400e,#78350f);"></div>
+          <div class="social-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div class="social-name">@sofia_m</div>
+              <span style="font-size:9px;color:var(--dim);">5h fa</span>
+            </div>
+            <div class="social-text">Weekend minimal ✨ total white</div>
+            <div style="display:flex;gap:4px;margin:6px 0 4px;">
+              <div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+                <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=60&h=80&fit=crop&auto=format&q=60" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+              </div>
+              <div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+                <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=60&h=80&fit=crop&auto=format&q=60" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+              </div>
+            </div>
+            <div class="social-likes">❤️ 41 · 💬 7 · 🔖 12</div>
+          </div>
+        </div>
+        <!-- Post 3 -->
+        <div class="social-post">
+          <div class="social-avatar" style="background:linear-gradient(135deg,#10b981,#059669);"></div>
+          <div class="social-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div class="social-name">@luca_style</div>
+              <span style="font-size:9px;color:var(--dim);">ieri</span>
+            </div>
+            <div class="social-text">Serata fuori 🌙 blazer navy + sneakers</div>
+            <div class="social-likes" style="margin-top:6px;">❤️ 18 · 💬 2 · 🔖 5</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- Feature 4: Shopping Advisor -->
+  <section class="feature reverse" id="shopping">
+    <div class="feature-text">
+      <div class="feature-tag">🛍 &nbsp; Shopping Advisor</div>
+      <h2 class="feature-title">Prima di comprare,<br>chiedi all'AI.</h2>
+      <p class="feature-desc">
+        Stai valutando un nuovo capo? Fotografalo e Endyo analizza quanti outfit potresti creare con quello che hai già, quanti capi simili possiedi e se colma davvero un vuoto nel tuo armadio.
+      </p>
+      <div class="feature-pills">
+        <span class="pill">Analisi compatibilità</span>
+        <span class="pill">Score acquisto</span>
+        <span class="pill">Outfit possibili</span>
+        <span class="pill">Capi simili in armadio</span>
+      </div>
+    </div>
+    <div class="feature-visual">
+      <div class="visual-shopping">
+        <div class="score-ring-wrapper">
+          <div class="score-ring">
+            <span class="score-num">82</span>
+          </div>
+          <div class="score-info">
+            <div class="score-verdict">Ottimo acquisto!</div>
+            <div class="score-sub">Si abbina con 14 capi già nel tuo armadio. Crea 6 nuovi outfit possibili.</div>
+          </div>
+        </div>
+        <div class="compat-tags">
+          <span class="compat-tag">+6 outfit possibili</span>
+          <span class="compat-tag">14 capi abbinabili</span>
+          <span class="compat-tag">Riempie un vuoto</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Download section ──────────────────────────────────────────────────── -->
+  <section class="download-section" id="download">
+
+    <!-- Desktop: download installer -->
+    <div class="download-desktop">
+      <p class="hero-badge" style="display:inline-flex;margin-bottom:20px;">
+        Disponibile ora
+      </p>
+      <h2 class="download-title">Scarica Endyo.</h2>
+      <p class="download-sub">
+        Un'app desktop nativa per Windows e macOS. Tutto gira in locale — i tuoi dati non lasciano mai il tuo computer.
+      </p>
+      <div class="download-buttons">
+        <a href="/download/Endyo-Setup.exe" download class="btn-download">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          Windows
+        </a>
+        <a href="/download/Endyo.dmg" download class="btn-download" style="background:rgba(26,18,8,0.07);color:var(--text);box-shadow:none;border:1px solid var(--border);">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+          macOS
+        </a>
+      </div>
+      <p class="download-sysreq">Windows 10+ · macOS 11+ · ~150 MB</p>
+    </div>
+
+    <!-- Mobile: aggiungi alla home PWA -->
+    <div class="pwa-section" id="pwa">
+      <p class="hero-badge" style="display:inline-flex;margin-bottom:20px;">
+        Versione mobile
+      </p>
+      <h2 class="download-title" style="font-size:clamp(28px,7vw,44px);">
+        Aggiungilo alla home.
+      </h2>
+      <p class="download-sub" style="font-size:15px;">
+        Endyo funziona come un'app nativa sul tuo smartphone. Nessun App Store — aggiungila alla home screen in 3 secondi.
+      </p>
+
+      <!-- iOS -->
+      <div id="pwa-ios" style="display:none;">
+        <div class="pwa-steps">
+          <div class="pwa-step">
+            <div class="pwa-step-num">1</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Apri in Safari</div>
+              <div class="pwa-step-desc">Questa pagina deve essere aperta nel browser Safari di iPhone o iPad.</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">2</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Tocca Condividi
+                <svg class="pwa-icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 3H13v8h-2V5H9l3-3zM4 17v3h16v-3h2v5H2v-5h2z"/></svg>
+              </div>
+              <div class="pwa-step-desc">Trovi l'icona "Condividi" nella barra in basso di Safari (rettangolo con freccia su).</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">3</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Aggiungi a Home</div>
+              <div class="pwa-step-desc">Scorri il menu e tocca <strong>"Aggiungi alla schermata Home"</strong>, poi conferma con "Aggiungi".</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Android -->
+      <div id="pwa-android" style="display:none;">
+        <div class="pwa-steps">
+          <div class="pwa-step">
+            <div class="pwa-step-num">1</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Apri in Chrome</div>
+              <div class="pwa-step-desc">Assicurati di star usando Google Chrome sul tuo dispositivo Android.</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">2</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Tocca il menu ⋮</div>
+              <div class="pwa-step-desc">Tocca i tre puntini in alto a destra nella barra di Chrome.</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">3</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Aggiungi a Home</div>
+              <div class="pwa-step-desc">Tocca <strong>"Aggiungi alla schermata Home"</strong> e poi <strong>"Aggiungi"</strong> nella finestra di conferma.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generic fallback -->
+      <div id="pwa-generic">
+        <div class="pwa-steps">
+          <div class="pwa-step">
+            <div class="pwa-step-num">1</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Apri nel browser</div>
+              <div class="pwa-step-desc">Usa Safari su iPhone/iPad oppure Chrome su Android.</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">2</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Menu del browser</div>
+              <div class="pwa-step-desc">Su iOS tocca Condividi → "Aggiungi a Home". Su Android tocca ⋮ → "Aggiungi alla schermata Home".</div>
+            </div>
+          </div>
+          <div class="pwa-step">
+            <div class="pwa-step-num">3</div>
+            <div class="pwa-step-body">
+              <div class="pwa-step-title">Apri come app</div>
+              <div class="pwa-step-desc">Endyo apparirà sulla tua home screen come una vera app, senza barra del browser.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="footer-logo-icon">✦</div>
+          Endyo
+        </div>
+        <p class="footer-tagline">
+          Il tuo armadio digitale con Stylist AI. Organizza, crea outfit e condividi il tuo stile.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>App</h4>
+          <ul>
+            <li><a href="/portal/index.html">Login</a></li>
+            <li><a href="/download/Endyo-Setup.exe" download>Download Windows</a></li>
+            <li><a href="/download/Endyo.dmg" download>Download macOS</a></li>
+            <li><a href="#pwa">Versione mobile</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Funzionalità</h4>
+          <ul>
+            <li><a href="#armadio">Armadio digitale</a></li>
+            <li><a href="#stylist">Stylist AI</a></li>
+            <li><a href="#social">Social</a></li>
+            <li><a href="#shopping">Shopping Advisor</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Partner</h4>
+          <ul>
+            <li><a href="/brand-portal" target="_blank">Brand Portal</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2025 Endyo S.r.l.s. · P.IVA da inserire · Tutti i diritti riservati.</span>
+      <span style="display:flex;gap:16px;align-items:center;">
+        <a href="/privacy" style="color:var(--muted);font-size:12px;text-decoration:none;">Privacy Policy</a>
+        <a href="/terms" style="color:var(--muted);font-size:12px;text-decoration:none;">Termini di Servizio</a>
+        <a href="/cookie" style="color:var(--muted);font-size:12px;text-decoration:none;">Cookie Policy</a>
+      </span>
+    </div>
+  </footer>
+
+  <!-- ── Cookie Banner GDPR ─────────────────────────────────────────────────── -->
+  <div id="cookie-banner" style="
+    display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
+    background:rgba(15,15,26,0.97); backdrop-filter:blur(20px);
+    border-top:1px solid rgba(0,0,0,0.07);
+    padding:16px 24px; gap:16px;
+    align-items:center; justify-content:space-between; flex-wrap:wrap;
+  ">
+    <p style="margin:0;font-size:13px;color:#92400e;line-height:1.55;flex:1;min-width:260px;">
+      🍪 Usiamo cookie tecnici necessari al funzionamento del sito e, con il tuo consenso,
+      cookie analitici e pubblicitari (Google AdSense). Leggi la nostra
+      <a href="/cookie" style="color:#d97706;text-decoration:underline;">Cookie Policy</a>.
+    </p>
+    <div style="display:flex;gap:10px;flex-shrink:0;">
+      <button onclick="rejectCookies()" style="
+        padding:9px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+        background:transparent;color:#6b5b3e;font-size:13px;font-weight:600;cursor:pointer;
+      ">Solo necessari</button>
+      <button onclick="acceptCookies()" style="
+        padding:9px 20px;border-radius:8px;border:none;
+        background:#f59e0b;color:white;font-size:13px;font-weight:700;cursor:pointer;
+      ">Accetta tutti</button>
+    </div>
+  </div>
+
+  <!-- ── Mobile bottom nav ─────────────────────────────────────────────────── -->
+  <nav class="mobile-bottom-nav">
+    <a href="#home" class="bottom-nav-item active">
+      <div class="bottom-nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </div>
+      Home
+    </a>
+    <a href="#features" class="bottom-nav-item">
+      <div class="bottom-nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      Features
+    </a>
+    <a href="#pwa" class="bottom-nav-item">
+      <div class="bottom-nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.75a.75.75 0 01.75.75v8.614l2.955-3.129a.75.75 0 011.09 1.03l-4.25 4.5a.75.75 0 01-1.09 0l-4.25-4.5a.75.75 0 011.09-1.03L11.25 12.114V3.5A.75.75 0 0112 2.75zM3.5 15.25a.75.75 0 011.5 0v2.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-2.5a.75.75 0 011.5 0v2.5A2.75 2.75 0 0116.75 20.5H7.25A2.75 2.75 0 014.5 17.75v-2.5z"/></svg>
+      </div>
+      Installa
+    </a>
+  </nav>
+
+  <script>
+    // ── Detect OS per istruzioni PWA ────────────────────────────────────────
+    const ua = navigator.userAgent.toLowerCase()
+    const isIOS     = /iphone|ipad|ipod/.test(ua)
+    const isAndroid = /android/.test(ua)
+
+    if (isIOS) {
+      document.getElementById('pwa-ios').style.display = 'block'
+      document.getElementById('pwa-generic').style.display = 'none'
+    } else if (isAndroid) {
+      document.getElementById('pwa-android').style.display = 'block'
+      document.getElementById('pwa-generic').style.display = 'none'
+    }
+
+    // ── Bottom nav active state on scroll ───────────────────────────────────
+    const navItems = document.querySelectorAll('.bottom-nav-item')
+    const sections = [
+      { id: 'home',     el: document.getElementById('home') },
+      { id: 'features', el: document.getElementById('features') },
+      { id: 'pwa',      el: document.getElementById('pwa') },
+    ]
+
+    function updateNav() {
+      const scrollY = window.scrollY + window.innerHeight * 0.4
+      let active = 'home'
+      for (const s of sections) {
+        if (s.el && s.el.offsetTop <= scrollY) active = s.id
+      }
+      navItems.forEach(item => {
+        const href = item.getAttribute('href')
+        item.classList.toggle('active', href === '#' + active)
+      })
+    }
+
+    window.addEventListener('scroll', updateNav, { passive: true })
+
+    // ── 1. STYLIST CHAT — typewriter animation ──────────────────────────────
+    ;(function () {
+      const section = document.getElementById('stylist')
+      if (!section) return
+
+      const visual = section.querySelector('.visual-chat')
+      if (!visual) return
+
+      // Snapshot original children & their HTML
+      const children = Array.from(visual.children)
+      const origHTML = children.map(c => c.outerHTML)
+      let fired = false
+
+      // Full AI message text (stripped of HTML for typing)
+      const aiMsg1Text = 'Perfetto! Ti propongo:\n🧥 Felpa Nike + 👖 Jeans slim + 👟 Sneakers bianche\nCasual ma curato. Applico l\'outfit?'
+      const aiMsg2Text = 'Outfit applicato ✓ Buona giornata!'
+
+      function runChat() {
+        if (fired) return
+        fired = true
+
+        // Hide all children
+        children.forEach(c => { c.style.opacity = '0'; c.style.transition = 'none' })
+
+        // Step helper: fade in an element
+        function show(el, delay) {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              el.style.transition = 'opacity 0.3s ease'
+              el.style.opacity = '1'
+              resolve()
+            }, delay)
+          })
+        }
+
+        // Typing indicator builder
+        function makeTypingIndicator() {
+          const wrap = document.createElement('div')
+          wrap.innerHTML = `<div class="chat-ai-label">✦ Endyo Stylist</div>
+            <div class="chat-bubble ai" style="display:flex;align-items:center;gap:4px;padding:10px 14px;">
+              <span class="typing-dot" style="animation-delay:0ms"></span>
+              <span class="typing-dot" style="animation-delay:160ms"></span>
+              <span class="typing-dot" style="animation-delay:320ms"></span>
+            </div>`
+          return wrap
+        }
+
+        // Typewriter into a bubble element
+        function typeText(el, text, speed) {
+          return new Promise(resolve => {
+            el.innerHTML = ''
+            // Add cursor
+            const cursor = document.createElement('span')
+            cursor.className = 'chat-cursor-blink'
+            el.appendChild(cursor)
+            let i = 0
+            function tick() {
+              if (i >= text.length) {
+                cursor.remove()
+                resolve()
+                return
+              }
+              const ch = text[i++]
+              // Insert before cursor
+              if (ch === '\n') {
+                el.insertBefore(document.createElement('br'), cursor)
+              } else if (text.slice(i-1, i+4) === '👖 J' || text.slice(i-1, i+8) === '👟 Sneak') {
+                // Bold the item lines — just insert text node
+                el.insertBefore(document.createTextNode(ch), cursor)
+              } else {
+                el.insertBefore(document.createTextNode(ch), cursor)
+              }
+              setTimeout(tick, speed + (Math.random() * 20 - 10))
+            }
+            tick()
+          })
+        }
+
+        const t = 300 // base offset ms
+
+        // Show user msg 1
+        show(children[0], t).then(async () => {
+          // Insert typing indicator after msg 1
+          const typing = makeTypingIndicator()
+          typing.style.opacity = '0'
+          visual.insertBefore(typing, children[1])
+          await show(typing, 350)
+
+          // Wait a bit then replace with real AI bubble (typed)
+          await new Promise(r => setTimeout(r, 1200))
+          typing.remove()
+
+          // Restore AI msg 1 wrapper (children[1])
+          children[1].style.opacity = '0'
+          await show(children[1], 0)
+          const aiBubble1 = children[1].querySelector('.chat-bubble.ai')
+          if (aiBubble1) await typeText(aiBubble1, aiMsg1Text, 22)
+
+          // User reply
+          await show(children[2], 400)
+
+          // Typing indicator 2
+          const typing2 = makeTypingIndicator()
+          typing2.style.opacity = '0'
+          visual.insertBefore(typing2, children[3])
+          await show(typing2, 350)
+          await new Promise(r => setTimeout(r, 700))
+          typing2.remove()
+
+          // Final AI msg
+          children[3].style.opacity = '0'
+          await show(children[3], 0)
+          const aiBubble2 = children[3].querySelector('.chat-bubble.ai')
+          if (aiBubble2) await typeText(aiBubble2, aiMsg2Text, 28)
+        })
+      }
+
+      const chatObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          runChat()
+          chatObs.disconnect()
+        }
+      }, { threshold: 0.35 })
+      chatObs.observe(section)
+    })()
+
+    // ── 2. SOCIAL FEED — live cycling posts ────────────────────────────────
+    ;(function () {
+      const section = document.getElementById('social')
+      if (!section) return
+      const feed = section.querySelector('.visual-social')
+      if (!feed) return
+
+      // Extra pool of posts to cycle in
+      const extraPosts = [
+        {
+          avatar: 'linear-gradient(135deg,#f59e0b,#d97706)',
+          name: '@ale_fashion',
+          time: '30m fa',
+          text: 'Gonna vento + boots 🍂 combo perfetta',
+          imgs: [
+            'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=60&h=80&fit=crop&auto=format&q=60',
+            'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=60&h=80&fit=crop&auto=format&q=60',
+          ],
+          likes: '❤️ 33 · 💬 5 · 🔖 9',
+        },
+        {
+          avatar: 'linear-gradient(135deg,#ec4899,#be185d)',
+          name: '@chiara_v',
+          time: '1h fa',
+          text: 'Giacca di pelle nera 🖤 classico senza tempo',
+          imgs: [
+            'https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=60&h=80&fit=crop&auto=format&q=60',
+          ],
+          likes: '❤️ 58 · 💬 11 · 🔖 22',
+        },
+        {
+          avatar: 'linear-gradient(135deg,#14b8a6,#0d9488)',
+          name: '@ricky_fit',
+          time: '3h fa',
+          text: 'Hoodie oversize + cargo pants 🛹 vibe',
+          imgs: [
+            'https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=60&h=80&fit=crop&auto=format&q=60',
+            'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=60&h=80&fit=crop&auto=format&q=60',
+          ],
+          likes: '❤️ 27 · 💬 4 · 🔖 7',
+        },
+      ]
+
+      function buildPost(p) {
+        const imgs = (p.imgs || []).map(src =>
+          `<div style="width:28px;height:36px;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);background:#f5f0e0;">
+            <img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+          </div>`
+        ).join('')
+        const div = document.createElement('div')
+        div.className = 'social-post'
+        div.innerHTML = `
+          <div class="social-avatar" style="background:${p.avatar};"></div>
+          <div class="social-content">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div class="social-name">${p.name}</div>
+              <span style="font-size:9px;color:var(--dim);">${p.time}</span>
+            </div>
+            <div class="social-text">${p.text}</div>
+            ${imgs ? `<div style="display:flex;gap:4px;margin:6px 0 4px;">${imgs}</div>` : ''}
+            <div class="social-likes">${p.likes}</div>
+          </div>`
+        return div
+      }
+
+      let poolIdx = 0
+      let cycling = false
+
+      function cyclePosts() {
+        if (cycling) return
+        const posts = feed.querySelectorAll('.social-post')
+        if (posts.length === 0) return
+        cycling = true
+
+        const first = posts[0]
+
+        // Slide out first post upward
+        first.style.transition = 'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease'
+        first.style.transform = 'translateY(-36px)'
+        first.style.opacity = '0'
+
+        setTimeout(() => {
+          first.remove()
+
+          // Build new post and insert at bottom
+          const newPost = buildPost(extraPosts[poolIdx % extraPosts.length])
+          poolIdx++
+          newPost.style.opacity = '0'
+          newPost.style.transform = 'translateY(24px)'
+          newPost.style.transition = 'none'
+          feed.appendChild(newPost)
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              newPost.style.transition = 'transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease'
+              newPost.style.transform = 'translateY(0)'
+              newPost.style.opacity = '1'
+              cycling = false
+            })
+          })
+        }, 420)
+      }
+
+      let cycleInterval = null
+      let socialFired = false
+
+      const socialObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !socialFired) {
+          socialFired = true
+          // Stagger-in existing posts
+          const posts = feed.querySelectorAll('.social-post')
+          posts.forEach((p, i) => {
+            p.style.opacity = '0'
+            p.style.transform = 'translateY(18px)'
+            p.style.transition = 'none'
+            setTimeout(() => {
+              p.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease'
+              p.style.transform = 'translateY(0)'
+              p.style.opacity = '1'
+            }, 120 + i * 140)
+          })
+          // Start cycling after stagger
+          setTimeout(() => { cycleInterval = setInterval(cyclePosts, 2800) }, 1400)
+        } else if (!entries[0].isIntersecting && cycleInterval) {
+          clearInterval(cycleInterval)
+          cycleInterval = null
+          socialFired = false
+        }
+      }, { threshold: 0.25 })
+      socialObs.observe(section)
+    })()
+
+    // ── 3. SHOPPING SCORE — counter + ring fill animation ──────────────────
+    ;(function () {
+      const section = document.getElementById('shopping')
+      if (!section) return
+      const ring = section.querySelector('.score-ring')
+      const numEl = section.querySelector('.score-num')
+      if (!ring || !numEl) return
+
+      const TARGET = 82
+      const DURATION = 1400 // ms
+
+      function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4) }
+
+      function runScore() {
+        // Reset
+        numEl.textContent = '0'
+        ring.style.background = `conic-gradient(#4ade80 0% 0%, rgba(0,0,0,0.04) 0% 100%)`
+
+        const start = performance.now()
+        function frame(now) {
+          const elapsed = now - start
+          const progress = Math.min(elapsed / DURATION, 1)
+          const eased = easeOutQuart(progress)
+          const current = Math.round(eased * TARGET)
+          const pct = (eased * TARGET).toFixed(2)
+
+          numEl.textContent = current
+          ring.style.background = `conic-gradient(#4ade80 0% ${pct}%, rgba(0,0,0,0.04) ${pct}% 100%)`
+
+          if (progress < 1) requestAnimationFrame(frame)
+        }
+        requestAnimationFrame(frame)
+      }
+
+      // Observe the ring itself, not the whole section, so it fires only when visible
+      const ringWrapper = section.querySelector('.score-ring-wrapper') || ring
+      let scoreFired = false
+
+      const scoreObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !scoreFired) {
+          scoreFired = true
+          runScore()
+          scoreObs.disconnect()
+        }
+      }, { threshold: 0.75, rootMargin: '0px 0px -60px 0px' })
+      scoreObs.observe(ringWrapper)
+    })()
+
+    // ── Scroll-triggered fade-in for feature sections ───────────────────────
+    const scrollReveal = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1'
+          entry.target.style.transform = 'translateY(0)'
+          scrollReveal.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.12 })
+
+    document.querySelectorAll('.feature-text, .feature-visual, .stat-item').forEach((el, i) => {
+      el.style.opacity = '0'
+      el.style.transform = 'translateY(32px)'
+      el.style.transition = `opacity 0.75s cubic-bezier(0.16,1,0.3,1) ${i % 2 * 80}ms, transform 0.75s cubic-bezier(0.16,1,0.3,1) ${i % 2 * 80}ms`
+      scrollReveal.observe(el)
+    })
+
+    // ── Cookie Banner GDPR ──────────────────────────────────────────────────
+    const COOKIE_KEY = 'endyo_cookie_consent'
+
+    function acceptCookies() {
+      localStorage.setItem(COOKIE_KEY, 'all')
+      document.getElementById('cookie-banner').style.display = 'none'
+      // Attiva Google AdSense / Analytics dopo consenso
+      // window.dataLayer = window.dataLayer || []; gtag('consent', 'update', { ad_storage: 'granted', analytics_storage: 'granted' })
+    }
+
+    function rejectCookies() {
+      localStorage.setItem(COOKIE_KEY, 'necessary')
+      document.getElementById('cookie-banner').style.display = 'none'
+    }
+
+    ;(function() {
+      const consent = localStorage.getItem(COOKIE_KEY)
+      if (!consent) {
+        // Mostra banner dopo 800ms per non disturbare il caricamento
+        setTimeout(() => {
+          const banner = document.getElementById('cookie-banner')
+          if (banner) banner.style.display = 'flex'
+        }, 800)
+      }
+    })()
+
+    // ── ads.txt served via backend route (vedere main.py) ──────────────────
+
+  </script>
+</body>
+</html>
