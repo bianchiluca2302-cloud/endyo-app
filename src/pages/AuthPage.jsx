@@ -1,9 +1,68 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { authLogin, authRegister, authForgotPassword, authResendVerification } from '../api/client'
+import { authLogin, authRegister, authForgotPassword, authResendVerification, api } from '../api/client'
 import logoUrl from '../assets/logo.png'
 import { useT } from '../i18n'
+
+// ── Password strength checker ─────────────────────────────────────────────────
+function PasswordStrength({ password }) {
+  if (!password) return null
+  const checks = [
+    { label: 'Almeno 8 caratteri', ok: password.length >= 8 },
+    { label: 'Una lettera maiuscola', ok: /[A-Z]/.test(password) },
+    { label: 'Un numero',            ok: /[0-9]/.test(password) },
+    { label: 'Un carattere speciale',ok: /[^a-zA-Z0-9]/.test(password) },
+  ]
+  const score = checks.filter(c => c.ok).length
+  const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e']
+  const color  = colors[score - 1] || '#ef4444'
+  return (
+    <div style={{ marginTop: -8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{
+            flex: 1, height: 3, borderRadius: 2,
+            background: i < score ? color : 'var(--border)',
+            transition: 'background 0.3s',
+          }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
+        {checks.map(c => (
+          <span key={c.label} style={{ fontSize: 11, color: c.ok ? '#22c55e' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ fontSize: 10 }}>{c.ok ? '✓' : '○'}</span>
+            {c.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Username availability ─────────────────────────────────────────────────────
+function useUsernameCheck(username) {
+  const [status, setStatus] = useState(null) // null | 'checking' | 'available' | 'taken' | 'invalid'
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    if (!username || username.length < 3) { setStatus(null); return }
+    setStatus('checking')
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/auth/check-username/${encodeURIComponent(username.toLowerCase())}`)
+        if (res.data.reason === 'invalid') setStatus('invalid')
+        else setStatus(res.data.available ? 'available' : 'taken')
+      } catch {
+        setStatus(null)
+      }
+    }, 500)
+    return () => clearTimeout(timerRef.current)
+  }, [username])
+
+  return status
+}
 
 // ── Helper componente campo input ─────────────────────────────────────────────
 function Field({ label, type = 'text', value, onChange, placeholder, error, autoComplete }) {
@@ -216,17 +275,19 @@ function RegisterForm({ onLogin }) {
   const [fieldErrors, setFieldErrors] = useState({})
   const [registered, setRegistered] = useState(false)
 
+  const usernameStatus = useUsernameCheck(username)
+
   const clearFieldError = (field) => setFieldErrors(prev => ({ ...prev, [field]: null }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-    // Validazione campi
     const fe = {}
     if (!email.trim()) fe.email = t('authErrEmailRequired')
     if (!username.trim()) fe.username = t('authErrUsernameRequired')
     else if (username.length < 3) fe.username = t('authErrUsernameLength')
     else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) fe.username = t('authErrUsernameChars')
+    else if (usernameStatus === 'taken') fe.username = 'Username non disponibile'
     if (password.length < 8) fe.password = t('authErrPasswordLength')
     if (password !== confirm) fe.confirm = t('authErrPasswordMatch')
     if (Object.keys(fe).length > 0) { setFieldErrors(fe); return }
@@ -246,6 +307,13 @@ function RegisterForm({ onLogin }) {
     setLoading(false)
   }
 
+  const usernameHint = {
+    checking:  { color: 'var(--text-dim)',    icon: '…', text: 'Controllo...' },
+    available: { color: '#22c55e',             icon: '✓', text: 'Disponibile' },
+    taken:     { color: '#ef4444',             icon: '✕', text: 'Non disponibile' },
+    invalid:   { color: 'var(--text-dim)',    icon: '○', text: 'Min. 3 caratteri, solo lettere/numeri/_.-' },
+  }[usernameStatus]
+
   if (registered) {
     return (
       <VerifyEmailPending
@@ -260,10 +328,35 @@ function RegisterForm({ onLogin }) {
     <form onSubmit={handleSubmit}>
       <Field label={t('authEmailLabel')} type="email" value={email} onChange={v => { setEmail(v); clearFieldError('email') }}
         placeholder={t('authEmailPlaceholder')} autoComplete="email" error={fieldErrors.email} />
-      <Field label={t('authUsernameLabel')} type="text" value={username} onChange={v => { setUsername(v); clearFieldError('username') }}
-        placeholder={t('authUsernamePlaceholder')} autoComplete="username" error={fieldErrors.username} />
+
+      {/* Username con check disponibilità */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
+          {t('authUsernameLabel')}
+        </label>
+        <input
+          type="text"
+          value={username}
+          onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
+          placeholder={t('authUsernamePlaceholder')}
+          autoComplete="username"
+          className="input"
+          style={{ width: '100%', borderColor: usernameStatus === 'taken' ? 'var(--danger)' : usernameStatus === 'available' ? '#22c55e' : undefined }}
+        />
+        {usernameHint && !fieldErrors.username && (
+          <div style={{ fontSize: 11, color: usernameHint.color, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>{usernameHint.icon}</span>
+            <span>{usernameHint.text}</span>
+          </div>
+        )}
+        {fieldErrors.username && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{fieldErrors.username}</div>}
+      </div>
+
+      {/* Password con strength meter */}
       <Field label={t('authPasswordLabel')} type="password" value={password} onChange={v => { setPassword(v); clearFieldError('password'); clearFieldError('confirm') }}
         placeholder={t('authPasswordPlaceholder')} autoComplete="new-password" error={fieldErrors.password} />
+      <PasswordStrength password={password} />
+
       <Field label={t('authConfirmLabel')} type="password" value={confirm} onChange={v => { setConfirm(v); clearFieldError('confirm') }}
         placeholder={t('authConfirmPlaceholder')} autoComplete="new-password" error={fieldErrors.confirm} />
 

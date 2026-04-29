@@ -463,6 +463,15 @@ def user_to_dict(u: User) -> dict:
     }
 
 
+@app.get("/auth/check-username/{username}")
+async def check_username(username: str, db: AsyncSession = Depends(get_db)):
+    if len(username) < 3 or not _re.match(r'^[a-zA-Z0-9_.-]+$', username):
+        return {"available": False, "reason": "invalid"}
+    result = await db.execute(select(User).where(User.username == username.lower()))
+    taken = result.scalar_one_or_none() is not None
+    return {"available": not taken}
+
+
 @app.post("/auth/register", status_code=201)
 @limiter.limit("5/minute")    # prevent account creation spam
 async def register(request: Request, data: RegisterRequest, db: AsyncSession = Depends(get_db)):
@@ -604,7 +613,8 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/auth/resend-verification")
-async def resend_verification(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("1/2minutes")
+async def resend_verification(request: Request, data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
     # Risposta identica sia che l'utente esista o meno (sicurezza)
