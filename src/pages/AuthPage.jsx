@@ -454,11 +454,33 @@ function ForgotForm({ onBack }) {
 
 // ── Pagina principale ─────────────────────────────────────────────────────────
 // ── Schermata installa PWA (mobile browser, non standalone) ──────────────────
+// ── Palette amber per la schermata di installazione ──────────────────────────
+const INSTALL_C = {
+  primary:  '#f59e0b',
+  primaryD: '#d97706',
+  bg:       '#fffcf0',
+  surface:  '#ffffff',
+  border:   '#fde68a',
+  text:     '#1a1208',
+  muted:    '#6b5b3e',
+  dim:      '#a08060',
+}
+
 function InstallScreen() {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [installed, setInstalled]           = useState(false)
   const [highlight, setHighlight]           = useState(false)
+
+  // Rileva lingua dal localStorage (impostata da settingsStore) o dal browser
+  const lang = (() => {
+    try {
+      const s = localStorage.getItem('endyo-settings')
+      if (s) { const p = JSON.parse(s); if (p?.state?.language) return p.state.language }
+    } catch (_) {}
+    return navigator.language?.startsWith('en') ? 'en' : 'it'
+  })()
+  const en = lang === 'en'
 
   useEffect(() => {
     const handler = e => { e.preventDefault(); setDeferredPrompt(e) }
@@ -468,41 +490,58 @@ function InstallScreen() {
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      // Android: dialog nativo
       deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') setInstalled(true)
       setDeferredPrompt(null)
     } else {
-      // iOS: pulsa le istruzioni per attirare l'attenzione
       setHighlight(true)
-      setTimeout(() => setHighlight(false), 2000)
+      setTimeout(() => setHighlight(false), 2200)
     }
   }
 
   return (
     <div style={{
-      height: '100vh', display: 'flex', flexDirection: 'column',
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg)', padding: '32px 24px',
+      background: INSTALL_C.bg, padding: '32px 24px 80px',
       textAlign: 'center',
     }}>
       <style>{`
-        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
-        @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0.4)} 50%{box-shadow:0 0 0 12px rgba(124,58,237,0)} }
+        @keyframes install-bounce {
+          0%,100% { transform: translateX(-50%) translateY(0) }
+          50%      { transform: translateX(-50%) translateY(-10px) }
+        }
+        @keyframes install-pulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.45) }
+          50%      { box-shadow: 0 0 0 14px rgba(245,158,11,0) }
+        }
+        @keyframes install-step-pulse {
+          0%,100% { border-color: rgba(245,158,11,0.3) }
+          50%      { border-color: rgba(245,158,11,0.9) }
+        }
       `}</style>
 
       {/* Logo */}
       <img src={logoUrl} alt="Endyo" style={{
-        width: 80, height: 80, borderRadius: 20, marginBottom: 20,
-        boxShadow: '0 8px 32px rgba(124,58,237,0.3)',
+        width: 80, height: 80, borderRadius: 22, marginBottom: 20,
+        boxShadow: '0 8px 32px rgba(245,158,11,0.35)',
       }} />
 
-      <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
-        Installa Endyo
+      {/* Titolo */}
+      <h1 style={{
+        fontSize: 26, fontWeight: 900, letterSpacing: '-0.035em',
+        color: INSTALL_C.text, margin: '0 0 10px',
+      }}>
+        {en ? 'Install Endyo' : 'Installa Endyo'}
       </h1>
-      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 28, maxWidth: 300 }}>
-        Aggiungi l'app alla schermata Home per accedere al tuo armadio digitale.
+      <p style={{
+        fontSize: 14, color: INSTALL_C.muted, lineHeight: 1.65,
+        margin: '0 0 28px', maxWidth: 300,
+      }}>
+        {en
+          ? 'Add the app to your Home Screen for the best experience — fast, full-screen, always at hand.'
+          : 'Aggiungi l\'app alla schermata Home per la migliore esperienza — veloce, a schermo intero, sempre a portata di mano.'}
       </p>
 
       {/* Bottone principale */}
@@ -510,78 +549,120 @@ function InstallScreen() {
         <button
           onClick={handleInstall}
           style={{
-            background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-            color: 'white', border: 'none', borderRadius: 16,
+            background: `linear-gradient(135deg, ${INSTALL_C.primary}, ${INSTALL_C.primaryD})`,
+            color: '#fff', border: 'none', borderRadius: 16,
             padding: '15px 40px', fontSize: 16, fontWeight: 700,
             cursor: 'pointer', marginBottom: 32, letterSpacing: '-0.01em',
-            boxShadow: '0 4px 24px rgba(124,58,237,0.4)',
-            animation: highlight ? 'pulse 0.6s ease 3' : 'none',
-            transition: 'transform 0.1s',
+            boxShadow: '0 4px 24px rgba(245,158,11,0.4)',
+            animation: highlight ? 'install-pulse 0.7s ease 3' : 'none',
+            WebkitTapHighlightColor: 'transparent',
           }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          ＋ Aggiungi alla Home
+          ＋ {en ? 'Add to Home Screen' : 'Aggiungi alla Home'}
         </button>
       ) : (
-        <div style={{ marginBottom: 32, fontSize: 15, color: '#22c55e', fontWeight: 600 }}>
-          ✓ App aggiunta alla home screen!
+        <div style={{ marginBottom: 32, fontSize: 15, color: '#22c55e', fontWeight: 700 }}>
+          ✓ {en ? 'App added to your home screen!' : 'App aggiunta alla home screen!'}
         </div>
       )}
 
-      {/* Steps — mostrati sempre, evidenziati se highlight */}
+      {/* Badge piattaforma */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+        borderRadius: 20, padding: '4px 14px', marginBottom: 20,
+        fontSize: 12, fontWeight: 600, color: INSTALL_C.primaryD,
+      }}>
+        {isIOS ? '🍎 iPhone / iPad' : '🤖 Android'}
+        <span style={{ opacity: 0.5, margin: '0 2px' }}>·</span>
+        {isIOS
+          ? (en ? 'Safari required' : 'Richiede Safari')
+          : (en ? 'Chrome / Edge' : 'Chrome / Edge')}
+      </div>
+
+      {/* Steps differenziati per piattaforma */}
       <div style={{
         width: '100%', maxWidth: 320,
-        display: 'flex', flexDirection: 'column', gap: 12,
-        transition: 'opacity 0.3s',
-        opacity: highlight ? 1 : 0.75,
+        display: 'flex', flexDirection: 'column', gap: 10,
       }}>
         {isIOS ? (
           <>
-            <Step n={1} text={<>Tocca l'icona <strong>Condividi</strong> ⬆️ in basso nel browser</>} highlight={highlight} />
-            <Step n={2} text={<>Scorri e tocca <strong>"Aggiungi a schermata Home"</strong></>} highlight={highlight} />
-            <Step n={3} text={<>Tocca <strong>Aggiungi</strong> in alto a destra</>} highlight={highlight} />
+            <InstallStep n={1} emoji="⬆️" highlight={highlight}
+              text={en
+                ? <><strong>Tap the Share button</strong> at the bottom of Safari</>
+                : <>Tocca il tasto <strong>Condividi ⬆️</strong> in basso in Safari</>}
+            />
+            <InstallStep n={2} emoji="📲" highlight={highlight}
+              text={en
+                ? <>Scroll down and tap <strong>"Add to Home Screen"</strong></>
+                : <>Scorri in basso e tocca <strong>"Aggiungi a schermata Home"</strong></>}
+            />
+            <InstallStep n={3} emoji="✅" highlight={highlight}
+              text={en
+                ? <>Tap <strong>Add</strong> in the top-right corner to confirm</>
+                : <>Tocca <strong>Aggiungi</strong> in alto a destra per confermare</>}
+            />
           </>
         ) : (
           <>
-            <Step n={1} text={<>Tocca il menu <strong>⋮</strong> in alto a destra nel browser</>} highlight={highlight} />
-            <Step n={2} text={<>Seleziona <strong>"Aggiungi alla schermata Home"</strong></>} highlight={highlight} />
-            <Step n={3} text={<>Tocca <strong>Aggiungi</strong> per confermare</>} highlight={highlight} />
+            <InstallStep n={1} emoji="⋮" highlight={highlight}
+              text={en
+                ? <>Tap the <strong>⋮ menu</strong> in the top-right corner of Chrome</>
+                : <>Tocca il menu <strong>⋮</strong> in alto a destra in Chrome</>}
+            />
+            <InstallStep n={2} emoji="📲" highlight={highlight}
+              text={en
+                ? <>Tap <strong>"Add to Home Screen"</strong> from the menu</>
+                : <>Seleziona <strong>"Aggiungi alla schermata Home"</strong></>}
+            />
+            <InstallStep n={3} emoji="✅" highlight={highlight}
+              text={en
+                ? <>Tap <strong>Add</strong> to confirm — the app icon will appear on your screen</>
+                : <>Tocca <strong>Aggiungi</strong> — l'icona apparirà nella tua home</>}
+            />
           </>
         )}
       </div>
 
-      {/* Freccia animata in basso per iOS */}
+      {/* Freccia animata in basso per iOS (indica il tasto Share) */}
       {isIOS && (
         <div style={{
-          position: 'fixed', bottom: 20, left: '50%',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-          animation: 'bounce 1.4s ease-in-out infinite',
+          position: 'fixed', bottom: 16, left: '50%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+          animation: 'install-bounce 1.4s ease-in-out infinite',
+          pointerEvents: 'none',
         }}>
-          <span style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Condividi</span>
-          <span style={{ fontSize: 24 }}>⬆️</span>
+          <span style={{
+            fontSize: 10, color: INSTALL_C.primaryD,
+            letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700,
+          }}>
+            {en ? 'Share' : 'Condividi'}
+          </span>
+          <span style={{ fontSize: 26 }}>⬆️</span>
         </div>
       )}
     </div>
   )
 }
 
-function Step({ n, text, highlight }) {
+function InstallStep({ n, emoji, text, highlight }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left',
-      background: 'var(--surface)',
-      border: `1px solid ${highlight ? 'rgba(124,58,237,0.5)' : 'var(--border)'}`,
-      borderRadius: 14, padding: '14px 16px',
+      background: INSTALL_C.surface,
+      border: `1px solid ${INSTALL_C.border}`,
+      borderRadius: 14, padding: '13px 16px',
+      animation: highlight ? 'install-step-pulse 0.7s ease 3' : 'none',
       transition: 'border-color 0.3s',
     }}>
       <div style={{
-        width: 32, height: 32, borderRadius: 50, flexShrink: 0,
-        background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)',
+        width: 34, height: 34, borderRadius: 50, flexShrink: 0,
+        background: 'rgba(245,158,11,0.12)',
+        border: `1px solid rgba(245,158,11,0.3)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 13, fontWeight: 800, color: 'var(--primary)',
+        fontSize: 15, fontWeight: 800, color: INSTALL_C.primaryD,
       }}>{n}</div>
-      <div style={{ paddingTop: 6, fontSize: 14, lineHeight: 1.5, color: 'var(--text)' }}>
+      <div style={{ paddingTop: 7, fontSize: 14, lineHeight: 1.55, color: INSTALL_C.text }}>
         {text}
       </div>
     </div>

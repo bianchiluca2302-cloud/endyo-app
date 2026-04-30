@@ -9,11 +9,25 @@ from PIL import Image
 
 load_dotenv()
 
+# ── Risoluzione chiavi OpenAI ─────────────────────────────────────────────────
+# Supporta sia chiavi separate per servizio (OPENAI_KEY_VISION, ecc.)
+# sia una singola chiave generica (OPENAI_API_KEY) come fallback.
+_key_fallback = os.getenv("OPENAI_API_KEY", "")
+
+def _openai_key(specific: str) -> str:
+    """Restituisce la chiave specifica se configurata, altrimenti il fallback generico."""
+    k = os.getenv(specific, "")
+    if not k and _key_fallback:
+        import logging
+        logging.getLogger(__name__).warning(
+            "[AI] %s non configurata, uso OPENAI_API_KEY come fallback.", specific
+        )
+    return k or _key_fallback
+
 # ── Client OpenAI separati per servizio ───────────────────────────────────────
-# Ogni client usa la propria API key (progetto separato su platform.openai.com)
-client_vision   = AsyncOpenAI(api_key=os.getenv("OPENAI_KEY_VISION",   ""))  # analisi/caricamento capi
-client_stylist  = AsyncOpenAI(api_key=os.getenv("OPENAI_KEY_STYLIST",  ""))  # stylist chat + outfit AI
-client_shopping = AsyncOpenAI(api_key=os.getenv("OPENAI_KEY_SHOPPING", ""))  # shopping advisor
+client_vision   = AsyncOpenAI(api_key=_openai_key("OPENAI_KEY_VISION"))    # analisi/caricamento capi
+client_stylist  = AsyncOpenAI(api_key=_openai_key("OPENAI_KEY_STYLIST"))   # stylist chat + outfit AI
+client_shopping = AsyncOpenAI(api_key=_openai_key("OPENAI_KEY_SHOPPING"))  # shopping advisor
 
 # Alias retrocompatibile (usato nei check os.getenv interni)
 client = client_stylist
@@ -71,7 +85,12 @@ async def analyze_garment(
                (description, style_tags, season_tags, occasion_tags)
     Costo totale stimato: ~€0.0035 vs ~€0.010 con gpt-4o full.
     """
-    if not os.getenv("OPENAI_KEY_VISION"):
+    if not _openai_key("OPENAI_KEY_VISION"):
+        import logging
+        logging.getLogger(__name__).warning(
+            "[AI] Nessuna chiave OpenAI configurata (OPENAI_KEY_VISION o OPENAI_API_KEY). "
+            "Restituisco analisi mock."
+        )
         return _mock_analysis(language)
 
     # ── Step 1: riconoscimento visivo con VISION_MODEL ─────────────────────────
@@ -210,7 +229,7 @@ async def reenrich_garment(garment_data: dict, language: str = 'it') -> dict:
     Rigenera description, style_tags, season_tags e occasion_tags
     a partire dai dati già salvati, senza bisogno delle foto originali.
     """
-    if not os.getenv("OPENAI_KEY_VISION"):
+    if not _openai_key("OPENAI_KEY_VISION"):
         return {}
 
     if language == 'en':
@@ -282,7 +301,7 @@ async def generate_outfit_recommendations(
     Generate outfit recommendations using GPT-4.
     Returns a list of outfit dicts: { name, garment_ids, occasion, season, notes }
     """
-    if not os.getenv("OPENAI_KEY_STYLIST"):
+    if not _openai_key("OPENAI_KEY_STYLIST"):
         return _mock_outfits(garments, n)
 
     # Prepare garment summary for the prompt
@@ -363,7 +382,7 @@ async def complete_outfit(
     Given already-selected garments, suggest complementary items from the wardrobe
     to complete the outfit. Returns { additional_ids, notes }.
     """
-    if not os.getenv("OPENAI_KEY_STYLIST"):
+    if not _openai_key("OPENAI_KEY_STYLIST"):
         # Mock: just pick one garment not already selected
         selected_ids = {g["id"] for g in selected_garments}
         remaining = [g for g in all_garments if g["id"] not in selected_ids]
@@ -647,7 +666,7 @@ async def chat_with_stylist(
     brand_products: list[dict] | None = None,
 ) -> str:
     """Stylist chat — risposta singola (non streaming). Usato come fallback."""
-    if not os.getenv("OPENAI_KEY_STYLIST"):
+    if not _openai_key("OPENAI_KEY_STYLIST"):
         if language == 'en':
             return "⚠️ Configure your OpenAI API key in the `.env` file to activate the AI assistant."
         return "⚠️ Configura la tua OpenAI API key nel file `.env` per attivare l'assistente AI."
@@ -685,7 +704,7 @@ async def stream_chat_with_stylist(
     """Generatore asincrono che restituisce token SSE dalla chat dello stylist.
     Yields: stringhe di testo (token) man mano che arrivano da OpenAI.
     """
-    if not os.getenv("OPENAI_KEY_STYLIST"):
+    if not _openai_key("OPENAI_KEY_STYLIST"):
         msg = ("⚠️ Configure your OpenAI API key in the `.env` file."
                if language == 'en' else
                "⚠️ Configura la tua OpenAI API key nel file `.env`.")
