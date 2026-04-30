@@ -866,8 +866,14 @@ async def confirm_garment(
     """
     Crea il capo nel DB usando le foto temporanee già analizzate.
     Rinomina i file tmp_ con i prefissi definitivi (front_, back_, label_).
+    Controlla e incrementa la quota upload prima di salvare.
     """
     import json as _json
+
+    # ── Controllo quota upload ─────────────────────────────────────────────────
+    await _maybe_expire_plan(current_user, db)
+    _check_and_increment_upload_quota(current_user)
+    await db.commit()   # salva aggiornamento contatori prima del resto
 
     front_path = back_path = label_path = None
 
@@ -1473,6 +1479,24 @@ ARMO_WEEKLY_LIMIT_FREE         = 0    # bloccato per free
 ARMO_WEEKLY_LIMIT_PREMIUM      = 2    # analisi/settimana per Premium
 ARMO_WEEKLY_LIMIT_PREMIUM_PLUS = 5    # analisi/settimana per Premium Plus
 
+# Upload vestiti — limite giornaliero e settimanale per piano
+UPLOAD_DAILY_LIMIT_FREE          = 10
+UPLOAD_WEEKLY_LIMIT_FREE         = 40
+UPLOAD_DAILY_LIMIT_PREMIUM       = 30
+UPLOAD_WEEKLY_LIMIT_PREMIUM      = 120
+UPLOAD_DAILY_LIMIT_PREMIUM_PLUS  = 100
+UPLOAD_WEEKLY_LIMIT_PREMIUM_PLUS = 400
+
+# Pacchetti upload extra (crediti one-time acquistabili)
+UPLOAD_PACK_S = 40    # 2€
+UPLOAD_PACK_M = 100   # 5€
+UPLOAD_PACK_L = 300   # 10€
+
+# Stripe Price ID pacchetti upload (impostare nelle env vars dopo creazione su Stripe)
+STRIPE_PRICE_UPLOAD_S = os.getenv("STRIPE_PRICE_UPLOAD_S", "")
+STRIPE_PRICE_UPLOAD_M = os.getenv("STRIPE_PRICE_UPLOAD_M", "")
+STRIPE_PRICE_UPLOAD_L = os.getenv("STRIPE_PRICE_UPLOAD_L", "")
+
 
 async def _maybe_expire_plan(user: User, db: AsyncSession) -> None:
     """Se il piano corrente è scaduto, applica il downgrade schedulato (default: free)."""
@@ -1702,6 +1726,67 @@ def _check_and_increment_armocromia_quota(user: User) -> dict:
     }
 
 
+def _check_and_increment_upload_quota(user: User) -> dict:
+    """Controlla limite giornaliero e settimanale degli upload vestiti.
+    Scala automaticamente i contatori, decurta crediti extra se presenti.
+    Lancia HTTPException 429 se tutti i limiti sono esauriti.
+    Ritorna dict con remaining_day, remaining_week, upload_extra.
+    """
+    plan = user.plan or 'free'
+    if plan == 'premium_annual':      plan = 'premium'
+    if plan == 'premium_plus_annual': plan = 'premium_plus'
+
+    if plan == 'premium_plus':
+        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_PREMIUM_PLUS, UPLOAD_WEEKLY_LIMIT_PREMIUM_PLUS
+    elif plan == 'premium':
+        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_PREMIUM, UPLOAD_WEEKLY_LIMIT_PREMIUM
+    else:
+        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_FREE, UPLOAD_WEEKLY_LIMIT_FREE
+
+    now        = datetime.now(timezone.utc)
+    week_start = (now - timedelta(days=now.weekday())).date()
+
+    # Reset giornaliero
+    if user.upload_reset_at is None or user.upload_reset_at.date() < now.date():
+        user.upload_count    = 0
+        user.upload_reset_at = now
+    # Reset settimanale
+    if user.upload_week_reset_at is None or user.upload_week_reset_at.date() < week_start:
+        user.upload_week_count    = 0
+        user.upload_week_reset_at = now
+
+    day_count  = user.upload_count      or 0
+    week_count = user.upload_week_count or 0
+    extra      = user.upload_extra      or 0
+
+    # Se entro i limiti normali → usa quelli
+    if day_count < daily_lim and week_count < weekly_lim:
+        user.upload_count      = day_count  + 1
+        user.upload_week_count = week_count + 1
+    elif extra > 0:
+        # Fuori limite ma ha crediti extra → consuma 1 credito extra
+        user.upload_extra = extra - 1
+    else:
+        # Nessun credito disponibile
+        if day_count >= daily_lim:
+            raise HTTPException(status_code=429, detail=(
+                f"Hai raggiunto il limite di {daily_lim} upload giornalieri. "
+                "Riprova domani o acquista un pacchetto upload extra."
+            ))
+        raise HTTPException(status_code=429, detail=(
+            f"Hai raggiunto il limite di {weekly_lim} upload settimanali. "
+            "Riprova la prossima settimana o acquista un pacchetto upload extra."
+        ))
+
+    return {
+        "remaining_day":  max(0, daily_lim  - (user.upload_count      or 0)),
+        "remaining_week": max(0, weekly_lim - (user.upload_week_count or 0)),
+        "limit_day":      daily_lim,
+        "limit_week":     weekly_lim,
+        "upload_extra":   user.upload_extra or 0,
+    }
+
+
 # ── Chat streaming (SSE) ──────────────────────────────────────────────────────
 @app.post("/ai/chat-stream")
 async def ai_chat_stream(
@@ -1859,6 +1944,13 @@ async def get_chat_quota(
     ar_week_reset = (current_user.armocromia_week_reset_at is None or current_user.armocromia_week_reset_at.date() < week_start)
     ar_week_count = 0 if ar_week_reset else (current_user.armocromia_week_count or 0)
 
+    # ── Upload vestiti giornaliero/settimanale ────────────────────────────────
+    up_day_reset  = (current_user.upload_reset_at is None or current_user.upload_reset_at.date() < now.date())
+    up_day_count  = 0 if up_day_reset  else (current_user.upload_count      or 0)
+    up_week_reset = (current_user.upload_week_reset_at is None or current_user.upload_week_reset_at.date() < week_start)
+    up_week_count = 0 if up_week_reset else (current_user.upload_week_count or 0)
+    up_extra      = current_user.upload_extra or 0
+
     if plan == 'premium_plus':
         return {
             "plan":                   raw_plan,
@@ -1873,6 +1965,11 @@ async def get_chat_quota(
             "shopping_limit_week":     SHOP_WEEKLY_LIMIT_PREMIUM_PLUS,
             "armo_remaining_week":     max(0, ARMO_WEEKLY_LIMIT_PREMIUM_PLUS - ar_week_count),
             "armo_limit_week":         ARMO_WEEKLY_LIMIT_PREMIUM_PLUS,
+            "upload_remaining_day":    max(0, UPLOAD_DAILY_LIMIT_PREMIUM_PLUS  - up_day_count),
+            "upload_remaining_week":   max(0, UPLOAD_WEEKLY_LIMIT_PREMIUM_PLUS - up_week_count),
+            "upload_limit_day":        UPLOAD_DAILY_LIMIT_PREMIUM_PLUS,
+            "upload_limit_week":       UPLOAD_WEEKLY_LIMIT_PREMIUM_PLUS,
+            "upload_extra":            up_extra,
             "plan_expires_at":         expires_iso,
             "scheduled_downgrade_to":  downgrade_to,
         }
@@ -1890,6 +1987,11 @@ async def get_chat_quota(
             "shopping_limit_week":     SHOP_WEEKLY_LIMIT_PREMIUM,
             "armo_remaining_week":     max(0, ARMO_WEEKLY_LIMIT_PREMIUM - ar_week_count),
             "armo_limit_week":         ARMO_WEEKLY_LIMIT_PREMIUM,
+            "upload_remaining_day":    max(0, UPLOAD_DAILY_LIMIT_PREMIUM  - up_day_count),
+            "upload_remaining_week":   max(0, UPLOAD_WEEKLY_LIMIT_PREMIUM - up_week_count),
+            "upload_limit_day":        UPLOAD_DAILY_LIMIT_PREMIUM,
+            "upload_limit_week":       UPLOAD_WEEKLY_LIMIT_PREMIUM,
+            "upload_extra":            up_extra,
             "plan_expires_at":         expires_iso,
             "scheduled_downgrade_to":  downgrade_to,
         }
@@ -1907,6 +2009,11 @@ async def get_chat_quota(
         "shopping_limit_week":     SHOP_WEEKLY_LIMIT_FREE,
         "armo_remaining_week":     0,
         "armo_limit_week":         0,
+        "upload_remaining_day":    max(0, UPLOAD_DAILY_LIMIT_FREE  - up_day_count),
+        "upload_remaining_week":   max(0, UPLOAD_WEEKLY_LIMIT_FREE - up_week_count),
+        "upload_limit_day":        UPLOAD_DAILY_LIMIT_FREE,
+        "upload_limit_week":       UPLOAD_WEEKLY_LIMIT_FREE,
+        "upload_extra":            up_extra,
         "plan_expires_at":         None,
         "scheduled_downgrade_to":  None,
     }
@@ -3964,7 +4071,73 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             await db.commit()
             logger.info(f"[Stripe] User {user_id} tornato a piano free")
 
+    elif event_type == "checkout.session.completed":
+        # Pacchetto upload one-time
+        session_obj = event["data"]["object"]
+        meta        = session_obj.get("metadata", {})
+        uid         = meta.get("user_id")
+        credits_str = meta.get("upload_credits")
+        if uid and credits_str and session_obj.get("payment_status") == "paid":
+            try:
+                credits = int(credits_str)
+                from sqlalchemy import select as _sel
+                result  = await db.execute(_sel(User).where(User.id == int(uid)))
+                u       = result.scalar_one_or_none()
+                if u:
+                    u.upload_extra = (u.upload_extra or 0) + credits
+                    await db.commit()
+                    logger.info(f"[Stripe] User {uid} +{credits} upload_extra (tot {u.upload_extra})")
+            except Exception as ex:
+                logger.error(f"[Stripe] Errore crediti upload: {ex}")
+
     return {"received": True}
+
+
+class UploadPackBody(BaseModel):
+    pack: str   # 's' | 'm' | 'l'
+
+@app.post("/payments/upload-pack")
+async def create_upload_pack_checkout(
+    body: UploadPackBody,
+    current_user: User = Depends(get_current_user),
+):
+    """Crea sessione Stripe (one-time) per l'acquisto di un pacchetto upload extra."""
+    if not _stripe_available or not STRIPE_SECRET_KEY:
+        raise HTTPException(503, "Stripe non configurato")
+
+    import stripe
+    stripe.api_key = STRIPE_SECRET_KEY
+
+    pack_map = {
+        's': (STRIPE_PRICE_UPLOAD_S, UPLOAD_PACK_S, "2"),
+        'm': (STRIPE_PRICE_UPLOAD_M, UPLOAD_PACK_M, "5"),
+        'l': (STRIPE_PRICE_UPLOAD_L, UPLOAD_PACK_L, "10"),
+    }
+    entry = pack_map.get(body.pack)
+    if not entry:
+        raise HTTPException(400, f"Pacchetto non valido: {body.pack}")
+    price_id, credits, price_eur = entry
+    if not price_id:
+        raise HTTPException(400, f"Price ID per il pacchetto '{body.pack}' non configurato nelle variabili d'ambiente")
+
+    app_url = os.getenv("APP_URL", "http://localhost:5173")
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            mode="payment",
+            line_items=[{"price": price_id, "quantity": 1}],
+            customer_email=current_user.email,
+            metadata={
+                "user_id":       str(current_user.id),
+                "upload_credits": str(credits),
+                "pack":           body.pack,
+            },
+            success_url=f"{app_url}/#/settings?upload_success=1",
+            cancel_url=f"{app_url}/#/settings",
+        )
+        return {"checkout_url": session.url}
+    except Exception as e:
+        raise HTTPException(500, f"Errore pagamento: {str(e)}")
 
 
 @app.get("/payments/portal")

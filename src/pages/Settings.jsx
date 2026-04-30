@@ -9,7 +9,7 @@ import {
   SHOE_SIZE_SYSTEMS, CLOTHING_SIZE_SYSTEMS, STYLIST_TONES,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, authDeleteAccount } from '../api/client'
+import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout } from '../api/client'
 import {
   IconAlertTriangle, IconStar, IconCalendar, IconRefreshCw, IconCheck,
   IconLightbulb, IconPalette, IconGlobe,
@@ -341,16 +341,17 @@ function DeleteAccountModal({ onSuccess, onCancel, t }) {
 
 // ── Sezione utilizzo Stylist AI ───────────────────────────────────────────────
 const PLAN_META = {
-  free:                { label: 'Free',         limDay: 2,   limWeek: 8,   shLimDay: 1,  shLimWeek: 4,   arLimWeek: 0,  color: 'var(--text-muted)',  bg: 'var(--bg)',                     border: 'var(--border)',              isPlus: false },
-  premium:             { label: 'Premium',      limDay: 30,  limWeek: 120, shLimDay: 5,  shLimWeek: 20,  arLimWeek: 2,  color: 'var(--primary)',     bg: 'rgba(139,92,246,0.08)',          border: 'rgba(139,92,246,0.25)',      isPlus: false },
-  premium_annual:      { label: 'Premium',      limDay: 30,  limWeek: 120, shLimDay: 5,  shLimWeek: 20,  arLimWeek: 2,  color: 'var(--primary)',     bg: 'rgba(139,92,246,0.08)',          border: 'rgba(139,92,246,0.25)',      isPlus: false },
-  premium_plus:        { label: 'Premium Plus', limDay: 60,  limWeek: 240, shLimDay: 10, shLimWeek: 40,  arLimWeek: 5,  color: '#f59e0b',            bg: 'rgba(251,191,36,0.08)',          border: 'rgba(251,191,36,0.3)',       isPlus: true  },
-  premium_plus_annual: { label: 'Premium Plus', limDay: 60,  limWeek: 240, shLimDay: 10, shLimWeek: 40,  arLimWeek: 5,  color: '#f59e0b',            bg: 'rgba(251,191,36,0.08)',          border: 'rgba(251,191,36,0.3)',       isPlus: true  },
+  free:                { label: 'Free',         limDay: 2,   limWeek: 8,   shLimDay: 1,  shLimWeek: 4,   arLimWeek: 0,  upLimDay: 10,  upLimWeek: 40,   color: 'var(--text-muted)',  bg: 'var(--bg)',                     border: 'var(--border)',              isPlus: false },
+  premium:             { label: 'Premium',      limDay: 30,  limWeek: 120, shLimDay: 5,  shLimWeek: 20,  arLimWeek: 2,  upLimDay: 30,  upLimWeek: 120,  color: 'var(--primary)',     bg: 'rgba(139,92,246,0.08)',          border: 'rgba(139,92,246,0.25)',      isPlus: false },
+  premium_annual:      { label: 'Premium',      limDay: 30,  limWeek: 120, shLimDay: 5,  shLimWeek: 20,  arLimWeek: 2,  upLimDay: 30,  upLimWeek: 120,  color: 'var(--primary)',     bg: 'rgba(139,92,246,0.08)',          border: 'rgba(139,92,246,0.25)',      isPlus: false },
+  premium_plus:        { label: 'Premium Plus', limDay: 60,  limWeek: 240, shLimDay: 10, shLimWeek: 40,  arLimWeek: 5,  upLimDay: 100, upLimWeek: 400,  color: '#f59e0b',            bg: 'rgba(251,191,36,0.08)',          border: 'rgba(251,191,36,0.3)',       isPlus: true  },
+  premium_plus_annual: { label: 'Premium Plus', limDay: 60,  limWeek: 240, shLimDay: 10, shLimWeek: 40,  arLimWeek: 5,  upLimDay: 100, upLimWeek: 400,  color: '#f59e0b',            bg: 'rgba(251,191,36,0.08)',          border: 'rgba(251,191,36,0.3)',       isPlus: true  },
 }
 
 function StylistUsage({ language }) {
-  const [quota, setQuota]   = useState(null)
+  const [quota, setQuota]     = useState(null)
   const [loading, setLoading] = useState(true)
+  const [packBuying, setPackBuying] = useState(null)  // 's'|'m'|'l'|null
 
   useEffect(() => {
     fetchChatQuota()
@@ -358,6 +359,18 @@ function StylistUsage({ language }) {
       .catch(() => setQuota(null))
       .finally(() => setLoading(false))
   }, [])
+
+  const buyPack = async (pack) => {
+    setPackBuying(pack)
+    try {
+      const data = await startUploadPackCheckout(pack)
+      if (data.checkout_url) window.location.href = data.checkout_url
+    } catch {
+      alert('Errore pagamento. Riprova.')
+    } finally {
+      setPackBuying(null)
+    }
+  }
 
   const L = {
     it: {
@@ -376,7 +389,14 @@ function StylistUsage({ language }) {
       stylistLabel: 'Stylist AI',
       shopLabel:    'Shopping Advisor',
       armoLabel:    'Armocromia',
+      uploadLabel:  'Upload Vestiti',
       blocked:      'Bloccato (solo Premium)',
+      extraCredits: 'Crediti extra',
+      buyPack:      'Acquista pacchetto',
+      packS:        '40 upload — 2€',
+      packM:        '100 upload — 5€',
+      packL:        '300 upload — 10€',
+      buying:       'Apertura pagamento…',
     },
     en: {
       plan:         'Plan',
@@ -394,7 +414,14 @@ function StylistUsage({ language }) {
       stylistLabel: 'Stylist AI',
       shopLabel:    'Shopping Advisor',
       armoLabel:    'Colour Season',
+      uploadLabel:  'Garment Uploads',
       blocked:      'Locked (Premium only)',
+      extraCredits: 'Extra credits',
+      buyPack:      'Buy a pack',
+      packS:        '40 uploads — €2',
+      packM:        '100 uploads — €5',
+      packL:        '300 uploads — €10',
+      buying:       'Opening payment…',
     },
   }
   const s = L[language] || L.it
@@ -445,6 +472,17 @@ function StylistUsage({ language }) {
   const dispArLimWeek = arLimWeek >= UNLIMITED ? -1 : arLimWeek
   const arUsedWeek = dispArLimWeek !== -1 ? Math.max(0, arLimWeek - (quota.armo_remaining_week ?? arLimWeek)) : 0
   const arPctWeek  = dispArLimWeek > 0 ? Math.min(100, Math.round((arUsedWeek / arLimWeek) * 100)) : 0
+
+  // Upload vestiti
+  const upLimDay   = quota.upload_limit_day  ?? meta.upLimDay
+  const upLimWeek  = quota.upload_limit_week ?? meta.upLimWeek
+  const dispUpLimDay  = upLimDay  >= UNLIMITED ? -1 : upLimDay
+  const dispUpLimWeek = upLimWeek >= UNLIMITED ? -1 : upLimWeek
+  const upUsedDay  = dispUpLimDay  !== -1 ? Math.max(0, upLimDay  - (quota.upload_remaining_day  ?? upLimDay))  : 0
+  const upUsedWeek = dispUpLimWeek !== -1 ? Math.max(0, upLimWeek - (quota.upload_remaining_week ?? upLimWeek)) : 0
+  const upPctDay   = dispUpLimDay  > 0 ? Math.min(100, Math.round((upUsedDay  / upLimDay)  * 100)) : 0
+  const upPctWeek  = dispUpLimWeek > 0 ? Math.min(100, Math.round((upUsedWeek / upLimWeek) * 100)) : 0
+  const upExtra    = quota.upload_extra ?? 0
 
   const barColor = (pct) => pct >= 90 ? '#ef4444' : pct >= 65 ? '#f59e0b' : 'var(--primary)'
 
@@ -528,6 +566,53 @@ function StylistUsage({ language }) {
       ) : (
         <UsageBar label={s.weekly} used={arUsedWeek} limit={dispArLimWeek} pct={arPctWeek} resetNote={s.resetWeek} />
       )}
+
+      {/* ── Upload Vestiti ───────────────────────────────────────────────── */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 2px 0' }}>
+        {s.uploadLabel}
+      </div>
+      <UsageBar label={s.daily}  used={upUsedDay}  limit={dispUpLimDay}  pct={upPctDay}  resetNote={s.resetDay}  />
+      <UsageBar label={s.weekly} used={upUsedWeek} limit={dispUpLimWeek} pct={upPctWeek} resetNote={s.resetWeek} />
+
+      {/* Crediti extra */}
+      {upExtra > 0 && (
+        <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.07)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
+          ✦ {s.extraCredits}: <strong>{upExtra}</strong>
+        </div>
+      )}
+
+      {/* Pacchetti upload */}
+      <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+          {s.buyPack}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { pack: 's', label: s.packS },
+            { pack: 'm', label: s.packM },
+            { pack: 'l', label: s.packL },
+          ].map(({ pack, label }) => (
+            <button
+              key={pack}
+              onClick={() => buyPack(pack)}
+              disabled={!!packBuying}
+              style={{
+                width: '100%', padding: '9px 14px',
+                borderRadius: 8, border: '1px solid var(--primary)',
+                background: packBuying === pack ? 'var(--primary-dim)' : 'transparent',
+                color: 'var(--primary)', fontSize: 13, fontWeight: 600,
+                cursor: packBuying ? 'not-allowed' : 'pointer',
+                opacity: packBuying && packBuying !== pack ? 0.5 : 1,
+                transition: 'background 0.2s, opacity 0.2s',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <span>{label}</span>
+              {packBuying === pack && <span style={{ fontSize: 11, opacity: 0.7 }}>{s.buying}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Hint upgrade per utenti free */}
       {isFree && (

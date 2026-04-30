@@ -244,6 +244,9 @@ export const upgradeUserPlan = (plan) =>
 export const startStripeCheckout = (plan) =>
   api.post('/payments/checkout', { plan }).then(r => r.data)
 
+export const startUploadPackCheckout = (pack) =>
+  api.post('/payments/upload-pack', { pack }).then(r => r.data)
+
 export const cancelScheduledDowngrade = () =>
   api.delete('/user/scheduled-downgrade').then(r => r.data)
 
