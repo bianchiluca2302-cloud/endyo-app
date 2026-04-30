@@ -15,6 +15,7 @@ import Friends from './pages/Friends'
 import Shopping from './pages/Shopping'
 import Premium from './pages/Premium'
 import AuthPage from './pages/AuthPage'
+import LocationBanner from './components/LocationBanner'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import useWardrobeStore from './store/wardrobeStore'
@@ -88,16 +89,61 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
-  // Mentre verifichiamo il refresh token, mostriamo uno spinner centrato
+  // Splash screen stile Meta durante il bootstrap
   if (bootstrapping) {
     return (
       <div style={{
-        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg)',
+        height: '100vh', width: '100vw',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(160deg, #0a0a0f 0%, #12071f 100%)',
+        position: 'fixed', inset: 0, zIndex: 9999,
       }}>
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 13, letterSpacing: '-0.01em' }}>Accesso in corso…</div>
+        {/* Logo centrale */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          flex: 1, justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: 20,
+            background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 40px rgba(124,58,237,0.4)',
+          }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                fill="white" stroke="white" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <span style={{
+            fontSize: 28, fontWeight: 900, letterSpacing: '-0.05em',
+            color: '#ffffff',
+          }}>endyo</span>
+        </div>
+
+        {/* Loader in basso stile Meta */}
+        <div style={{ paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+          <div style={{
+            width: 36, height: 4, borderRadius: 2,
+            background: 'rgba(255,255,255,0.1)',
+            overflow: 'hidden', position: 'relative',
+          }}>
+            <div style={{
+              position: 'absolute', left: 0, top: 0, height: '100%',
+              width: '40%', borderRadius: 2,
+              background: 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+              animation: 'splashSlide 1s ease-in-out infinite',
+            }} />
+          </div>
+          <style>{`
+            @keyframes splashSlide {
+              0%   { left: -40%; }
+              100% { left: 140%; }
+            }
+          `}</style>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
+            da Endyo
+          </span>
         </div>
       </div>
     )
@@ -143,6 +189,7 @@ export default function App() {
               /* ── Layout DESKTOP: sidebar + pagine standard ───────────────────── */
               <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
                 {showTutorial && <TutorialOverlay onDone={() => setShowTutorial(false)} />}
+                <LocationBanner />
                 <Navbar />
                 <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   {showBackendError && <BackendErrorBanner />}

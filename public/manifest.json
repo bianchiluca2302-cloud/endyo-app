@@ -2,7 +2,7 @@
   "name": "Endyo",
   "short_name": "Endyo",
   "description": "Il tuo armadio digitale con Stylist AI",
-  "start_url": "/?pwa=1#/wardrobe",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
