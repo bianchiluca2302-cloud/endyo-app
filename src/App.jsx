@@ -104,21 +104,14 @@ export default function App() {
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
           flex: 1, justifyContent: 'center',
         }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: 20,
-            background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 40px rgba(124,58,237,0.4)',
-          }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                fill="white" stroke="white" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span style={{
-            fontSize: 28, fontWeight: 900, letterSpacing: '-0.05em',
-            color: '#ffffff',
-          }}>endyo</span>
+          <img
+            src={logoUrl}
+            alt="Endyo"
+            style={{
+              width: 90, height: 90, borderRadius: 22,
+              boxShadow: '0 0 40px rgba(124,58,237,0.4)',
+            }}
+          />
         </div>
 
         {/* Loader in basso stile Meta */}
