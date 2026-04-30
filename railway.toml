@@ -5,5 +5,5 @@ buildArgs = ["VITE_API_URL"]
 
 [deploy]
 healthcheckPath = "/"
-healthcheckTimeout = 30
+healthcheckTimeout = 120
 restartPolicyType = "on_failure"
