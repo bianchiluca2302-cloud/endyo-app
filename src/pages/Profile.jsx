@@ -947,35 +947,30 @@ export default function Profile() {
   const PROFILE_TOUR = getProfileTour(language)
   return (
     <div style={{
-      padding: isMobile ? '0 0 0 0' : '32px 40px 60px',
+      padding: isMobile ? '20px 16px' : '32px 40px 60px',
       paddingBottom: isMobile
         ? 'calc(env(safe-area-inset-bottom, 0px) + 130px)'
         : '60px',
     }}>
-      {/* ── Header mobile con tasto indietro ── */}
+      {/* ── Back button mobile (identico a Settings) ── */}
       {isMobile && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '14px 16px 8px',
-          position: 'sticky', top: 0, zIndex: 10,
-          background: 'var(--bg)',
-          borderBottom: '1px solid var(--border)',
-        }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--primary)', fontSize: 22, lineHeight: 1,
-              padding: '4px 8px 4px 0', display: 'flex', alignItems: 'center',
-            }}
-          >‹</button>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            {t('profilePageTitle')}
-          </span>
-        </div>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--primary-light)', fontSize: 15, fontWeight: 600,
+            padding: '0 0 20px', WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          {language === 'en' ? 'Back' : 'Indietro'}
+        </button>
       )}
       {!isMobile && <PageTutorial pageId="profile" steps={PROFILE_TOUR} />}
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 16px' : 0 }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
         {!isMobile && <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>{t('profilePageTitle')}</h1>}
         <ProfileContent />
       </div>

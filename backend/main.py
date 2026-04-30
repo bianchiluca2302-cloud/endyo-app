@@ -3879,8 +3879,7 @@ class StripeCheckoutRequest(BaseModel):
 @app.post("/payments/checkout")
 async def create_checkout_session(
     body: StripeCheckoutRequest,
-    token: HTTPAuthorizationCredentials = Depends(_bearer),
-    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Crea una sessione Stripe Checkout per abbonamento Premium o Premium Plus."""
     if not _stripe_available:
@@ -3891,7 +3890,7 @@ async def create_checkout_session(
     import stripe
     stripe.api_key = STRIPE_SECRET_KEY
 
-    user = await _require_auth(token, db)
+    user = current_user
     app_url = os.getenv("APP_URL", "http://localhost:5173")
 
     price_fn = _STRIPE_PRICE_MAP.get(body.plan)
@@ -3970,8 +3969,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
 @app.get("/payments/portal")
 async def stripe_billing_portal(
-    token: HTTPAuthorizationCredentials = Depends(_bearer),
-    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Genera link al portale di fatturazione Stripe per gestire abbonamento."""
     if not _stripe_available or not STRIPE_SECRET_KEY:
@@ -3980,7 +3978,7 @@ async def stripe_billing_portal(
     import stripe
     stripe.api_key = STRIPE_SECRET_KEY
 
-    user = await _require_auth(token, db)
+    user = current_user
     app_url = os.getenv("APP_URL", "http://localhost:5173")
 
     # Trova il customer Stripe dall'email

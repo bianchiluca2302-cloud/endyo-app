@@ -1,10 +1,6 @@
 /**
  * MobileTutorial — tour guidato al primo accesso su smartphone.
- *
- * 5 step con spotlight sul tab bar corrispondente.
- * Animazione slide + fade al cambio step.
- * Footer sticky con i tasti sempre visibili.
- * Usa la stessa chiave localStorage di TutorialOverlay.
+ * Palette amber (come la landing). Contenuto realistico e dettagliato.
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -15,81 +11,103 @@ const STORAGE_KEY = 'endyo_tutorial_done'
 const STEPS_IT = [
   {
     tabTarget: 'tab-wardrobe',
-    icon: '🗂',
-    title: 'Il tuo armadio',
-    body: 'Qui trovi tutti i capi che hai caricato. Tieni il tuo guardaroba sempre organizzato e sotto controllo.',
+    emoji: '👗',
+    title: 'Il tuo armadio digitale',
+    body: 'Tutti i tuoi capi in un unico posto. Puoi filtrarli per categoria, colore, stagione o brand. Toccane uno per vederne i dettagli, le statistiche di utilizzo e gli outfit in cui l\'hai indossato.',
+    tip: '💡 Scorri in su per vedere l\'intero guardaroba',
   },
   {
     tabTarget: 'tab-upload',
-    icon: '📸',
+    emoji: '📸',
     title: 'Aggiungi un capo',
-    body: 'Scatta o carica una foto e premi il pulsante centrale. L\'AI riconosce brand, colore e categoria in pochi secondi.',
+    body: 'Premi il pulsante centrale ＋ per fotografare o caricare un capo. L\'AI lo analizza automaticamente: riconosce categoria, colore, brand e stagione. Puoi correggere qualsiasi campo prima di salvare.',
+    tip: '💡 Scatta su sfondo neutro per risultati migliori',
   },
   {
     tabTarget: 'tab-outfit',
-    icon: '⭐',
-    title: 'Crea outfit',
-    body: 'Combina i tuoi capi e chiedi allo Stylist AI consigli su abbinamenti, occasioni e meteo. Salva i look che preferisci.',
+    emoji: '✨',
+    title: 'Stylist AI & Outfit',
+    body: 'Crea outfit combinando i tuoi capi oppure chiedi allo Stylist AI. Scrivi ad esempio "outfit casual per domani con pioggia" e l\'AI suggerirà combinazioni dai tuoi capi, tenendo conto del meteo e dell\'occasione.',
+    tip: '💡 Il meteo in alto mostra le condizioni attuali',
   },
   {
     tabTarget: 'tab-friends',
-    icon: '👥',
-    title: 'Social',
-    body: 'Pubblica i tuoi outfit, scopri quelli degli altri e segui chi ti ispira.',
+    emoji: '👥',
+    title: 'Social & amici',
+    body: 'Pubblica i tuoi outfit preferiti, scopri quelli degli altri utenti e segui chi ti ispira. Puoi cercare persone tramite username e commentare i look che ami.',
+    tip: '💡 Il feed mostra gli outfit più recenti dei tuoi amici',
   },
   {
     tabTarget: 'tab-profile',
-    icon: '🙂',
-    title: 'Profilo',
-    body: 'Personalizza il tuo account. Con il piano Premium puoi analizzare la tua stagione cromatica con l\'AI.',
-    cta: 'Inizia →',
+    emoji: '🙂',
+    title: 'Profilo & impostazioni',
+    body: 'Personalizza avatar, foto corpo e preferenze. Con il piano Premium sblocchi l\'analisi dell\'armocromia AI, outfit illimitati e lo Shopping Advisor personalizzato. Vai su Impostazioni per cambiare lingua e tema.',
+    tip: null,
+    cta: 'Inizia ora →',
   },
 ]
 
 const STEPS_EN = [
   {
     tabTarget: 'tab-wardrobe',
-    icon: '🗂',
-    title: 'Your wardrobe',
-    body: 'Find all your uploaded items here. Keep your wardrobe organised and always under control.',
+    emoji: '👗',
+    title: 'Your digital wardrobe',
+    body: 'All your items in one place. Filter by category, colour, season or brand. Tap any item to see details, wear stats and the outfits you\'ve built with it.',
+    tip: '💡 Scroll up to browse your full wardrobe',
   },
   {
     tabTarget: 'tab-upload',
-    icon: '📸',
+    emoji: '📸',
     title: 'Add an item',
-    body: 'Take or upload a photo and press the centre button. The AI recognises the brand, colour and category in seconds.',
+    body: 'Tap the central ＋ button to photograph or upload an item. The AI automatically detects category, colour, brand and season. You can edit any field before saving.',
+    tip: '💡 Shoot on a neutral background for best results',
   },
   {
     tabTarget: 'tab-outfit',
-    icon: '⭐',
-    title: 'Create outfits',
-    body: 'Combine your items and ask the AI Stylist for advice on pairings, occasions and weather. Save the looks you love.',
+    emoji: '✨',
+    title: 'AI Stylist & Outfits',
+    body: 'Build outfits by combining your items, or ask the AI Stylist. Try "casual outfit for tomorrow with rain" and the AI will suggest combinations from your wardrobe, considering the weather and occasion.',
+    tip: '💡 The weather badge at the top shows current conditions',
   },
   {
     tabTarget: 'tab-friends',
-    icon: '👥',
-    title: 'Social',
-    body: 'Share your outfits, discover others\' and follow who inspires you.',
+    emoji: '👥',
+    title: 'Social & friends',
+    body: 'Share your favourite outfits, discover other users\' looks and follow who inspires you. Search people by username and comment on looks you love.',
+    tip: '💡 The feed shows the most recent outfits from people you follow',
   },
   {
     tabTarget: 'tab-profile',
-    icon: '🙂',
-    title: 'Profile',
-    body: 'Customise your account. With a Premium plan you can analyse your colour season with AI.',
+    emoji: '🙂',
+    title: 'Profile & settings',
+    body: 'Customise your avatar, body photo and preferences. With Premium you unlock AI colour season analysis, unlimited outfits and a personalised Shopping Advisor. Go to Settings to change language and theme.',
+    tip: null,
     cta: 'Get started →',
   },
 ]
 
+// ── Palette amber (identica alla landing) ─────────────────────────────────────
+const C = {
+  bg:       '#fffcf0',
+  surface:  '#ffffff',
+  border:   'rgba(0,0,0,0.08)',
+  primary:  '#f59e0b',
+  primaryD: '#d97706',
+  text:     '#1a1208',
+  muted:    '#6b5b3e',
+  dim:      '#a08060',
+  overlay:  'rgba(26,18,8,0.82)',
+}
+
 export default function MobileTutorial({ onDone }) {
   const language  = useSettingsStore(s => s.language) || 'it'
   const STEPS     = language === 'en' ? STEPS_EN : STEPS_IT
-  const [step,      setStep]      = useState(0)
-  const [phase,     setPhase]     = useState('in')   // 'in' | 'out-fwd' | 'out-back'
-  const [tabRect,   setTabRect]   = useState(null)
+  const [step,    setStep]  = useState(0)
+  const [phase,   setPhase] = useState('in')
+  const [tabRect, setTabRect] = useState(null)
   const current = STEPS[step]
   const total   = STEPS.length
 
-  /* Trova il tab target nel DOM */
   useEffect(() => {
     const find = () => {
       const el = document.querySelector(`[data-mobiletour="${current.tabTarget}"]`)
@@ -108,7 +126,6 @@ export default function MobileTutorial({ onDone }) {
     onDone()
   }, [onDone])
 
-  /* Animazione slide fluida: esce → cambia step → entra */
   const navigateTo = useCallback((next, dir) => {
     setPhase(dir === 'fwd' ? 'out-fwd' : 'out-back')
     setTimeout(() => {
@@ -137,7 +154,6 @@ export default function MobileTutorial({ onDone }) {
     return () => window.removeEventListener('keydown', handler)
   }, [finish, advance, goBack])
 
-  /* Calcolo transform/opacity per la fase corrente */
   const phaseStyle = {
     'in':             { opacity: 1,   transform: 'translateX(0)' },
     'out-fwd':        { opacity: 0,   transform: 'translateX(-28px)' },
@@ -150,7 +166,6 @@ export default function MobileTutorial({ onDone }) {
   const H = window.innerHeight
   const pad = 10
 
-  /* SVG spotlight path */
   const spotlightPath = tabRect
     ? (() => {
         const x = tabRect.left - pad
@@ -169,12 +184,10 @@ export default function MobileTutorial({ onDone }) {
       })()
     : `M 0 0 H ${W} V ${H} H 0 Z`
 
-  const tabTop      = tabRect ? tabRect.top : H - 120
-  const cardBottom  = H - tabTop + 20
-  /* Altezza massima della card: dallo spazio sopra il tab bar, meno margine in cima */
-  const cardMaxH    = tabTop - 24
-
-  const tabCenterX  = tabRect ? tabRect.left + tabRect.width / 2 : W / 2
+  const tabTop     = tabRect ? tabRect.top : H - 120
+  const cardBottom = H - tabTop + 20
+  const cardMaxH   = tabTop - 24
+  const tabCenterX = tabRect ? tabRect.left + tabRect.width / 2 : W / 2
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
@@ -182,27 +195,27 @@ export default function MobileTutorial({ onDone }) {
       {/* ── Overlay SVG spotlight ── */}
       <svg width={W} height={H}
         style={{ position: 'absolute', inset: 0, display: 'block', pointerEvents: 'none' }}>
-        <path d={spotlightPath} fill="rgba(0,0,0,0.80)" fillRule="evenodd" />
+        <path d={spotlightPath} fill={C.overlay} fillRule="evenodd" />
         {tabRect && (
           <rect
             x={tabRect.left - pad} y={tabRect.top - pad}
             width={tabRect.width + pad * 2} height={tabRect.height + pad * 2}
-            rx={14} fill="none" stroke="var(--primary-light)" strokeWidth={2.5}
+            rx={14} fill="none" stroke={C.primary} strokeWidth={2.5}
           >
-            <animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite" />
           </rect>
         )}
         {tabRect && (
           <line
             x1={tabCenterX} y1={H - cardBottom - 4}
             x2={tabCenterX} y2={tabRect.top - pad - 6}
-            stroke="var(--primary-light)" strokeWidth={2}
-            strokeDasharray="4 4" opacity={0.65}
+            stroke={C.primary} strokeWidth={1.5}
+            strokeDasharray="4 4" opacity={0.6}
           />
         )}
       </svg>
 
-      {/* ── Card tutorial ── */}
+      {/* ── Card tutorial (palette amber) ── */}
       <div style={{
         position: 'absolute',
         bottom: cardBottom,
@@ -211,26 +224,26 @@ export default function MobileTutorial({ onDone }) {
         width: 'calc(100% - 32px)',
         maxWidth: 360,
         maxHeight: cardMaxH,
-        background: 'var(--surface)',
+        background: C.surface,
         borderRadius: 20,
-        border: '1px solid var(--border)',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
+        border: `1px solid ${C.border}`,
+        boxShadow: `0 8px 40px rgba(245,158,11,0.18), 0 2px 16px rgba(0,0,0,0.12)`,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
       }}>
 
-        {/* Barra progresso — sempre in cima */}
-        <div style={{ height: 3, background: 'var(--border)', flexShrink: 0 }}>
+        {/* Barra progresso amber */}
+        <div style={{ height: 3, background: 'rgba(245,158,11,0.12)', flexShrink: 0 }}>
           <div style={{
             height: '100%',
             width: `${((step + 1) / total) * 100}%`,
-            background: 'linear-gradient(90deg, var(--primary), #c084fc)',
+            background: `linear-gradient(90deg, ${C.primary}, ${C.primaryD})`,
             transition: 'width 0.4s ease',
           }} />
         </div>
 
-        {/* Contenuto scorrevole con animazione slide */}
+        {/* Contenuto con animazione slide */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
@@ -240,15 +253,15 @@ export default function MobileTutorial({ onDone }) {
             ? 'opacity 0.22s ease, transform 0.22s ease'
             : 'opacity 0.18s ease, transform 0.18s ease',
         }}>
-          {/* Icona */}
-          <div style={{ fontSize: 28, marginBottom: 8, textAlign: 'center' }}>
-            {current.icon}
+          {/* Emoji */}
+          <div style={{ fontSize: 30, marginBottom: 6, textAlign: 'center' }}>
+            {current.emoji}
           </div>
 
           {/* Contatore */}
           <div style={{
-            fontSize: 10, fontWeight: 700, color: 'var(--text-dim)',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
+            fontSize: 10, fontWeight: 700, color: C.primaryD,
+            textTransform: 'uppercase', letterSpacing: '0.1em',
             marginBottom: 5, textAlign: 'center',
           }}>
             {step + 1} {language === 'en' ? 'of' : 'di'} {total}
@@ -257,34 +270,48 @@ export default function MobileTutorial({ onDone }) {
           {/* Titolo */}
           <h3 style={{
             fontSize: 17, fontWeight: 800, letterSpacing: '-0.025em',
-            textAlign: 'center', lineHeight: 1.25, color: 'var(--text)',
-            margin: '0 0 8px',
+            textAlign: 'center', lineHeight: 1.25, color: C.text,
+            margin: '0 0 10px',
           }}>
             {current.title}
           </h3>
 
           {/* Testo */}
           <p style={{
-            fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65,
-            textAlign: 'center', margin: '0 0 14px',
+            fontSize: 13, color: C.muted, lineHeight: 1.7,
+            textAlign: 'center', margin: '0 0 12px',
           }}>
             {current.body}
           </p>
+
+          {/* Tip */}
+          {current.tip && (
+            <div style={{
+              background: 'rgba(245,158,11,0.08)',
+              border: '1px solid rgba(245,158,11,0.2)',
+              borderRadius: 10, padding: '8px 12px',
+              fontSize: 12, color: C.primaryD,
+              textAlign: 'center', marginBottom: 12,
+              lineHeight: 1.5,
+            }}>
+              {current.tip}
+            </div>
+          )}
         </div>
 
-        {/* Footer tasti — sempre visibile, non scorrevole */}
+        {/* Footer tasti */}
         <div style={{
           flexShrink: 0,
           padding: '10px 20px 14px',
-          borderTop: '1px solid var(--border)',
-          background: 'var(--surface)',
+          borderTop: `1px solid ${C.border}`,
+          background: C.surface,
           display: 'flex', gap: 8, alignItems: 'center',
         }}>
           <button
             onClick={finish}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, color: 'var(--text-dim)', padding: '8px 0',
+              fontSize: 12, color: C.dim, padding: '8px 0',
               flexShrink: 0, WebkitTapHighlightColor: 'transparent',
             }}
           >
@@ -295,8 +322,10 @@ export default function MobileTutorial({ onDone }) {
             <button
               onClick={goBack}
               style={{
-                padding: '10px 16px', borderRadius: 12, border: '1px solid var(--border)',
-                background: 'var(--card)', color: 'var(--text-muted)',
+                padding: '10px 16px', borderRadius: 12,
+                border: `1px solid ${C.border}`,
+                background: 'rgba(245,158,11,0.06)',
+                color: C.muted,
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -306,9 +335,10 @@ export default function MobileTutorial({ onDone }) {
             onClick={advance}
             style={{
               padding: '10px 22px', borderRadius: 12, border: 'none',
-              background: 'var(--primary)', color: '#fff',
+              background: `linear-gradient(135deg, ${C.primary}, ${C.primaryD})`,
+              color: '#fff',
               fontSize: 14, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 2px 12px var(--primary-shadow)',
+              boxShadow: '0 2px 12px rgba(245,158,11,0.35)',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
