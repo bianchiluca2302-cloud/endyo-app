@@ -1017,7 +1017,7 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
 }
 
 // ── WeatherBadge — badge con tooltip previsioni orarie ───────────────────────
-function WeatherBadge({ weather, language, chatOpen }) {
+function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
   const [hovered, setHovered] = useState(false)
   const [tapped,  setTapped]  = useState(false)
   const isMobile = useIsMobile()
@@ -1040,7 +1040,13 @@ function WeatherBadge({ weather, language, chatOpen }) {
       style={{ position: 'relative', flexShrink: 0 }}
       onMouseEnter={() => !isMobile && setHovered(true)}
       onMouseLeave={() => !isMobile && setHovered(false)}
-      onClick={e => { e.stopPropagation(); if (isMobile) setTapped(t => !t) }}
+      onClick={e => {
+        e.stopPropagation()
+        if (isMobile) {
+          if (!chatOpen && onOpenChat) onOpenChat()
+          setTapped(t => !t)
+        }
+      }}
     >
       {/* Badge compatto */}
       <span style={{
@@ -1240,7 +1246,7 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
 
         {/* Badge meteo con tooltip previsioni */}
         {weather
-          ? <WeatherBadge weather={weather} language={language} chatOpen={isOpen} />
+          ? <WeatherBadge weather={weather} language={language} chatOpen={isOpen} onOpenChat={() => setIsOpen(true)} />
           : weatherLoading && (
             <span style={{
               fontSize: 11, flexShrink: 0,
