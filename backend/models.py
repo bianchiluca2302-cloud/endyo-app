@@ -42,6 +42,12 @@ class User(Base):
     # ── Quota Armocromia (solo settimana, non giornaliero) ─────────────────────
     armocromia_week_count    = Column(Integer,   default=0,      nullable=False, server_default='0')
     armocromia_week_reset_at = Column(DateTime(timezone=True), nullable=True)
+    # ── Quota Upload vestiti ───────────────────────────────────────────────────
+    upload_count             = Column(Integer,   default=0,      nullable=False, server_default='0')
+    upload_reset_at          = Column(DateTime(timezone=True), nullable=True)
+    upload_week_count        = Column(Integer,   default=0,      nullable=False, server_default='0')
+    upload_week_reset_at     = Column(DateTime(timezone=True), nullable=True)
+    upload_extra             = Column(Integer,   default=0,      nullable=False, server_default='0')  # crediti extra acquistati
 
     created_at          = Column(DateTime(timezone=True), server_default=func.now())
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())

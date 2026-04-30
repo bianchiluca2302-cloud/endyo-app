@@ -87,6 +87,12 @@ async def _migrate(conn):
         # Quota Armocromia
         ("users", "armocromia_week_count",    "INTEGER DEFAULT 0"),
         ("users", "armocromia_week_reset_at", "DATETIME"),
+        # Quota Upload vestiti
+        ("users", "upload_count",          "INTEGER DEFAULT 0"),
+        ("users", "upload_reset_at",       "DATETIME"),
+        ("users", "upload_week_count",     "INTEGER DEFAULT 0"),
+        ("users", "upload_week_reset_at",  "DATETIME"),
+        ("users", "upload_extra",          "INTEGER DEFAULT 0"),
     ]
     from sqlalchemy import text as _text
     for table, column, col_type in migrations:

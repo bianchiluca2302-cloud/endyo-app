@@ -124,8 +124,8 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
-  // ── Splash screen amber — sempre 1s minimo ────────────────────────────────
-  if (!splashReady || bootstrapping) {
+  // ── Splash screen amber — solo su PWA standalone, sempre 1s minimo ─────────
+  if (isPWA && (!splashReady || bootstrapping)) {
     return (
       <div style={{
         height: '100vh', width: '100vw',
