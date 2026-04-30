@@ -682,12 +682,21 @@ export default function Settings() {
 
         {/* Temi */}
         <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+          {/* Tema automatico */}
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {language === 'en' ? 'Automatic' : 'Automatico'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {THEMES.filter(th => th.auto).map(th => (
+              <ThemeButton key={th.id} theme={th} active={settings.theme === th.id} onSelect={() => updateSetting('theme', th.id)} language={language} />
+            ))}
+          </div>
           {/* Temi scuri */}
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {t('darkThemes')}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            {THEMES.filter(th => th.dark).map(th => (
+            {THEMES.filter(th => th.dark && !th.auto).map(th => (
               <ThemeButton key={th.id} theme={th} active={settings.theme === th.id} onSelect={() => updateSetting('theme', th.id)} language={language} />
             ))}
           </div>
@@ -696,7 +705,7 @@ export default function Settings() {
             {t('lightThemes')}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {THEMES.filter(th => !th.dark).map(th => (
+            {THEMES.filter(th => !th.dark && !th.auto).map(th => (
               <ThemeButton key={th.id} theme={th} active={settings.theme === th.id} onSelect={() => updateSetting('theme', th.id)} language={language} />
             ))}
           </div>

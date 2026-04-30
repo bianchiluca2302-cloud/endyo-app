@@ -28,6 +28,7 @@ import MobileWardrobe from './mobile/MobileWardrobe'
 import MobileUpload from './mobile/MobileUpload'
 import MobileFriends from './mobile/MobileFriends'
 import MobileProfile from './mobile/MobileProfile'
+import MobileAdBanner from './mobile/MobileAdBanner'
 
 const ROUTER_FUTURE = {
   v7_startTransition:  true,
@@ -159,6 +160,7 @@ export default function App() {
               /* ── Layout MOBILE: tab bar + pagine ridisegnate da zero ─────────── */
               <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: 'var(--bg)' }}>
                 {showTutorial && <MobileTutorial onDone={() => setShowTutorial(false)} />}
+                <MobileAdBanner position="top" />
                 <main style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
                   {showBackendError && <BackendErrorBanner />}
                   <Routes>
@@ -174,6 +176,7 @@ export default function App() {
                     <Route path="/shopping"     element={<Shopping />} />
                   </Routes>
                 </main>
+                <MobileAdBanner position="bottom" />
                 <MobileTabBar />
               </div>
             ) : (

@@ -235,7 +235,7 @@ if DIST_DIR.exists():
 @app.get("/brand-portal")
 async def brand_portal_redirect():
     """Redirect rapido per i brand: http://IP:8000/brand-portal → brand.html"""
-    return RedirectResponse(url="/portal")
+    return RedirectResponse(url="/portal/brand.html")
 
 
 # ── Landing page pubblica ─────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ async def landing_page():
     """Serve la landing page pubblica di Endyo."""
     if _LANDING_PATH.exists():
         return HTMLResponse(content=_LANDING_PATH.read_text(encoding="utf-8"))
-    return RedirectResponse(url="/portal")
+    return RedirectResponse(url="/portal/brand.html")
 
 
 # ── Pagine legali ─────────────────────────────────────────────────────────────
