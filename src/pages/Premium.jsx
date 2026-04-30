@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, upgradeUserPlan, cancelScheduledDowngrade } from '../api/client'
+import { fetchChatQuota, upgradeUserPlan, cancelScheduledDowngrade, startStripeCheckout } from '../api/client'
 import useIsMobile from '../hooks/useIsMobile'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -520,32 +520,42 @@ export default function Premium() {
   }
 
   const handleUpgrade = async (planId) => {
+    // Downgrade a Free: usa endpoint interno direttamente
+    if (planId === 'free') {
+      setLoading(true)
+      try {
+        const data = await upgradeUserPlan('free')
+        setCurrentPlan(data.plan)
+        setPlanExpiresAt(data.plan_expires_at || null)
+        setScheduledDowngradeTo(data.scheduled_downgrade_to || null)
+        updateUser({ ...user, plan: data.plan })
+        if (data.scheduled_downgrade_to === 'free') {
+          const d = fmtDate(data.plan_expires_at, lang)
+          showToast('info', t('premiumDowngradeScheduled', d))
+        } else {
+          showToast('info', lang === 'en' ? 'Free plan restored.' : 'Piano Free ripristinato.')
+        }
+      } catch (e) {
+        const msg = e?.response?.data?.detail || (lang === 'en'
+          ? 'Error. Please try again.'
+          : "Errore. Riprova tra un momento.")
+        showToast('error', msg)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // Piani a pagamento: redirect a Stripe Checkout
     setLoading(true)
     try {
-      const data = await upgradeUserPlan(planId)
-      setCurrentPlan(data.plan)
-      setPlanExpiresAt(data.plan_expires_at || null)
-      setScheduledDowngradeTo(data.scheduled_downgrade_to || null)
-      updateUser({ ...user, plan: data.plan })
-
-      if (data.scheduled_downgrade_to === 'free') {
-        const d = fmtDate(data.plan_expires_at, lang)
-        showToast('info', t('premiumDowngradeScheduled', d))
-      } else if (planId === 'free') {
-        showToast('info', lang === 'en' ? 'Free plan restored.' : 'Piano Free ripristinato.')
-      } else {
-        const name = PLANS.find(p => p.idMonthly === planId || p.idAnnual === planId)?.name || planId
-        const d = fmtDate(data.plan_expires_at, lang)
-        showToast('success', lang === 'en'
-          ? `${name} plan activated!${d ? ` Expires on ${d}.` : ''}`
-          : `Piano ${name} attivato!${d ? ` Scade il ${d}.` : ''}`)
-      }
+      const { checkout_url } = await startStripeCheckout(planId)
+      window.location.href = checkout_url
     } catch (e) {
       const msg = e?.response?.data?.detail || (lang === 'en'
-        ? 'Error during activation. Please try again.'
-        : "Errore durante l'attivazione. Riprova tra un momento.")
+        ? 'Payment error. Please try again.'
+        : "Errore nel pagamento. Riprova tra un momento.")
       showToast('error', msg)
-    } finally {
       setLoading(false)
     }
   }

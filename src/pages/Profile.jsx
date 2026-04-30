@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import { uploadAvatar, uploadFacePhoto, uploadProfilePicture, analyzeArmocromia, imgUrl } from '../api/client'
 import useAuthStore from '../store/authStore'
@@ -744,13 +745,13 @@ export function ProfileContent() {
             <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
               {t('profileArmocromiaUpgradeDesc')}
             </p>
-            <a
-              href="/premium"
+            <button
+              onClick={() => navigate('/premium')}
               className="btn btn-primary"
-              style={{ textDecoration: 'none', textAlign: 'center', fontSize: 13, padding: '8px 20px', alignSelf: 'flex-start' }}
+              style={{ fontSize: 13, padding: '8px 20px', alignSelf: 'flex-start', cursor: 'pointer' }}
             >
               {t('profileArmocromiaUpgradeBtn')}
-            </a>
+            </button>
           </div>
         ) : (
           /* ── Sezione armocromia per utenti Premium ── */
@@ -941,6 +942,7 @@ export default function Profile() {
   const t        = useT()
   const language = useSettingsStore(s => s.language) || 'it'
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
   const PROFILE_TOUR = getProfileTour(language)
   return (
     <div style={{

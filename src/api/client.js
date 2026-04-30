@@ -241,6 +241,9 @@ export const fetchChatQuota = async (retries = 2) => {
 export const upgradeUserPlan = (plan) =>
   api.post('/user/upgrade', { plan }).then(r => r.data)
 
+export const startStripeCheckout = (plan) =>
+  api.post('/payments/checkout', { plan }).then(r => r.data)
+
 export const cancelScheduledDowngrade = () =>
   api.delete('/user/scheduled-downgrade').then(r => r.data)
 

@@ -556,13 +556,17 @@ def _html_page(title: str, emoji: str, heading: str, body: str, color: str = "#8
   <style>
     * {{ margin: 0; padding: 0; box-sizing: border-box; }}
     body {{ min-height: 100vh; display: flex; align-items: center; justify-content: center;
-           background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
-    .card {{ background: white; border-radius: 20px; padding: 48px 40px; max-width: 420px;
-             width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.10); }}
+           background: linear-gradient(160deg, #0a0a0f 0%, #12071f 100%);
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
+    .card {{ background: #1a1025; border: 1px solid rgba(139,92,246,0.2); border-radius: 24px;
+             padding: 48px 40px; max-width: 420px; width: 90%; text-align: center;
+             box-shadow: 0 24px 64px rgba(0,0,0,0.5); }}
     .emoji {{ font-size: 56px; margin-bottom: 20px; }}
-    h1 {{ font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 12px; }}
-    p {{ color: #6b7280; line-height: 1.6; font-size: 15px; }}
-    .brand {{ margin-top: 32px; font-size: 18px; font-weight: 800; color: {color}; letter-spacing: -0.03em; }}
+    h1 {{ font-size: 22px; font-weight: 800; color: #f5f3ff; margin-bottom: 12px; }}
+    p {{ color: #a78bfa; line-height: 1.6; font-size: 15px; }}
+    .brand {{ margin-top: 32px; font-size: 20px; font-weight: 900; color: #8b5cf6;
+              letter-spacing: -0.04em; }}
+    .brand span {{ color: #a78bfa; }}
   </style>
 </head>
 <body>
@@ -570,7 +574,7 @@ def _html_page(title: str, emoji: str, heading: str, body: str, color: str = "#8
     <div class="emoji">{emoji}</div>
     <h1>{heading}</h1>
     <p>{body}</p>
-    <div class="brand">Mirror<em>Fit</em></div>
+    <div class="brand">end<span>yo</span></div>
   </div>
 </body>
 </html>"""
@@ -1444,21 +1448,21 @@ async def ai_chat(
 
 
 # ── Costanti rate limiting ────────────────────────────────────────────────────
-# Chat Stylist AI
-CHAT_DAILY_LIMIT_FREE          = 2    # richieste/giorno per piano free
-CHAT_WEEKLY_LIMIT_FREE         = 8    # richieste/settimana per piano free
-CHAT_DAILY_LIMIT_PREMIUM       = 30   # richieste/giorno per Premium
-CHAT_WEEKLY_LIMIT_PREMIUM      = 120  # richieste/settimana per Premium
-CHAT_DAILY_LIMIT_PREMIUM_PLUS  = 60   # richieste/giorno per Premium Plus
-CHAT_WEEKLY_LIMIT_PREMIUM_PLUS = 240  # richieste/settimana per Premium Plus
+# Chat Stylist AI — limiti alti durante beta gratuita
+CHAT_DAILY_LIMIT_FREE          = 999
+CHAT_WEEKLY_LIMIT_FREE         = 999
+CHAT_DAILY_LIMIT_PREMIUM       = 999
+CHAT_WEEKLY_LIMIT_PREMIUM      = 999
+CHAT_DAILY_LIMIT_PREMIUM_PLUS  = 999
+CHAT_WEEKLY_LIMIT_PREMIUM_PLUS = 999
 
-# Shopping Advisor
-SHOP_DAILY_LIMIT_FREE          = 1    # analisi/giorno per piano free
-SHOP_WEEKLY_LIMIT_FREE         = 4    # analisi/settimana per piano free
-SHOP_DAILY_LIMIT_PREMIUM       = 5    # analisi/giorno per Premium
-SHOP_WEEKLY_LIMIT_PREMIUM      = 20   # analisi/settimana per Premium
-SHOP_DAILY_LIMIT_PREMIUM_PLUS  = 10   # analisi/giorno per Premium Plus
-SHOP_WEEKLY_LIMIT_PREMIUM_PLUS = 40   # analisi/settimana per Premium Plus
+# Shopping Advisor — limiti alti durante beta gratuita
+SHOP_DAILY_LIMIT_FREE          = 999
+SHOP_WEEKLY_LIMIT_FREE         = 999
+SHOP_DAILY_LIMIT_PREMIUM       = 999
+SHOP_WEEKLY_LIMIT_PREMIUM      = 999
+SHOP_DAILY_LIMIT_PREMIUM_PLUS  = 999
+SHOP_WEEKLY_LIMIT_PREMIUM_PLUS = 999
 
 # Armocromia (solo settimanale — analisi costosa, limite conservativo)
 ARMO_WEEKLY_LIMIT_FREE         = 0    # bloccato per free
@@ -3851,13 +3855,22 @@ async def health():
 import importlib
 _stripe_available = importlib.util.find_spec("stripe") is not None
 
-STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY", "")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-STRIPE_PRICE_MONTHLY  = os.getenv("STRIPE_PRICE_MONTHLY", "")
-STRIPE_PRICE_YEARLY   = os.getenv("STRIPE_PRICE_YEARLY", "")
+STRIPE_SECRET_KEY          = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET      = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PRICE_MONTHLY       = os.getenv("STRIPE_PRICE_MONTHLY", "")
+STRIPE_PRICE_YEARLY        = os.getenv("STRIPE_PRICE_YEARLY", "")
+STRIPE_PRICE_PLUS_MONTHLY  = os.getenv("STRIPE_PRICE_PLUS_MONTHLY", "")
+STRIPE_PRICE_PLUS_YEARLY   = os.getenv("STRIPE_PRICE_PLUS_YEARLY", "")
+
+_STRIPE_PRICE_MAP = {
+    "premium":              lambda: STRIPE_PRICE_MONTHLY,
+    "premium_annual":       lambda: STRIPE_PRICE_YEARLY,
+    "premium_plus":         lambda: STRIPE_PRICE_PLUS_MONTHLY,
+    "premium_plus_annual":  lambda: STRIPE_PRICE_PLUS_YEARLY,
+}
 
 class StripeCheckoutRequest(BaseModel):
-    plan: str  # "premium_monthly" | "premium_yearly"
+    plan: str  # "premium" | "premium_annual" | "premium_plus" | "premium_plus_annual"
 
 @app.post("/payments/checkout")
 async def create_checkout_session(
@@ -3865,7 +3878,7 @@ async def create_checkout_session(
     token: HTTPAuthorizationCredentials = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ):
-    """Crea una sessione Stripe Checkout per abbonamento Premium."""
+    """Crea una sessione Stripe Checkout per abbonamento Premium o Premium Plus."""
     if not _stripe_available:
         raise HTTPException(503, "Stripe non installato. Esegui: pip install stripe")
     if not STRIPE_SECRET_KEY:
@@ -3877,9 +3890,12 @@ async def create_checkout_session(
     user = await _require_auth(token, db)
     app_url = os.getenv("APP_URL", "http://localhost:5173")
 
-    price_id = STRIPE_PRICE_MONTHLY if body.plan == "premium_monthly" else STRIPE_PRICE_YEARLY
+    price_fn = _STRIPE_PRICE_MAP.get(body.plan)
+    if not price_fn:
+        raise HTTPException(400, f"Piano non valido: {body.plan}")
+    price_id = price_fn()
     if not price_id:
-        raise HTTPException(400, f"Price ID per {body.plan} non configurato")
+        raise HTTPException(400, f"Price ID per {body.plan} non configurato nelle variabili d'ambiente")
 
     try:
         session = stripe.checkout.Session.create(
@@ -3919,7 +3935,12 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     user_id = subscription.get("metadata", {}).get("user_id")
 
     if event_type in ("customer.subscription.created", "customer.subscription.updated"):
-        plan_map = {STRIPE_PRICE_MONTHLY: "premium", STRIPE_PRICE_YEARLY: "premium_annual"}
+        plan_map = {
+            STRIPE_PRICE_MONTHLY:      "premium",
+            STRIPE_PRICE_YEARLY:       "premium_annual",
+            STRIPE_PRICE_PLUS_MONTHLY: "premium_plus",
+            STRIPE_PRICE_PLUS_YEARLY:  "premium_plus_annual",
+        }
         plan_items = subscription.get("items", {}).get("data", [])
         price_id = plan_items[0]["price"]["id"] if plan_items else ""
         new_plan = plan_map.get(price_id, "premium")
