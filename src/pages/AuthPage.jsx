@@ -466,6 +466,195 @@ const INSTALL_C = {
   dim:      '#a08060',
 }
 
+// ── Illustrazioni SVG per ogni step ──────────────────────────────────────────
+
+// iOS Step 1 — Safari bottom bar con tasto Share evidenziato
+function IllustrationIOSShare() {
+  return (
+    <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      {/* Sfondo telefono / browser */}
+      <rect x="10" y="8" width="280" height="74" rx="12" fill="#f8f8f8" stroke="#e5e7eb" strokeWidth="1.5"/>
+      {/* Barra indirizzi */}
+      <rect x="20" y="14" width="260" height="22" rx="8" fill="#fff" stroke="#e5e7eb" strokeWidth="1"/>
+      <text x="150" y="29" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">endyo.it</text>
+      {/* Bottom bar Safari */}
+      <rect x="10" y="60" width="280" height="22" rx="0" fill="#f8f8f8"/>
+      <line x1="10" y1="60" x2="290" y2="60" stroke="#e5e7eb" strokeWidth="1"/>
+      {/* Icone bottom bar: indietro, avanti, share, segnalibri, tab */}
+      {/* ← */}
+      <text x="36" y="75" textAnchor="middle" fontSize="14" fill="#c4c4c4" fontFamily="-apple-system,sans-serif">‹</text>
+      {/* → */}
+      <text x="80" y="75" textAnchor="middle" fontSize="14" fill="#e5e5e5" fontFamily="-apple-system,sans-serif">›</text>
+      {/* Share — EVIDENZIATO */}
+      <circle cx="150" cy="71" r="14" fill="rgba(245,158,11,0.18)"/>
+      <circle cx="150" cy="71" r="14" fill="none" stroke="#f59e0b" strokeWidth="2">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      {/* Icona share (quadrato con freccia su) */}
+      <rect x="145" y="67" width="10" height="8" rx="1.5" fill="none" stroke="#f59e0b" strokeWidth="1.6"/>
+      <line x1="150" y1="66" x2="150" y2="61" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round"/>
+      <polyline points="147,63 150,60 153,63" fill="none" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Segnalibri */}
+      <text x="220" y="76" textAnchor="middle" fontSize="12" fill="#c4c4c4">⊡</text>
+      {/* Tab */}
+      <text x="264" y="76" textAnchor="middle" fontSize="11" fill="#c4c4c4">⊞</text>
+      {/* Label */}
+      <text x="150" y="56" textAnchor="middle" fontSize="8" fill="#f59e0b" fontWeight="700" fontFamily="-apple-system,sans-serif">TAP HERE</text>
+    </svg>
+  )
+}
+
+// iOS Step 2 — Share sheet con "Aggiungi a schermata Home" evidenziato
+function IllustrationIOSAddHome({ en }) {
+  return (
+    <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="94" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
+      {/* Titolo sheet */}
+      <text x="150" y="24" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">Share</text>
+      <line x1="10" y1="29" x2="290" y2="29" stroke="#f3f4f6" strokeWidth="1"/>
+      {/* Icone app nella riga */}
+      {[40,80,120,160,200,240].map((x, i) => (
+        <g key={i}>
+          <rect x={x-14} y="33" width="28" height="28" rx="7" fill="#f3f4f6"/>
+        </g>
+      ))}
+      <line x1="10" y1="68" x2="290" y2="68" stroke="#f3f4f6" strokeWidth="1"/>
+      {/* Riga "Aggiungi a schermata Home" — evidenziata */}
+      <rect x="14" y="72" width="272" height="26" rx="8" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="1.5">
+        <animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/>
+      </rect>
+      {/* Icona casa */}
+      <text x="32" y="89" textAnchor="middle" fontSize="13" fontFamily="-apple-system,sans-serif">🏠</text>
+      <text x="154" y="89" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#1a1208" fontFamily="-apple-system,sans-serif">
+        {en ? 'Add to Home Screen' : 'Aggiungi a schermata Home'}
+      </text>
+      {/* freccia */}
+      <text x="272" y="89" textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">›</text>
+    </svg>
+  )
+}
+
+// iOS Step 3 — Dialog "Aggiungi" in alto a destra
+function IllustrationIOSConfirm({ en }) {
+  return (
+    <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="84" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
+      {/* Barra in alto con Annulla e Aggiungi */}
+      <rect x="10" y="8" width="280" height="28" rx="12" fill="#f8f8f8"/>
+      <rect x="10" y="24" width="280" height="12" fill="#f8f8f8"/>
+      <line x1="10" y1="36" x2="290" y2="36" stroke="#e5e7eb" strokeWidth="1"/>
+      <text x="36" y="26" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="-apple-system,sans-serif">
+        {en ? 'Cancel' : 'Annulla'}
+      </text>
+      <text x="150" y="26" textAnchor="middle" fontSize="10" fontWeight="600" fill="#1a1208" fontFamily="-apple-system,sans-serif">
+        {en ? 'Add to Home Screen' : 'Aggiungi a schermata'}
+      </text>
+      {/* Aggiungi — EVIDENZIATO */}
+      <rect x="242" y="14" width="48" height="20" rx="6" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="266" y="26" textAnchor="middle" fontSize="10" fontWeight="700" fill="#f59e0b" fontFamily="-apple-system,sans-serif">
+        {en ? 'Add' : 'Aggiungi'}
+      </text>
+      {/* Contenuto dialog */}
+      <rect x="116" y="46" width="68" height="28" rx="8" fill="#f3f4f6"/>
+      <text x="150" y="64" textAnchor="middle" fontSize="18">🧥</text>
+      <text x="150" y="83" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">endyo.it</text>
+    </svg>
+  )
+}
+
+// Android Step 1 — Chrome top bar con ⋮ evidenziato
+function IllustrationAndroidMenu() {
+  return (
+    <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="74" rx="12" fill="#f8f8f8" stroke="#e5e7eb" strokeWidth="1.5"/>
+      {/* Barra indirizzo Chrome */}
+      <rect x="10" y="8" width="280" height="34" rx="12" fill="#4285F4"/>
+      <rect x="10" y="28" width="280" height="14" fill="#4285F4"/>
+      {/* URL bar */}
+      <rect x="28" y="13" width="208" height="18" rx="9" fill="rgba(255,255,255,0.2)"/>
+      <text x="132" y="25" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.9)" fontFamily="-apple-system,sans-serif">endyo.it</text>
+      {/* Menu ⋮ — EVIDENZIATO */}
+      <circle cx="265" cy="22" r="14" fill="rgba(245,158,11,0.25)"/>
+      <circle cx="265" cy="22" r="14" fill="none" stroke="#f59e0b" strokeWidth="2">
+        <animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="265" cy="16" r="1.8" fill="#fff"/>
+      <circle cx="265" cy="22" r="1.8" fill="#fff"/>
+      <circle cx="265" cy="28" r="1.8" fill="#fff"/>
+      {/* Label */}
+      <text x="265" y="10" textAnchor="middle" fontSize="7.5" fill="#f59e0b" fontWeight="700" fontFamily="-apple-system,sans-serif">TAP</text>
+      {/* Contenuto pagina */}
+      <rect x="20" y="48" width="160" height="8" rx="3" fill="#e5e7eb"/>
+      <rect x="20" y="62" width="120" height="6" rx="3" fill="#f3f4f6"/>
+    </svg>
+  )
+}
+
+// Android Step 2 — Menu Chrome con voce evidenziata
+function IllustrationAndroidAddHome({ en }) {
+  return (
+    <svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="104" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
+      {/* Header menu */}
+      <rect x="10" y="8" width="280" height="24" rx="12" fill="#4285F4"/>
+      <rect x="10" y="20" width="280" height="12" fill="#4285F4"/>
+      <text x="150" y="23" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.8)" fontFamily="-apple-system,sans-serif">endyo.it</text>
+      {/* Voci menu */}
+      {[
+        en ? 'New tab' : 'Nuova scheda',
+        en ? 'Add to Home Screen' : 'Aggiungi a schermata Home',
+        en ? 'Share…' : 'Condividi…',
+      ].map((label, i) => {
+        const y = 40 + i * 26
+        const isTarget = i === 1
+        return (
+          <g key={i}>
+            {isTarget && (
+              <rect x="14" y={y - 10} width="272" height="24" rx="6" fill="rgba(245,158,11,0.14)" stroke="#f59e0b" strokeWidth="1.5">
+                <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+              </rect>
+            )}
+            <text x="28" y={y + 6} fontSize="10" fontWeight={isTarget ? '700' : '400'}
+              fill={isTarget ? '#1a1208' : '#6b7280'}
+              fontFamily="-apple-system,sans-serif">{label}</text>
+            {isTarget && (
+              <text x="272" y={y + 6} textAnchor="end" fontSize="10" fill="#f59e0b" fontWeight="700">←</text>
+            )}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+// Android Step 3 — Dialog conferma
+function IllustrationAndroidConfirm({ en }) {
+  return (
+    <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="94" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
+      <text x="150" y="32" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1a1208" fontFamily="-apple-system,sans-serif">
+        {en ? 'Add to Home screen?' : 'Aggiungere alla schermata?'}
+      </text>
+      {/* Icona app */}
+      <rect x="122" y="40" width="56" height="30" rx="8" fill="#f3f4f6"/>
+      <text x="150" y="61" textAnchor="middle" fontSize="18">🧥</text>
+      {/* Pulsanti */}
+      <text x="196" y="94" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="-apple-system,sans-serif">
+        {en ? 'Cancel' : 'Annulla'}
+      </text>
+      {/* Installa — evidenziato */}
+      <rect x="220" y="82" width="58" height="20" rx="6" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="249" y="95" textAnchor="middle" fontSize="10" fontWeight="700" fill="#f59e0b" fontFamily="-apple-system,sans-serif">
+        {en ? 'Install' : 'Installa'}
+      </text>
+    </svg>
+  )
+}
+
 function InstallScreen() {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -580,51 +769,57 @@ function InstallScreen() {
           : (en ? 'Chrome / Edge' : 'Chrome / Edge')}
       </div>
 
-      {/* Steps differenziati per piattaforma */}
+      {/* Steps con illustrazioni SVG */}
       <div style={{
-        width: '100%', maxWidth: 320,
-        display: 'flex', flexDirection: 'column', gap: 10,
+        width: '100%', maxWidth: 340,
+        display: 'flex', flexDirection: 'column', gap: 14,
       }}>
         {isIOS ? (
           <>
-            <InstallStep n={1} emoji="⬆️" highlight={highlight}
+            <InstallStep n={1} highlight={highlight}
+              illustration={<IllustrationIOSShare />}
               text={en
-                ? <><strong>Tap the Share button</strong> at the bottom of Safari</>
+                ? <><strong>Tap the Share ⬆️ button</strong> at the bottom of Safari</>
                 : <>Tocca il tasto <strong>Condividi ⬆️</strong> in basso in Safari</>}
             />
-            <InstallStep n={2} emoji="📲" highlight={highlight}
+            <InstallStep n={2} highlight={highlight}
+              illustration={<IllustrationIOSAddHome en={en} />}
               text={en
                 ? <>Scroll down and tap <strong>"Add to Home Screen"</strong></>
-                : <>Scorri in basso e tocca <strong>"Aggiungi a schermata Home"</strong></>}
+                : <>Scorri e tocca <strong>"Aggiungi a schermata Home"</strong></>}
             />
-            <InstallStep n={3} emoji="✅" highlight={highlight}
+            <InstallStep n={3} highlight={highlight}
+              illustration={<IllustrationIOSConfirm en={en} />}
               text={en
-                ? <>Tap <strong>Add</strong> in the top-right corner to confirm</>
-                : <>Tocca <strong>Aggiungi</strong> in alto a destra per confermare</>}
+                ? <>Tap <strong>Add</strong> (top-right) to confirm</>
+                : <>Tocca <strong>Aggiungi</strong> in alto a destra</>}
             />
           </>
         ) : (
           <>
-            <InstallStep n={1} emoji="⋮" highlight={highlight}
+            <InstallStep n={1} highlight={highlight}
+              illustration={<IllustrationAndroidMenu />}
               text={en
-                ? <>Tap the <strong>⋮ menu</strong> in the top-right corner of Chrome</>
+                ? <>Tap the <strong>⋮ menu</strong> at the top-right of Chrome</>
                 : <>Tocca il menu <strong>⋮</strong> in alto a destra in Chrome</>}
             />
-            <InstallStep n={2} emoji="📲" highlight={highlight}
+            <InstallStep n={2} highlight={highlight}
+              illustration={<IllustrationAndroidAddHome en={en} />}
               text={en
-                ? <>Tap <strong>"Add to Home Screen"</strong> from the menu</>
-                : <>Seleziona <strong>"Aggiungi alla schermata Home"</strong></>}
+                ? <>Tap <strong>"Add to Home Screen"</strong></>
+                : <>Tocca <strong>"Aggiungi a schermata Home"</strong></>}
             />
-            <InstallStep n={3} emoji="✅" highlight={highlight}
+            <InstallStep n={3} highlight={highlight}
+              illustration={<IllustrationAndroidConfirm en={en} />}
               text={en
-                ? <>Tap <strong>Add</strong> to confirm — the app icon will appear on your screen</>
-                : <>Tocca <strong>Aggiungi</strong> — l'icona apparirà nella tua home</>}
+                ? <>Tap <strong>Install</strong> to confirm</>
+                : <>Tocca <strong>Installa</strong> per confermare</>}
             />
           </>
         )}
       </div>
 
-      {/* Freccia animata in basso per iOS (indica il tasto Share) */}
+      {/* Freccia animata in basso per iOS */}
       {isIOS && (
         <div style={{
           position: 'fixed', bottom: 16, left: '50%',
@@ -645,25 +840,36 @@ function InstallScreen() {
   )
 }
 
-function InstallStep({ n, emoji, text, highlight }) {
+function InstallStep({ n, illustration, text, highlight }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left',
       background: INSTALL_C.surface,
       border: `1px solid ${INSTALL_C.border}`,
-      borderRadius: 14, padding: '13px 16px',
+      borderRadius: 16, overflow: 'hidden',
       animation: highlight ? 'install-step-pulse 0.7s ease 3' : 'none',
       transition: 'border-color 0.3s',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
     }}>
+      {/* Illustrazione SVG */}
+      <div style={{ padding: '12px 12px 6px', background: '#fafaf8' }}>
+        {illustration}
+      </div>
+      {/* Testo */}
       <div style={{
-        width: 34, height: 34, borderRadius: 50, flexShrink: 0,
-        background: 'rgba(245,158,11,0.12)',
-        border: `1px solid rgba(245,158,11,0.3)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 15, fontWeight: 800, color: INSTALL_C.primaryD,
-      }}>{n}</div>
-      <div style={{ paddingTop: 7, fontSize: 14, lineHeight: 1.55, color: INSTALL_C.text }}>
-        {text}
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '10px 14px 12px',
+        borderTop: `1px solid ${INSTALL_C.border}`,
+      }}>
+        <div style={{
+          width: 26, height: 26, borderRadius: 50, flexShrink: 0,
+          background: 'rgba(245,158,11,0.14)',
+          border: '1px solid rgba(245,158,11,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 12, fontWeight: 800, color: INSTALL_C.primaryD,
+        }}>{n}</div>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: INSTALL_C.text, textAlign: 'left' }}>
+          {text}
+        </div>
       </div>
     </div>
   )
