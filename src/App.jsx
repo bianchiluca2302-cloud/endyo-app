@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import logoUrl from '/logo.png'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import AdSidebar from './components/AdSidebar'
