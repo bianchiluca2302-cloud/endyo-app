@@ -453,9 +453,96 @@ function ForgotForm({ onBack }) {
 }
 
 // ── Pagina principale ─────────────────────────────────────────────────────────
+// ── Schermata installa PWA (mobile browser, non standalone) ──────────────────
+function InstallScreen() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+
+  return (
+    <div style={{
+      height: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', padding: '32px 24px',
+      textAlign: 'center',
+    }}>
+      {/* Logo */}
+      <img src={logoUrl} alt="Endyo" style={{
+        width: 80, height: 80, borderRadius: 20, marginBottom: 20,
+        boxShadow: '0 8px 32px rgba(124,58,237,0.3)',
+      }} />
+
+      <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
+        Installa Endyo
+      </h1>
+      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 36, maxWidth: 300 }}>
+        Aggiungi l'app alla schermata Home per accedere subito al tuo armadio digitale.
+      </p>
+
+      {/* Steps */}
+      <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {isIOS ? (
+          <>
+            <Step n={1} icon="⬆️" text={<>Tocca l'icona <strong>Condividi</strong> in basso nel browser</>} />
+            <Step n={2} icon="➕" text={<>Scorri e seleziona <strong>"Aggiungi a schermata Home"</strong></>} />
+            <Step n={3} icon="✅" text={<>Tocca <strong>Aggiungi</strong> in alto a destra</>} />
+          </>
+        ) : (
+          <>
+            <Step n={1} icon="⋮"  text={<>Tocca il menu <strong>⋮</strong> in alto a destra nel browser</>} />
+            <Step n={2} icon="➕" text={<>Seleziona <strong>"Aggiungi a schermata Home"</strong></>} />
+            <Step n={3} icon="✅" text={<>Tocca <strong>Aggiungi</strong> per confermare</>} />
+          </>
+        )}
+      </div>
+
+      {/* Freccia animata in basso per iOS */}
+      {isIOS && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          animation: 'bounce 1.4s ease-in-out infinite',
+        }}>
+          <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.04em' }}>Tocca qui</span>
+          <span style={{ fontSize: 22 }}>⬆️</span>
+          <style>{`@keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-6px)} }`}</style>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Step({ n, icon, text }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left',
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '14px 16px',
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 50, flexShrink: 0,
+        background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 13, fontWeight: 800, color: 'var(--primary)',
+      }}>{n}</div>
+      <div style={{ paddingTop: 6, fontSize: 14, lineHeight: 1.5, color: 'var(--text)' }}>
+        {text}
+      </div>
+    </div>
+  )
+}
+
 export default function AuthPage() {
   const t = useT()
   const [view, setView] = useState('login') // 'login' | 'register' | 'forgot'
+
+  // Se aperto da browser mobile (non PWA standalone) → mostra istruzioni installazione
+  const isMobileBrowser = (
+    /android|iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !window.matchMedia('(display-mode: standalone)').matches &&
+    window.navigator.standalone !== true &&
+    new URLSearchParams(window.location.search).get('pwa') !== '1'
+  )
+
+  if (isMobileBrowser) return <InstallScreen />
 
   const titles = {
     login:    t('authLoginTitle'),
