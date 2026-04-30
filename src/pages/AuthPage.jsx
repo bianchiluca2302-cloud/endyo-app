@@ -456,6 +456,29 @@ function ForgotForm({ onBack }) {
 // ── Schermata installa PWA (mobile browser, non standalone) ──────────────────
 function InstallScreen() {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [installed, setInstalled]           = useState(false)
+  const [highlight, setHighlight]           = useState(false)
+
+  useEffect(() => {
+    const handler = e => { e.preventDefault(); setDeferredPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      // Android: dialog nativo
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') setInstalled(true)
+      setDeferredPrompt(null)
+    } else {
+      // iOS: pulsa le istruzioni per attirare l'attenzione
+      setHighlight(true)
+      setTimeout(() => setHighlight(false), 2000)
+    }
+  }
 
   return (
     <div style={{
@@ -464,6 +487,11 @@ function InstallScreen() {
       background: 'var(--bg)', padding: '32px 24px',
       textAlign: 'center',
     }}>
+      <style>{`
+        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
+        @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0.4)} 50%{box-shadow:0 0 0 12px rgba(124,58,237,0)} }
+      `}</style>
+
       {/* Logo */}
       <img src={logoUrl} alt="Endyo" style={{
         width: 80, height: 80, borderRadius: 20, marginBottom: 20,
@@ -473,23 +501,52 @@ function InstallScreen() {
       <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
         Installa Endyo
       </h1>
-      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 36, maxWidth: 300 }}>
-        Aggiungi l'app alla schermata Home per accedere subito al tuo armadio digitale.
+      <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 28, maxWidth: 300 }}>
+        Aggiungi l'app alla schermata Home per accedere al tuo armadio digitale.
       </p>
 
-      {/* Steps */}
-      <div style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Bottone principale */}
+      {!installed ? (
+        <button
+          onClick={handleInstall}
+          style={{
+            background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+            color: 'white', border: 'none', borderRadius: 16,
+            padding: '15px 40px', fontSize: 16, fontWeight: 700,
+            cursor: 'pointer', marginBottom: 32, letterSpacing: '-0.01em',
+            boxShadow: '0 4px 24px rgba(124,58,237,0.4)',
+            animation: highlight ? 'pulse 0.6s ease 3' : 'none',
+            transition: 'transform 0.1s',
+          }}
+          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          ＋ Aggiungi alla Home
+        </button>
+      ) : (
+        <div style={{ marginBottom: 32, fontSize: 15, color: '#22c55e', fontWeight: 600 }}>
+          ✓ App aggiunta alla home screen!
+        </div>
+      )}
+
+      {/* Steps — mostrati sempre, evidenziati se highlight */}
+      <div style={{
+        width: '100%', maxWidth: 320,
+        display: 'flex', flexDirection: 'column', gap: 12,
+        transition: 'opacity 0.3s',
+        opacity: highlight ? 1 : 0.75,
+      }}>
         {isIOS ? (
           <>
-            <Step n={1} icon="⬆️" text={<>Tocca l'icona <strong>Condividi</strong> in basso nel browser</>} />
-            <Step n={2} icon="➕" text={<>Scorri e seleziona <strong>"Aggiungi a schermata Home"</strong></>} />
-            <Step n={3} icon="✅" text={<>Tocca <strong>Aggiungi</strong> in alto a destra</>} />
+            <Step n={1} text={<>Tocca l'icona <strong>Condividi</strong> ⬆️ in basso nel browser</>} highlight={highlight} />
+            <Step n={2} text={<>Scorri e tocca <strong>"Aggiungi a schermata Home"</strong></>} highlight={highlight} />
+            <Step n={3} text={<>Tocca <strong>Aggiungi</strong> in alto a destra</>} highlight={highlight} />
           </>
         ) : (
           <>
-            <Step n={1} icon="⋮"  text={<>Tocca il menu <strong>⋮</strong> in alto a destra nel browser</>} />
-            <Step n={2} icon="➕" text={<>Seleziona <strong>"Aggiungi a schermata Home"</strong></>} />
-            <Step n={3} icon="✅" text={<>Tocca <strong>Aggiungi</strong> per confermare</>} />
+            <Step n={1} text={<>Tocca il menu <strong>⋮</strong> in alto a destra nel browser</>} highlight={highlight} />
+            <Step n={2} text={<>Seleziona <strong>"Aggiungi alla schermata Home"</strong></>} highlight={highlight} />
+            <Step n={3} text={<>Tocca <strong>Aggiungi</strong> per confermare</>} highlight={highlight} />
           </>
         )}
       </div>
@@ -497,25 +554,26 @@ function InstallScreen() {
       {/* Freccia animata in basso per iOS */}
       {isIOS && (
         <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          position: 'fixed', bottom: 20, left: '50%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
           animation: 'bounce 1.4s ease-in-out infinite',
         }}>
-          <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.04em' }}>Tocca qui</span>
-          <span style={{ fontSize: 22 }}>⬆️</span>
-          <style>{`@keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-6px)} }`}</style>
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Condividi</span>
+          <span style={{ fontSize: 24 }}>⬆️</span>
         </div>
       )}
     </div>
   )
 }
 
-function Step({ n, icon, text }) {
+function Step({ n, text, highlight }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 14, textAlign: 'left',
-      background: 'var(--surface)', border: '1px solid var(--border)',
+      background: 'var(--surface)',
+      border: `1px solid ${highlight ? 'rgba(124,58,237,0.5)' : 'var(--border)'}`,
       borderRadius: 14, padding: '14px 16px',
+      transition: 'border-color 0.3s',
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: 50, flexShrink: 0,
