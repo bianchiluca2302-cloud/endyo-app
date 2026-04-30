@@ -947,13 +947,35 @@ export default function Profile() {
   const PROFILE_TOUR = getProfileTour(language)
   return (
     <div style={{
-      padding: isMobile ? '20px 16px' : '32px 40px 60px',
+      padding: isMobile ? '0 0 0 0' : '32px 40px 60px',
       paddingBottom: isMobile
         ? 'calc(env(safe-area-inset-bottom, 0px) + 130px)'
         : '60px',
     }}>
+      {/* ── Header mobile con tasto indietro ── */}
+      {isMobile && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '14px 16px 8px',
+          position: 'sticky', top: 0, zIndex: 10,
+          background: 'var(--bg)',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--primary)', fontSize: 22, lineHeight: 1,
+              padding: '4px 8px 4px 0', display: 'flex', alignItems: 'center',
+            }}
+          >‹</button>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+            {t('profilePageTitle')}
+          </span>
+        </div>
+      )}
       {!isMobile && <PageTutorial pageId="profile" steps={PROFILE_TOUR} />}
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 16px' : 0 }}>
         {!isMobile && <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>{t('profilePageTitle')}</h1>}
         <ProfileContent />
       </div>

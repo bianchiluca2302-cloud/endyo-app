@@ -188,7 +188,11 @@ from starlette.responses import Response as StarletteResponse
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Aggiunge header di sicurezza standard a ogni risposta."""
     async def dispatch(self, request, call_next):
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            # Passa l'eccezione ai gestori FastAPI senza avvolgere in ExceptionGroup
+            raise
         response.headers["X-Content-Type-Options"]  = "nosniff"
         response.headers["X-Frame-Options"]         = "DENY"
         response.headers["X-XSS-Protection"]        = "1; mode=block"
@@ -3909,8 +3913,9 @@ async def create_checkout_session(
         )
         return {"checkout_url": session.url}
     except Exception as e:
-        logger.error(f"Stripe error: {e}")
-        raise HTTPException(500, f"Errore Stripe: {str(e)}")
+        err_msg = str(e)
+        logger.error(f"[Stripe checkout] plan={body.plan} price_id={price_id} error={err_msg}")
+        raise HTTPException(500, f"Errore pagamento: {err_msg}")
 
 
 @app.post("/payments/webhook")
@@ -3927,8 +3932,10 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(400, "Firma webhook non valida")
+    except Exception as e:
+        if "signature" in str(e).lower() or "SignatureVerification" in type(e).__name__:
+            raise HTTPException(400, "Firma webhook non valida")
+        raise HTTPException(400, f"Webhook error: {str(e)}")
 
     event_type = event["type"]
     subscription = event["data"]["object"]
