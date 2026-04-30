@@ -1,5 +1,5 @@
 # ── Stage 1: build React frontend ────────────────────────────────────────────
-FROM node:20-slim AS frontend
+FROM node:20-slim-bookworm AS frontend
 WORKDIR /app
 
 # Dichiara l'ARG e lo esporta come ENV così Vite lo vede durante il build

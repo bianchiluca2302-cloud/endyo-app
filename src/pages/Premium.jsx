@@ -506,13 +506,28 @@ export default function Premium() {
   const [showDowngradeModal,   setShowDowngradeModal]   = useState(false)
 
   useEffect(() => {
+    // Rimuovi i parametri Stripe dall'URL senza creare una nuova voce nella cronologia,
+    // così premere "indietro" torna all'app invece che alla landing o a Stripe.
+    const params = new URLSearchParams(window.location.search || window.location.hash.split('?')[1] || '')
+    if (params.get('success') === '1') {
+      showToast('success', lang === 'en'
+        ? '🎉 Payment confirmed! Your plan is now active.'
+        : '🎉 Pagamento confermato! Il tuo piano è ora attivo.')
+      navigate('/premium', { replace: true })
+    } else if (params.get('cancelled') === '1') {
+      showToast('info', lang === 'en'
+        ? 'Payment cancelled. No charge was made.'
+        : 'Pagamento annullato. Non ti è stato addebitato nulla.')
+      navigate('/premium', { replace: true })
+    }
+
     fetchChatQuota().then(q => {
       setCurrentPlan(q.plan)
       setPlanExpiresAt(q.plan_expires_at || null)
       setScheduledDowngradeTo(q.scheduled_downgrade_to || null)
       if (q.plan?.endsWith('_annual')) setBilling('annual')
     }).catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const showToast = (type, msg) => {
     setToast({ type, msg })

@@ -564,6 +564,31 @@ function IllustrationIOSConfirm({ en }) {
   )
 }
 
+// iOS Step 2b — "Mostra altro" nella share sheet (iOS 16+)
+function IllustrationIOSMoreOptions({ en }) {
+  return (
+    <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="94" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
+      <text x="150" y="24" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">Share</text>
+      <line x1="10" y1="29" x2="290" y2="29" stroke="#f3f4f6" strokeWidth="1"/>
+      {/* Icone app riga 1 */}
+      {[40,80,120,160,200,240].map((x, i) => (
+        <rect key={i} x={x-14} y="33" width="28" height="28" rx="7" fill="#f3f4f6"/>
+      ))}
+      <line x1="10" y1="68" x2="290" y2="68" stroke="#f3f4f6" strokeWidth="1"/>
+      {/* "Mostra altro" — evidenziato */}
+      <rect x="14" y="72" width="272" height="26" rx="8" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="1.5">
+        <animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="32" y="89" textAnchor="middle" fontSize="14" fontFamily="-apple-system,sans-serif">•••</text>
+      <text x="154" y="89" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#1a1208" fontFamily="-apple-system,sans-serif">
+        {en ? 'More…' : 'Mostra altro…'}
+      </text>
+      <text x="272" y="89" textAnchor="end" fontSize="10" fill="#f59e0b" fontWeight="700">←</text>
+    </svg>
+  )
+}
+
 // Android Step 1 — Chrome top bar con ⋮ evidenziato
 function IllustrationAndroidMenu() {
   return (
@@ -783,12 +808,18 @@ function InstallScreen() {
                 : <>Tocca il tasto <strong>Condividi ⬆️</strong> in basso in Safari</>}
             />
             <InstallStep n={2} highlight={highlight}
-              illustration={<IllustrationIOSAddHome en={en} />}
+              illustration={<IllustrationIOSMoreOptions en={en} />}
               text={en
-                ? <>Scroll down and tap <strong>"Add to Home Screen"</strong></>
-                : <>Scorri e tocca <strong>"Aggiungi a schermata Home"</strong></>}
+                ? <>Scroll down and tap <strong>"More…"</strong> to see all options</>
+                : <>Scorri in basso e tocca <strong>"Mostra altro…"</strong></>}
             />
             <InstallStep n={3} highlight={highlight}
+              illustration={<IllustrationIOSAddHome en={en} />}
+              text={en
+                ? <>Find and tap <strong>"Add to Home Screen"</strong></>
+                : <>Trova e tocca <strong>"Aggiungi a schermata Home"</strong></>}
+            />
+            <InstallStep n={4} highlight={highlight}
               illustration={<IllustrationIOSConfirm en={en} />}
               text={en
                 ? <>Tap <strong>Add</strong> (top-right) to confirm</>

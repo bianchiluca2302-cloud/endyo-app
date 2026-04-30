@@ -15,6 +15,8 @@ export const ACCENT_COLORS = [
 
 // ── Temi (dark + light) ───────────────────────────────────────────────────────
 export const THEMES = [
+  // — Automatico (segue il sistema) —
+  { id: 'auto',      label: { it: 'Automatico', en: 'Automatic'  }, auto: true,  dark: false, bg: '#f8f9fc', surface: '#ffffff', card: '#f1f3f8', cardHover: '#e8ebf4', border: '#dde3ee', text: '#0f172a', textMuted: '#475569', textDim: '#94a3b8' },
   // — Dark —
   { id: 'dark',      label: { it: 'Scuro',      en: 'Dark'       }, dark: true,  bg: '#0d0d14', surface: '#13131e', card: '#1a1a2e', cardHover: '#202035', border: '#2a2a42', text: '#f1f5f9', textMuted: '#94a3b8', textDim: '#64748b' },
   { id: 'midnight',  label: { it: 'Midnight',   en: 'Midnight'   }, dark: true,  bg: '#060610', surface: '#0e0e1c', card: '#141428', cardHover: '#1a1a32', border: '#20203a', text: '#f1f5f9', textMuted: '#94a3b8', textDim: '#64748b' },
@@ -27,11 +29,21 @@ export const THEMES = [
   { id: 'cream',     label: { it: 'Crema',      en: 'Cream'      }, dark: false, bg: '#fdfaf5', surface: '#ffffff', card: '#fef3c7', cardHover: '#fde68a', border: '#fcd34d', text: '#1c1204', textMuted: '#78350f', textDim: '#92400e' },
 ]
 
+// Tema dark di default per la modalità auto
+const AUTO_DARK  = THEMES.find(t => t.id === 'dark')
+const AUTO_LIGHT = THEMES.find(t => t.id === 'light')
+
 // ── Applica le CSS variables al documento ─────────────────────────────────────
 export function applyTheme(settings) {
   const root   = document.documentElement
   const accent = ACCENT_COLORS.find(c => c.id === settings.accentColor) || ACCENT_COLORS[0]
-  const theme  = THEMES.find(t => t.id === settings.theme) || THEMES[0]
+  let theme    = THEMES.find(t => t.id === settings.theme) || THEMES[0]
+
+  // Tema automatico: usa dark/light in base alla preferenza di sistema
+  if (theme.auto) {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    theme = prefersDark ? AUTO_DARK : AUTO_LIGHT
+  }
 
   // Calcola rgba dall'hex per generare le varianti hover/active
   const _h = accent.hex
@@ -122,7 +134,7 @@ function detectSystemLanguage() {
 // ── Default settings ──────────────────────────────────────────────────────────
 const DEFAULTS = {
   accentColor:        'amber',
-  theme:              'light',
+  theme:              'auto',
   language:           detectSystemLanguage(),
   shoeSizeSystem:     'eu',
   clothingSizeSystem: 'eu',
