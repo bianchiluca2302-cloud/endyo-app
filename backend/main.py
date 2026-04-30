@@ -111,17 +111,8 @@ async def _migrate_db():
             except Exception:
                 pass  # colonna già esistente
 
-        # ── Tabella wear_logs (crea se non esiste) ─────────────────────────────
-        await conn.execute(_text("""
-            CREATE TABLE IF NOT EXISTS wear_logs (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER NOT NULL REFERENCES users(id),
-                outfit_id   INTEGER REFERENCES outfits(id),
-                outfit_name VARCHAR(200),
-                worn_on     DATETIME DEFAULT (datetime('now')),
-                note        VARCHAR(300)
-            )
-        """))
+        # Nota: wear_logs è creata da Base.metadata.create_all in init_db()
+        # Non va creata qui con SQL raw (incompatibile tra SQLite e PostgreSQL)
 
 
 @asynccontextmanager
