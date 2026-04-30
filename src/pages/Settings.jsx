@@ -415,21 +415,36 @@ function StylistUsage({ language }) {
   const isAnnual = planKey.endsWith('_annual')
   const isFree   = planKey === 'free'
 
-  const usedDay  = quota.limit_day  != null ? quota.limit_day  - (quota.remaining_day  ?? quota.remaining ?? 0) : 0
-  const usedWeek = quota.limit_week != null && quota.limit_week !== -1 ? quota.limit_week - (quota.remaining_week ?? 0) : 0
+  // Usa i limiti dell'API (più affidabili degli hard-coded in PLAN_META).
+  // Un limite >= 999 viene trattato come "illimitato" → visualizzato come -1.
+  const UNLIMITED = 999
+  const apiLimDay  = quota.limit_day  ?? meta.limDay
+  const apiLimWeek = quota.limit_week ?? meta.limWeek
+  const dispLimDay  = apiLimDay  >= UNLIMITED ? -1 : apiLimDay
+  const dispLimWeek = apiLimWeek >= UNLIMITED || apiLimWeek === -1 ? -1 : apiLimWeek
 
-  const pctDay  = meta.limDay  > 0 ? Math.min(100, Math.round((usedDay  / meta.limDay)  * 100)) : 0
-  const pctWeek = meta.limWeek > 0 ? Math.min(100, Math.round((usedWeek / meta.limWeek) * 100)) : 0
+  const usedDay  = dispLimDay  !== -1 ? Math.max(0, apiLimDay  - (quota.remaining_day  ?? quota.remaining ?? 0)) : 0
+  const usedWeek = dispLimWeek !== -1 ? Math.max(0, apiLimWeek - (quota.remaining_week ?? 0)) : 0
 
-  // Shopping
-  const shUsedDay  = meta.shLimDay  - (quota.shopping_remaining_day  ?? meta.shLimDay)
-  const shUsedWeek = meta.shLimWeek - (quota.shopping_remaining_week ?? meta.shLimWeek)
-  const shPctDay   = meta.shLimDay  > 0 ? Math.min(100, Math.round((shUsedDay  / meta.shLimDay)  * 100)) : 0
-  const shPctWeek  = meta.shLimWeek > 0 ? Math.min(100, Math.round((shUsedWeek / meta.shLimWeek) * 100)) : 0
+  const pctDay  = dispLimDay  > 0 ? Math.min(100, Math.round((usedDay  / apiLimDay)  * 100)) : 0
+  const pctWeek = dispLimWeek > 0 ? Math.min(100, Math.round((usedWeek / apiLimWeek) * 100)) : 0
+
+  // Shopping — usa i limiti restituiti dall'API (quota.shopping_limit_day/week)
+  const shLimDay  = quota.shopping_limit_day  ?? meta.shLimDay
+  const shLimWeek = quota.shopping_limit_week ?? meta.shLimWeek
+  const dispShLimDay  = shLimDay  >= UNLIMITED ? -1 : shLimDay
+  const dispShLimWeek = shLimWeek >= UNLIMITED ? -1 : shLimWeek
+
+  const shUsedDay  = dispShLimDay  !== -1 ? Math.max(0, shLimDay  - (quota.shopping_remaining_day  ?? shLimDay))  : 0
+  const shUsedWeek = dispShLimWeek !== -1 ? Math.max(0, shLimWeek - (quota.shopping_remaining_week ?? shLimWeek)) : 0
+  const shPctDay   = dispShLimDay  > 0 ? Math.min(100, Math.round((shUsedDay  / shLimDay)  * 100)) : 0
+  const shPctWeek  = dispShLimWeek > 0 ? Math.min(100, Math.round((shUsedWeek / shLimWeek) * 100)) : 0
 
   // Armocromia
-  const arUsedWeek = meta.arLimWeek - (quota.armo_remaining_week ?? meta.arLimWeek)
-  const arPctWeek  = meta.arLimWeek > 0 ? Math.min(100, Math.round((arUsedWeek / meta.arLimWeek) * 100)) : 0
+  const arLimWeek  = quota.armo_limit_week ?? meta.arLimWeek
+  const dispArLimWeek = arLimWeek >= UNLIMITED ? -1 : arLimWeek
+  const arUsedWeek = dispArLimWeek !== -1 ? Math.max(0, arLimWeek - (quota.armo_remaining_week ?? arLimWeek)) : 0
+  const arPctWeek  = dispArLimWeek > 0 ? Math.min(100, Math.round((arUsedWeek / arLimWeek) * 100)) : 0
 
   const barColor = (pct) => pct >= 90 ? '#ef4444' : pct >= 65 ? '#f59e0b' : 'var(--primary)'
 
@@ -492,15 +507,15 @@ function StylistUsage({ language }) {
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 2px 0' }}>
         {s.stylistLabel}
       </div>
-      <UsageBar label={s.daily}  used={usedDay}  limit={meta.limDay}  pct={pctDay}  resetNote={s.resetDay}  />
-      <UsageBar label={s.weekly} used={usedWeek} limit={meta.limWeek} pct={pctWeek} resetNote={s.resetWeek} />
+      <UsageBar label={s.daily}  used={usedDay}  limit={dispLimDay}  pct={pctDay}  resetNote={s.resetDay}  />
+      <UsageBar label={s.weekly} used={usedWeek} limit={dispLimWeek} pct={pctWeek} resetNote={s.resetWeek} />
 
       {/* ── Shopping Advisor ─────────────────────────────────────────────── */}
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 2px 0' }}>
         {s.shopLabel}
       </div>
-      <UsageBar label={s.daily}  used={shUsedDay}  limit={meta.shLimDay}  pct={shPctDay}  resetNote={s.resetDay}  />
-      <UsageBar label={s.weekly} used={shUsedWeek} limit={meta.shLimWeek} pct={shPctWeek} resetNote={s.resetWeek} />
+      <UsageBar label={s.daily}  used={shUsedDay}  limit={dispShLimDay}  pct={shPctDay}  resetNote={s.resetDay}  />
+      <UsageBar label={s.weekly} used={shUsedWeek} limit={dispShLimWeek} pct={shPctWeek} resetNote={s.resetWeek} />
 
       {/* ── Armocromia ───────────────────────────────────────────────────── */}
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 2px 0' }}>
@@ -511,7 +526,7 @@ function StylistUsage({ language }) {
           🔒 {s.blocked}
         </div>
       ) : (
-        <UsageBar label={s.weekly} used={arUsedWeek} limit={meta.arLimWeek} pct={arPctWeek} resetNote={s.resetWeek} />
+        <UsageBar label={s.weekly} used={arUsedWeek} limit={dispArLimWeek} pct={arPctWeek} resetNote={s.resetWeek} />
       )}
 
       {/* Hint upgrade per utenti free */}

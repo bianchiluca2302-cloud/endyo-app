@@ -20,9 +20,9 @@ import { getAdBrands, imgUrl } from '../api/client'
 import useAuthStore from '../store/authStore'
 
 // ─── Credenziali AdSense ─────────────────────────────────────────────────────
-const ADSENSE_CLIENT_ID   = 'ca-pub-XXXXXXXXXXXXXXXXX'  // ← sostituisci
-const ADSENSE_SLOT_TOP    = 'AAAAAAAAAA'                 // ← slot banner top
-const ADSENSE_SLOT_BOTTOM = 'BBBBBBBBBB'                 // ← slot banner bottom
+const ADSENSE_CLIENT_ID   = 'ca-pub-2435292000410787'
+const ADSENSE_SLOT_TOP    = 'AAAAAAAAAA'   // ← crea slot "Banner mobile top"
+const ADSENSE_SLOT_BOTTOM = 'BBBBBBBBBB'   // ← crea slot "Banner mobile bottom"
 // ─────────────────────────────────────────────────────────────────────────────
 
 const isElectron = typeof navigator !== 'undefined' &&

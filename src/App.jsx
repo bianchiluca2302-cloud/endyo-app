@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-
-const logoUrl = '/logo.png'
+import logoUrl from './assets/logo.png'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import TutorialOverlay, { shouldShowTutorial } from './components/TutorialOverlay'
@@ -42,6 +41,23 @@ export default function App() {
   const settings     = useSettingsStore()
   const isMobile     = useIsMobile()
 
+  // ── Landscape blocker per mobile ──────────────────────────────────────────
+  const [isLandscape, setIsLandscape] = useState(
+    () => isMobile && window.innerWidth > window.innerHeight
+  )
+  useEffect(() => {
+    const handler = () => {
+      const mobile = Math.min(window.innerWidth, window.innerHeight) <= 640
+      setIsLandscape(mobile && window.innerWidth > window.innerHeight)
+    }
+    window.addEventListener('resize', handler)
+    // Prova a bloccare orientamento su Android Chrome PWA
+    if (screen?.orientation?.lock) {
+      screen.orientation.lock('portrait').catch(() => {})
+    }
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
   const { refreshToken, rememberMe, setAuth, setAccessToken, logout, accessToken } = useAuthStore()
 
   // Tutorial primo accesso
@@ -65,9 +81,14 @@ export default function App() {
   // ── 1. Applica tema all'avvio + listener per tema automatico ──────────────
   useEffect(() => {
     applyTheme(settings)
-    // Se il tema è "auto", aggiorna quando il sistema cambia dark/light
+    // Se il tema è "auto", aggiorna quando il sistema cambia dark/light.
+    // Usiamo getState() per leggere sempre lo state più aggiornato (evita
+    // il problema della closure stale che perdeva il colore accent).
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => { if (settings.theme === 'auto') applyTheme(settings) }
+    const handler = () => {
+      const s = useSettingsStore.getState()
+      if (s.theme === 'auto') applyTheme(s)
+    }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [settings.theme]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -140,6 +161,27 @@ export default function App() {
           <span style={{ fontSize: 11, color: 'rgba(146,64,14,0.55)', letterSpacing: '0.06em', fontWeight: 600 }}>
             endyo
           </span>
+        </div>
+      </div>
+    )
+  }
+
+  // Blocca orizzontale su mobile
+  if (isMobile && isLandscape) {
+    return (
+      <div style={{
+        height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 20,
+        background: 'linear-gradient(160deg, #f59e0b 0%, #fffdf5 100%)',
+        position: 'fixed', inset: 0, zIndex: 9999,
+      }}>
+        <svg width={56} height={56} viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth={1.5} strokeLinecap="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 2l-4 5-4-5"/>
+        </svg>
+        <div style={{ textAlign: 'center', color: '#92400e' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Ruota il telefono</div>
+          <div style={{ fontSize: 13, opacity: 0.7 }}>Endyo funziona solo in modalità verticale</div>
         </div>
       </div>
     )

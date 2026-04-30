@@ -1197,7 +1197,7 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
   }, [selectedGarments.length]) // eslint-disable-line
 
   const quotaLabel = remaining === null ? null
-    : remaining === -1 ? null          // premium: non mostrare nulla
+    : remaining === -1 || remaining >= 999 ? null  // illimitato: non mostrare
     : remaining === 0 ? (language === 'en' ? '0 left today' : '0 rimaste oggi')
     : (language === 'en' ? `${remaining} left today` : `${remaining} rimaste oggi`)
 

@@ -27,8 +27,8 @@ const STEPS_IT = [
     tabTarget: 'tab-outfit',
     emoji: '✨',
     title: 'Stylist AI & Outfit',
-    body: 'Crea outfit combinando i tuoi capi oppure chiedi allo Stylist AI. Scrivi ad esempio "outfit casual per domani con pioggia" e l\'AI suggerirà combinazioni dai tuoi capi, tenendo conto del meteo e dell\'occasione.',
-    tip: '💡 Il meteo in alto mostra le condizioni attuali',
+    body: 'Crea outfit combinando i tuoi capi oppure chiedi allo Stylist AI. Lo stylist riceve automaticamente il meteo della tua zona — prova a chiedere "outfit casual per stasera" e l\'AI suggerirà combinazioni perfette per le condizioni attuali.',
+    tip: '💡 Tocca il badge meteo per vedere le prossime 5 ore di previsioni',
   },
   {
     tabTarget: 'tab-friends',
@@ -66,8 +66,8 @@ const STEPS_EN = [
     tabTarget: 'tab-outfit',
     emoji: '✨',
     title: 'AI Stylist & Outfits',
-    body: 'Build outfits by combining your items, or ask the AI Stylist. Try "casual outfit for tomorrow with rain" and the AI will suggest combinations from your wardrobe, considering the weather and occasion.',
-    tip: '💡 The weather badge at the top shows current conditions',
+    body: 'Build outfits by combining your items, or ask the AI Stylist. Weather data for your location is sent automatically — just try "casual outfit for tonight" and the AI will suggest combinations tailored to current conditions.',
+    tip: '💡 Tap the weather badge to see the next 5-hour forecast',
   },
   {
     tabTarget: 'tab-friends',

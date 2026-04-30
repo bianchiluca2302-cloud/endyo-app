@@ -52,16 +52,15 @@ async function fetchWeather(lat, lon, lang) {
   const c    = data.current
   const code = c.weathercode
 
-  // Ora corrente (arrotondata all'ora) per filtrare le ore future
+  // Ora corrente per filtrare le ore future (mostra le prossime 5 ore)
   const nowHour = new Date().getHours()
 
-  // Previsioni orarie del resto della giornata (max 6 slot da ora in poi, ogni 2h)
+  // Previsioni orarie: le 5 ore successive all'ora corrente
   const hourly = []
   if (data.hourly?.time) {
     for (let i = 0; i < data.hourly.time.length; i++) {
       const h = new Date(data.hourly.time[i]).getHours()
-      if (h <= nowHour) continue              // salta ore già passate
-      if (h % 2 !== 0) continue              // mostra solo ore pari (ogni 2h)
+      if (h <= nowHour) continue              // salta l'ora corrente e precedenti
       hourly.push({
         hour: h,
         temp: Math.round(data.hourly.temperature_2m[i]),
@@ -69,7 +68,7 @@ async function fetchWeather(lat, lon, lang) {
         icon: iconForCode(data.hourly.weathercode[i]),
         precip: data.hourly.precipitation_probability?.[i] ?? 0,
       })
-      if (hourly.length >= 6) break
+      if (hourly.length >= 5) break           // massimo 5 ore in avanti
     }
   }
 

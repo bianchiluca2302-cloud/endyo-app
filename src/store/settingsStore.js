@@ -169,7 +169,12 @@ const useSettingsStore = create(
 
       isLightTheme: () => {
         const { theme } = get()
-        return THEMES.find(t => t.id === theme)?.dark === false
+        const t = THEMES.find(th => th.id === theme)
+        if (t?.auto) {
+          // Tema automatico: risolvi in base alla preferenza di sistema
+          return !window.matchMedia('(prefers-color-scheme: dark)').matches
+        }
+        return t?.dark === false
       },
     }),
     {
