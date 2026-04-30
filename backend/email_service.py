@@ -48,28 +48,28 @@ def _base_template(content: str, preview: str = "") -> str:
   <title>Endyo</title>
   {preview_html}
 </head>
-<body style="margin:0;padding:0;background:#0d0d14;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d14;padding:40px 16px">
+<body style="margin:0;padding:0;background:#fef9e7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef9e7;padding:40px 16px">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
 
         <!-- HEADER -->
-        <tr><td style="background:linear-gradient(135deg,#1a0a2e,#12071f);border-radius:16px 16px 0 0;padding:32px;text-align:center;border:1px solid rgba(139,92,246,0.2);border-bottom:none">
-          <p style="margin:0 0 8px;color:rgba(167,139,250,0.6);font-size:10px;letter-spacing:0.2em;text-transform:uppercase">il tuo guardaroba intelligente</p>
-          <h1 style="margin:0;color:#f5f3ff;font-size:36px;font-weight:900;letter-spacing:-0.05em">end<span style="color:#8b5cf6">yo</span></h1>
+        <tr><td style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:16px 16px 0 0;padding:32px;text-align:center">
+          <p style="margin:0 0 8px;color:rgba(255,255,255,0.75);font-size:10px;letter-spacing:0.2em;text-transform:uppercase">il tuo guardaroba intelligente</p>
+          <h1 style="margin:0;color:#ffffff;font-size:36px;font-weight:900;letter-spacing:-0.05em">end<span style="color:rgba(255,255,255,0.7)">yo</span></h1>
         </td></tr>
 
         <!-- BODY -->
-        <tr><td style="background:#13101e;padding:40px 40px 32px;border-left:1px solid rgba(139,92,246,0.15);border-right:1px solid rgba(139,92,246,0.15)">
+        <tr><td style="background:#ffffff;padding:40px 40px 32px;border-left:1px solid #fde68a;border-right:1px solid #fde68a">
           {content}
         </td></tr>
 
         <!-- FOOTER -->
-        <tr><td style="background:#0f0c1a;border:1px solid rgba(139,92,246,0.15);border-top:1px solid rgba(139,92,246,0.1);border-radius:0 0 16px 16px;padding:20px 40px;text-align:center">
-          <p style="margin:0 0 6px;color:#8b5cf6;font-size:13px;font-weight:700;letter-spacing:-0.02em">endyo.it</p>
-          <p style="margin:0;color:rgba(167,139,250,0.5);font-size:11px">
+        <tr><td style="background:#fffbeb;border:1px solid #fde68a;border-top:1px solid #fcd34d;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center">
+          <p style="margin:0 0 6px;color:#d97706;font-size:13px;font-weight:700;letter-spacing:-0.02em">endyo.it</p>
+          <p style="margin:0;color:#92400e;font-size:11px;opacity:0.6">
             © 2025 Endyo · I tuoi dati sono al sicuro ·
-            <a href="https://endyo.it/privacy" style="color:rgba(167,139,250,0.7);text-decoration:none">Privacy</a>
+            <a href="https://endyo.it/privacy" style="color:#d97706;text-decoration:none">Privacy</a>
           </p>
         </td></tr>
 
@@ -83,8 +83,8 @@ def _base_template(content: str, preview: str = "") -> str:
 def _btn(url: str, label: str) -> str:
     return (
         f'<table cellpadding="0" cellspacing="0" style="margin:24px 0">'
-        f'<tr><td style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;'
-        f'box-shadow:0 4px 20px rgba(139,92,246,0.4)">'
+        f'<tr><td style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;'
+        f'box-shadow:0 4px 20px rgba(245,158,11,0.35)">'
         f'<a href="{url}" style="display:inline-block;padding:14px 36px;color:#ffffff;'
         f'text-decoration:none;font-weight:700;font-size:15px;letter-spacing:-0.01em">'
         f'{label} &rarr;</a></td></tr></table>'
@@ -92,7 +92,7 @@ def _btn(url: str, label: str) -> str:
 
 
 def _divider() -> str:
-    return '<div style="height:1px;background:rgba(139,92,246,0.15);margin:24px 0"></div>'
+    return '<div style="height:1px;background:#fde68a;margin:24px 0"></div>'
 
 
 # ── Invio generico ─────────────────────────────────────────────────────────────
@@ -166,16 +166,16 @@ async def send_verification_email(to: str, token: str) -> None:
     html = _base_template(
         preview="Conferma il tuo indirizzo email per iniziare a usare Endyo.",
         content=f"""
-      <p style="margin:0 0 6px;font-size:13px;color:#8b5cf6;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Benvenuto</p>
-      <h2 style="margin:0 0 16px;color:#f5f3ff;font-size:22px;font-weight:800;line-height:1.3">Conferma il tuo<br>indirizzo email</h2>
-      <p style="color:#a78bfa;line-height:1.7;margin:0 0 8px;font-size:15px">
+      <p style="margin:0 0 6px;font-size:13px;color:#d97706;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Benvenuto</p>
+      <h2 style="margin:0 0 16px;color:#1a1208;font-size:22px;font-weight:800;line-height:1.3">Conferma il tuo<br>indirizzo email</h2>
+      <p style="color:#6b5b3e;line-height:1.7;margin:0 0 8px;font-size:15px">
         Ci siamo quasi! Clicca il bottone qui sotto per attivare il tuo account Endyo
         e iniziare a costruire il tuo guardaroba intelligente.
       </p>
       {_btn(link, 'Verifica email')}
       {_divider()}
-      <p style="color:rgba(167,139,250,0.5);font-size:12px;margin:0;line-height:1.6">
-        Il link è valido per <strong style="color:rgba(167,139,250,0.7)">24 ore</strong>.<br>
+      <p style="color:#a08060;font-size:12px;margin:0;line-height:1.6">
+        Il link è valido per <strong style="color:#92400e">24 ore</strong>.<br>
         Se non hai creato un account Endyo, puoi ignorare questa email in tutta sicurezza.
       </p>
     """)
@@ -191,16 +191,16 @@ async def send_reset_email(to: str, token: str, brand_portal: bool = False) -> N
     html = _base_template(
         preview="Hai richiesto di reimpostare la password del tuo account Endyo.",
         content=f"""
-      <p style="margin:0 0 6px;font-size:13px;color:#8b5cf6;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Sicurezza account</p>
-      <h2 style="margin:0 0 16px;color:#f5f3ff;font-size:22px;font-weight:800;line-height:1.3">Reimposta la tua<br>password</h2>
-      <p style="color:#a78bfa;line-height:1.7;margin:0 0 8px;font-size:15px">
+      <p style="margin:0 0 6px;font-size:13px;color:#d97706;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Sicurezza account</p>
+      <h2 style="margin:0 0 16px;color:#1a1208;font-size:22px;font-weight:800;line-height:1.3">Reimposta la tua<br>password</h2>
+      <p style="color:#6b5b3e;line-height:1.7;margin:0 0 8px;font-size:15px">
         Abbiamo ricevuto una richiesta di reset password per il tuo account Endyo.
         Clicca il bottone qui sotto per sceglierne una nuova.
       </p>
       {_btn(link, 'Reimposta password')}
       {_divider()}
-      <p style="color:rgba(167,139,250,0.5);font-size:12px;margin:0;line-height:1.6">
-        Il link è valido per <strong style="color:rgba(167,139,250,0.7)">1 ora</strong>.<br>
+      <p style="color:#a08060;font-size:12px;margin:0;line-height:1.6">
+        Il link è valido per <strong style="color:#92400e">1 ora</strong>.<br>
         Se non hai richiesto il reset, ignora questa email — il tuo account rimane al sicuro e nessuna modifica è stata applicata.
       </p>
     """)
@@ -213,17 +213,17 @@ async def send_premium_confirmation_email(to: str, plan: str) -> None:
     html = _base_template(
         preview=f"Il tuo piano {plan_label} è ora attivo. Benvenuto nel lato premium di Endyo!",
         content=f"""
-      <p style="margin:0 0 6px;font-size:13px;color:#8b5cf6;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Abbonamento attivo</p>
-      <h2 style="margin:0 0 16px;color:#f5f3ff;font-size:22px;font-weight:800;line-height:1.3">Benvenuto in<br>Endyo Premium</h2>
-      <p style="color:#a78bfa;line-height:1.7;margin:0 0 20px;font-size:15px">
-        Il tuo piano <strong style="color:#c4b5fd">{plan_label}</strong> è ora attivo.
+      <p style="margin:0 0 6px;font-size:13px;color:#d97706;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Abbonamento attivo</p>
+      <h2 style="margin:0 0 16px;color:#1a1208;font-size:22px;font-weight:800;line-height:1.3">Benvenuto in<br>Endyo Premium</h2>
+      <p style="color:#6b5b3e;line-height:1.7;margin:0 0 20px;font-size:15px">
+        Il tuo piano <strong style="color:#d97706">{plan_label}</strong> è ora attivo.
         Hai accesso illimitato allo Stylist AI, alle analisi avanzate del guardaroba
         e a tutte le funzionalità Premium di Endyo.
       </p>
-      <table cellpadding="0" cellspacing="0" width="100%" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:12px;margin-bottom:24px">
+      <table cellpadding="0" cellspacing="0" width="100%" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;margin-bottom:24px">
         <tr><td style="padding:20px 24px">
-          <p style="margin:0 0 10px;color:#c4b5fd;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase">Cosa hai sbloccato:</p>
-          <p style="margin:0;color:#a78bfa;font-size:14px;line-height:2">
+          <p style="margin:0 0 10px;color:#d97706;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase">Cosa hai sbloccato:</p>
+          <p style="margin:0;color:#92400e;font-size:14px;line-height:2">
             ✦ Stylist AI illimitato<br>
             ✦ Analisi armocromia<br>
             ✦ Wear tracking avanzato<br>
@@ -233,8 +233,8 @@ async def send_premium_confirmation_email(to: str, plan: str) -> None:
       </table>
       {_btn(f"{APP_URL}/#/wardrobe", 'Apri Endyo')}
       {_divider()}
-      <p style="color:rgba(167,139,250,0.5);font-size:12px;margin:0;line-height:1.6">
-        Per gestire o annullare il tuo abbonamento, vai su <strong style="color:rgba(167,139,250,0.7)">Impostazioni → Piano</strong>.
+      <p style="color:#a08060;font-size:12px;margin:0;line-height:1.6">
+        Per gestire o annullare il tuo abbonamento, vai su <strong style="color:#92400e">Impostazioni → Piano</strong>.
       </p>
     """)
     await _send(to, f"Endyo Premium attivato — {plan_label}", html)

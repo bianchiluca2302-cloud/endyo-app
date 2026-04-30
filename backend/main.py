@@ -546,7 +546,7 @@ async def refresh_token(data: RefreshRequest, db: AsyncSession = Depends(get_db)
     }
 
 
-def _html_page(title: str, emoji: str, heading: str, body: str, color: str = "#8b5cf6") -> HTMLResponse:
+def _html_page(title: str, emoji: str, heading: str, body: str, color: str = "#f59e0b") -> HTMLResponse:
     html = f"""<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -556,17 +556,17 @@ def _html_page(title: str, emoji: str, heading: str, body: str, color: str = "#8
   <style>
     * {{ margin: 0; padding: 0; box-sizing: border-box; }}
     body {{ min-height: 100vh; display: flex; align-items: center; justify-content: center;
-           background: linear-gradient(160deg, #0a0a0f 0%, #12071f 100%);
+           background: #fef9e7;
            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
-    .card {{ background: #1a1025; border: 1px solid rgba(139,92,246,0.2); border-radius: 24px;
+    .card {{ background: #ffffff; border: 1px solid #fde68a; border-radius: 24px;
              padding: 48px 40px; max-width: 420px; width: 90%; text-align: center;
-             box-shadow: 0 24px 64px rgba(0,0,0,0.5); }}
+             box-shadow: 0 8px 40px rgba(245,158,11,0.15); }}
     .emoji {{ font-size: 56px; margin-bottom: 20px; }}
-    h1 {{ font-size: 22px; font-weight: 800; color: #f5f3ff; margin-bottom: 12px; }}
-    p {{ color: #a78bfa; line-height: 1.6; font-size: 15px; }}
-    .brand {{ margin-top: 32px; font-size: 20px; font-weight: 900; color: #8b5cf6;
+    h1 {{ font-size: 22px; font-weight: 800; color: #1a1208; margin-bottom: 12px; }}
+    p {{ color: #6b5b3e; line-height: 1.6; font-size: 15px; }}
+    .brand {{ margin-top: 32px; font-size: 20px; font-weight: 900; color: #f59e0b;
               letter-spacing: -0.04em; }}
-    .brand span {{ color: #a78bfa; }}
+    .brand span {{ color: #d97706; }}
   </style>
 </head>
 <body>

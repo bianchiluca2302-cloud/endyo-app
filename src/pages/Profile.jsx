@@ -336,6 +336,7 @@ export function ProfileContent() {
   const t             = useT()
   const lang          = useSettingsStore(s => s.language) || 'it'
   const isMobile      = useIsMobile()
+  const navigate      = useNavigate()
   const profile       = useWardrobeStore(s => s.profile)
   const updateProfile = useWardrobeStore(s => s.updateProfile)
   const patchProfile  = useWardrobeStore(s => s.patchProfile)
