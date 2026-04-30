@@ -42,62 +42,81 @@ async def get_db():
 
 
 async def init_db():
-    from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, BrandProductFeedback  # noqa
+    from models import (  # noqa — registra tutti i modelli in Base.metadata
+        Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem,
+        BrandProductFeedback, Brand, BrandProduct, BrandProductImpression,
+        SocialPost, PostLike, PostComment, WearLog,
+    )
+    # Step 1: crea tutte le tabelle in una transazione dedicata.
+    # Viene committata prima di eseguire le migrazioni: in PostgreSQL una
+    # transazione in stato "aborted" farebbe rollback anche del create_all.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Migrazioni leggere: aggiunge colonne nuove se non esistono
-        await _migrate(conn)
+
+    # Step 2: ogni migrazione nella propria transazione separata.
+    # Così un ALTER TABLE già-esistente (exception ignorata) non compromette
+    # le migrazioni successive né le tabelle appena create.
+    await _migrate()
     print("[DB] Database initialized")
 
 
-async def _migrate(conn):
-    """Aggiunge colonne introdotte dopo la creazione iniziale del DB."""
-    migrations = [
-        # Colonne storiche
-        ("user_profile", "profile_picture", "VARCHAR(500)"),
-        ("garments",     "tryon_image",  "VARCHAR(500)"),
-        ("garments",     "tryon_status", "VARCHAR(20) DEFAULT 'none'"),
-        ("user_profile", "avatar_photo", "VARCHAR(500)"),
-        ("user_profile", "face_photo_1", "VARCHAR(500)"),
-        ("user_profile", "face_photo_2", "VARCHAR(500)"),
-        ("garments",     "bg_status",    "VARCHAR(20) DEFAULT 'none'"),
-        ("outfits",      "transforms",   "JSON"),
-        # Auth multi-utente
-        ("garments",     "user_id",      "INTEGER REFERENCES users(id)"),
-        ("outfits",      "user_id",      "INTEGER REFERENCES users(id)"),
-        ("user_profile", "user_id",      "INTEGER REFERENCES users(id)"),
-        # Username pubblico (UNIQUE non supportato da SQLite in ALTER TABLE)
-        ("users",        "username",     "VARCHAR(30)"),
-        # Piano e quota chat AI
-        ("users",        "plan",         "VARCHAR(20) DEFAULT 'free'"),
-        ("users",        "chat_count",   "INTEGER DEFAULT 0"),
-        ("users",        "chat_reset_at","DATETIME"),
-        # Sfondo post social
-        ("social_posts", "bg_color",     "VARCHAR(30)"),
-        # Numero scarpe (EU)
-        ("user_profile", "shoe_size",    "REAL"),
-        # Armocromia (stagione cromatica AI)
-        ("user_profile", "armocromia_season", "VARCHAR(100)"),
-        ("user_profile", "armocromia_notes",  "VARCHAR(1000)"),
-        # Quota Shopping Advisor
-        ("users", "shopping_count",          "INTEGER DEFAULT 0"),
-        ("users", "shopping_reset_at",       "DATETIME"),
-        ("users", "shopping_week_count",     "INTEGER DEFAULT 0"),
-        ("users", "shopping_week_reset_at",  "DATETIME"),
-        # Quota Armocromia
-        ("users", "armocromia_week_count",    "INTEGER DEFAULT 0"),
-        ("users", "armocromia_week_reset_at", "DATETIME"),
-        # Quota Upload vestiti
-        ("users", "upload_count",          "INTEGER DEFAULT 0"),
-        ("users", "upload_reset_at",       "DATETIME"),
-        ("users", "upload_week_count",     "INTEGER DEFAULT 0"),
-        ("users", "upload_week_reset_at",  "DATETIME"),
-        ("users", "upload_extra",          "INTEGER DEFAULT 0"),
-    ]
+# Lista delle colonne da aggiungere se non esistono ancora.
+_MIGRATIONS = [
+    # Colonne storiche
+    ("user_profile", "profile_picture",       "VARCHAR(500)"),
+    ("garments",     "tryon_image",            "VARCHAR(500)"),
+    ("garments",     "tryon_status",           "VARCHAR(20) DEFAULT 'none'"),
+    ("user_profile", "avatar_photo",           "VARCHAR(500)"),
+    ("user_profile", "face_photo_1",           "VARCHAR(500)"),
+    ("user_profile", "face_photo_2",           "VARCHAR(500)"),
+    ("garments",     "bg_status",              "VARCHAR(20) DEFAULT 'none'"),
+    ("outfits",      "transforms",             "JSON"),
+    # Auth multi-utente
+    ("garments",     "user_id",               "INTEGER REFERENCES users(id)"),
+    ("outfits",      "user_id",               "INTEGER REFERENCES users(id)"),
+    ("user_profile", "user_id",               "INTEGER REFERENCES users(id)"),
+    # Username pubblico
+    ("users",        "username",              "VARCHAR(30)"),
+    # Piano e quota chat AI
+    ("users",        "plan",                  "VARCHAR(20) DEFAULT 'free'"),
+    ("users",        "chat_count",            "INTEGER DEFAULT 0"),
+    ("users",        "chat_reset_at",         "TIMESTAMP WITH TIME ZONE"),
+    # Sfondo post social
+    ("social_posts", "bg_color",              "VARCHAR(30)"),
+    # Numero scarpe (EU)
+    ("user_profile", "shoe_size",             "REAL"),
+    # Armocromia
+    ("user_profile", "armocromia_season",     "VARCHAR(100)"),
+    ("user_profile", "armocromia_notes",      "VARCHAR(1000)"),
+    # Quota Shopping Advisor
+    ("users", "shopping_count",               "INTEGER DEFAULT 0"),
+    ("users", "shopping_reset_at",            "TIMESTAMP WITH TIME ZONE"),
+    ("users", "shopping_week_count",          "INTEGER DEFAULT 0"),
+    ("users", "shopping_week_reset_at",       "TIMESTAMP WITH TIME ZONE"),
+    # Quota Armocromia
+    ("users", "armocromia_week_count",        "INTEGER DEFAULT 0"),
+    ("users", "armocromia_week_reset_at",     "TIMESTAMP WITH TIME ZONE"),
+    # Quota Upload vestiti
+    ("users", "upload_count",                 "INTEGER DEFAULT 0"),
+    ("users", "upload_reset_at",              "TIMESTAMP WITH TIME ZONE"),
+    ("users", "upload_week_count",            "INTEGER DEFAULT 0"),
+    ("users", "upload_week_reset_at",         "TIMESTAMP WITH TIME ZONE"),
+    ("users", "upload_extra",                 "INTEGER DEFAULT 0"),
+]
+
+
+async def _migrate():
+    """Aggiunge colonne introdotte dopo la creazione iniziale del DB.
+    Ogni ALTER TABLE gira in una propria transazione: un errore (colonna
+    già esistente, ecc.) non pregiudica le altre migrazioni.
+    """
     from sqlalchemy import text as _text
-    for table, column, col_type in migrations:
+    for table, column, col_type in _MIGRATIONS:
         try:
-            await conn.execute(_text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+            async with engine.begin() as conn:
+                await conn.execute(
+                    _text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                )
             print(f"[DB] Migrazione: aggiunta colonna {table}.{column}")
         except Exception:
-            pass
+            pass  # colonna già esistente o tabella inesistente — ignorato

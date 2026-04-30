@@ -70,49 +70,38 @@ DIST_DIR = Path(__file__).parent.parent / "dist"
 import asyncio
 
 async def _migrate_db():
-    """Aggiunge colonne mancanti senza toccare i dati esistenti (SQLite-safe)."""
+    """Aggiunge colonne mancanti senza toccare i dati esistenti.
+    Ogni ALTER TABLE gira in una transazione propria: un errore (es. colonna
+    già esistente) non blocca le migrazioni successive.
+    """
     from database import engine as _engine
     from sqlalchemy import text as _text
-    async with _engine.begin() as conn:
-        # ── Tabella users ──────────────────────────────────────────────────────
-        for col, definition in [
-            ("chat_week_count",       "INTEGER NOT NULL DEFAULT 0"),
-            ("chat_week_reset_at",    "DATETIME"),
-            ("plan_started_at",       "DATETIME"),
-            ("plan_expires_at",       "DATETIME"),
-            ("scheduled_downgrade_to","VARCHAR(20)"),
-        ]:
-            try:
-                await conn.execute(_text(f"ALTER TABLE users ADD COLUMN {col} {definition}"))
-            except Exception:
-                pass  # colonna già esistente
 
-        # ── Tabella brands ─────────────────────────────────────────────────────
-        for col, definition in [
-            ("reset_token",         "VARCHAR(100)"),
-            ("reset_token_expires", "DATETIME"),
-            ("logo_url",            "VARCHAR(500)"),
-            ("description",         "TEXT"),
-            ("website",             "VARCHAR(500)"),
-            ("active",              "BOOLEAN NOT NULL DEFAULT 1"),
-            ("updated_at",          "DATETIME"),
-        ]:
-            try:
-                await conn.execute(_text(f"ALTER TABLE brands ADD COLUMN {col} {definition}"))
-            except Exception:
-                pass  # colonna già esistente
+    extra_migrations = [
+        # Tabella users
+        ("users", "chat_week_count",        "INTEGER NOT NULL DEFAULT 0"),
+        ("users", "chat_week_reset_at",     "TIMESTAMP WITH TIME ZONE"),
+        ("users", "plan_started_at",        "TIMESTAMP WITH TIME ZONE"),
+        ("users", "plan_expires_at",        "TIMESTAMP WITH TIME ZONE"),
+        ("users", "scheduled_downgrade_to", "VARCHAR(20)"),
+        # Tabella brands
+        ("brands", "reset_token",           "VARCHAR(100)"),
+        ("brands", "reset_token_expires",   "TIMESTAMP WITH TIME ZONE"),
+        ("brands", "logo_url",              "VARCHAR(500)"),
+        ("brands", "description",           "TEXT"),
+        ("brands", "website",               "VARCHAR(500)"),
+        ("brands", "active",                "BOOLEAN NOT NULL DEFAULT TRUE"),
+        ("brands", "updated_at",            "TIMESTAMP WITH TIME ZONE"),
+        # Tabella outfits
+        ("outfits", "is_usual",             "BOOLEAN NOT NULL DEFAULT FALSE"),
+    ]
 
-        # ── Tabella outfits: colonne nuove ────────────────────────────────────
-        for col, definition in [
-            ("is_usual", "BOOLEAN NOT NULL DEFAULT 0"),
-        ]:
-            try:
-                await conn.execute(_text(f"ALTER TABLE outfits ADD COLUMN {col} {definition}"))
-            except Exception:
-                pass  # colonna già esistente
-
-        # Nota: wear_logs è creata da Base.metadata.create_all in init_db()
-        # Non va creata qui con SQL raw (incompatibile tra SQLite e PostgreSQL)
+    for table, col, definition in extra_migrations:
+        try:
+            async with _engine.begin() as conn:
+                await conn.execute(_text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
+        except Exception:
+            pass  # colonna già esistente — ignorato
 
 
 @asynccontextmanager

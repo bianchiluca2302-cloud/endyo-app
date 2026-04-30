@@ -686,7 +686,7 @@ function IllustrationAndroidConfirm({ en }) {
   )
 }
 
-function InstallScreen() {
+function InstallScreen({ onBack }) {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [installed, setInstalled]           = useState(false)
@@ -724,13 +724,13 @@ function InstallScreen() {
     <div style={{
       height: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', overflow: 'hidden',
-      background: INSTALL_C.bg, padding: '0 18px',
+      background: INSTALL_C.bg, padding: '0 20px',
       textAlign: 'center',
     }}>
       <style>{`
         @keyframes install-bounce-arrow {
           0%,100% { transform: translateY(0) }
-          50%      { transform: translateY(-8px) }
+          50%      { transform: translateY(-10px) }
         }
         @keyframes install-pulse {
           0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.45) }
@@ -742,60 +742,74 @@ function InstallScreen() {
         }
       `}</style>
 
-      {/* ── Header compatto ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 'calc(env(safe-area-inset-top,0px) + 16px)', marginBottom: 10 }}>
+      {/* ── Pulsante indietro ── */}
+      <div style={{ width: '100%', maxWidth: 400, paddingTop: 'calc(env(safe-area-inset-top,0px) + 12px)', display: 'flex', alignItems: 'center' }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: INSTALL_C.muted, fontSize: 14, fontWeight: 600,
+          padding: '6px 0', display: 'flex', alignItems: 'center', gap: 4,
+          WebkitTapHighlightColor: 'transparent',
+        }}>
+          ‹ {en ? 'Back' : 'Indietro'}
+        </button>
+      </div>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, marginTop: 8 }}>
         <img src={logoUrl} alt="Endyo" style={{
-          width: 48, height: 48, borderRadius: 14,
-          boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
+          width: 56, height: 56, borderRadius: 16,
+          boxShadow: '0 4px 20px rgba(245,158,11,0.35)',
         }} />
         <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.03em', color: INSTALL_C.text, lineHeight: 1.1 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', color: INSTALL_C.text, lineHeight: 1.1 }}>
             {en ? 'Install Endyo' : 'Installa Endyo'}
           </div>
-          <div style={{ fontSize: 12, color: INSTALL_C.muted, marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: INSTALL_C.muted, marginTop: 3 }}>
             {isIOS
-              ? (en ? 'Safari · iPhone / iPad' : 'Safari · iPhone / iPad')
-              : (en ? 'Chrome / Edge · Android' : 'Chrome / Edge · Android')}
+              ? 'Safari · iPhone / iPad'
+              : 'Chrome / Edge · Android'}
           </div>
         </div>
       </div>
 
-      {/* ── Bottone (solo Android ha il prompt nativo) ── */}
-      {!installed ? (
-        <button
-          onClick={handleInstall}
-          style={{
-            background: `linear-gradient(135deg, ${INSTALL_C.primary}, ${INSTALL_C.primaryD})`,
-            color: '#fff', border: 'none', borderRadius: 14,
-            padding: '12px 28px', fontSize: 15, fontWeight: 700,
-            cursor: 'pointer', marginBottom: 10, letterSpacing: '-0.01em',
-            boxShadow: '0 3px 16px rgba(245,158,11,0.4)',
-            animation: highlight ? 'install-pulse 0.7s ease 3' : 'none',
-            WebkitTapHighlightColor: 'transparent', width: '100%', maxWidth: 320,
-          }}
-        >
-          ＋ {en ? 'Add to Home Screen' : 'Aggiungi alla Home'}
-        </button>
-      ) : (
-        <div style={{ marginBottom: 10, fontSize: 14, color: '#22c55e', fontWeight: 700 }}>
-          ✓ {en ? 'Added to home screen!' : 'App aggiunta alla home!'}
-        </div>
+      {/* ── Bottone installazione — solo Android (su iOS non funziona) ── */}
+      {!isIOS && (
+        !installed ? (
+          <button
+            onClick={handleInstall}
+            style={{
+              background: `linear-gradient(135deg, ${INSTALL_C.primary}, ${INSTALL_C.primaryD})`,
+              color: '#fff', border: 'none', borderRadius: 14,
+              padding: '14px 28px', fontSize: 16, fontWeight: 700,
+              cursor: 'pointer', marginBottom: 14, letterSpacing: '-0.01em',
+              boxShadow: '0 3px 16px rgba(245,158,11,0.4)',
+              animation: highlight ? 'install-pulse 0.7s ease 3' : 'none',
+              WebkitTapHighlightColor: 'transparent', width: '100%', maxWidth: 360,
+            }}
+          >
+            ＋ {en ? 'Add to Home Screen' : 'Aggiungi alla Home'}
+          </button>
+        ) : (
+          <div style={{ marginBottom: 14, fontSize: 15, color: '#22c55e', fontWeight: 700 }}>
+            ✓ {en ? 'Added to home screen!' : 'App aggiunta alla home!'}
+          </div>
+        )
       )}
 
-      {/* ── Separatore "oppure segui i passaggi" ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', maxWidth: 320, marginBottom: 10 }}>
+      {/* ── Separatore ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', maxWidth: 400, marginBottom: 14 }}>
         <div style={{ flex: 1, height: 1, background: INSTALL_C.border }} />
-        <span style={{ fontSize: 11, color: INSTALL_C.dim, whiteSpace: 'nowrap' }}>
-          {en ? 'or follow the steps' : 'oppure segui i passaggi'}
+        <span style={{ fontSize: 12, color: INSTALL_C.dim, whiteSpace: 'nowrap' }}>
+          {en ? 'Follow the steps below' : 'Segui i passaggi'}
         </span>
         <div style={{ flex: 1, height: 1, background: INSTALL_C.border }} />
       </div>
 
       {/* ── Steps ── */}
       <div style={{
-        width: '100%', maxWidth: 360, flex: 1,
+        width: '100%', maxWidth: 400, flex: 1,
         display: 'flex', flexDirection: 'column',
-        gap: 8, overflow: 'hidden',
+        gap: 10, overflow: 'hidden',
       }}>
         {isIOS ? (
           <>
@@ -849,27 +863,27 @@ function InstallScreen() {
       </div>
 
       {/* Spazio safe-area bottom */}
-      <div style={{ height: 'calc(env(safe-area-inset-bottom,0px) + 12px)', flexShrink: 0 }} />
+      <div style={{ height: 'calc(env(safe-area-inset-bottom,0px) + 16px)', flexShrink: 0 }} />
 
-      {/* ── Freccia animata in basso a destra (iOS → punta ai •••) ── */}
+      {/* ── Freccia animata — punta verso il basso (iOS: verso i •••) ── */}
       {isIOS && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(env(safe-area-inset-bottom,0px) + 16px)',
-          right: 20,
+          bottom: 'calc(env(safe-area-inset-bottom,0px) + 14px)',
+          right: 22,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
           animation: 'install-bounce-arrow 1.2s ease-in-out infinite',
           pointerEvents: 'none',
         }}>
           <span style={{
-            fontSize: 9, color: INSTALL_C.primaryD,
+            fontSize: 10, color: INSTALL_C.primaryD,
             letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700,
           }}>
             {en ? 'here' : 'qui'}
           </span>
-          {/* Freccia SVG che punta verso i ••• (in basso a destra) */}
-          <svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-            <path d="M5 5l14 14M19 5v14H5" stroke={INSTALL_C.primaryD} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
+          {/* Freccia verticale verso il basso */}
+          <svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12l7 7 7-7" stroke={INSTALL_C.primaryD} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       )}
@@ -877,33 +891,34 @@ function InstallScreen() {
   )
 }
 
-/* InstallStep — riga orizzontale compatta: numero | testo | illustrazione mini */
+/* InstallStep — riga orizzontale: numero | testo | illustrazione */
 function InstallStep({ n, illustration, text, highlight }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
+      display: 'flex', alignItems: 'center', gap: 12,
       background: INSTALL_C.surface,
       border: `1.5px solid ${highlight ? INSTALL_C.primary : INSTALL_C.border}`,
-      borderRadius: 14, padding: '8px 10px',
+      borderRadius: 16, padding: '12px 14px',
       animation: highlight ? 'install-step-pulse 0.7s ease 3' : 'none',
       transition: 'border-color 0.3s',
-      boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+      flex: 1,
     }}>
       {/* Numero */}
       <div style={{
-        width: 24, height: 24, borderRadius: 50, flexShrink: 0,
+        width: 30, height: 30, borderRadius: 50, flexShrink: 0,
         background: 'rgba(245,158,11,0.14)',
         border: '1px solid rgba(245,158,11,0.35)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 800, color: INSTALL_C.primaryD,
+        fontSize: 13, fontWeight: 800, color: INSTALL_C.primaryD,
       }}>{n}</div>
       {/* Testo */}
-      <div style={{ flex: 1, fontSize: 12, lineHeight: 1.4, color: INSTALL_C.text, textAlign: 'left' }}>
+      <div style={{ flex: 1, fontSize: 13, lineHeight: 1.45, color: INSTALL_C.text, textAlign: 'left' }}>
         {text}
       </div>
       {/* Illustrazione miniatura */}
       <div style={{
-        width: 80, flexShrink: 0, borderRadius: 8, overflow: 'hidden',
+        width: 90, flexShrink: 0, borderRadius: 10, overflow: 'hidden',
         background: '#1a1a1a', border: '1px solid rgba(0,0,0,0.1)',
       }}>
         {illustration}
@@ -924,7 +939,8 @@ export default function AuthPage() {
     new URLSearchParams(window.location.search).get('pwa') !== '1'
   )
 
-  if (isMobileBrowser) return <InstallScreen />
+  const [bypassInstall, setBypassInstall] = useState(false)
+  if (isMobileBrowser && !bypassInstall) return <InstallScreen onBack={() => setBypassInstall(true)} />
 
   const titles = {
     login:    t('authLoginTitle'),
