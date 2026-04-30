@@ -54,6 +54,13 @@ export default function App() {
   // "bootstrapping" → true mentre tentiamo di usare il refresh token salvato
   const [bootstrapping, setBootstrapping] = useState(!!refreshToken && !accessToken)
 
+  // Splash sempre visibile per almeno 1 secondo
+  const [splashReady, setSplashReady] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setSplashReady(true), 1000)
+    return () => clearTimeout(t)
+  }, [])
+
   // ── 1. Applica tema all'avvio + listener per tema automatico ──────────────
   useEffect(() => {
     applyTheme(settings)
@@ -95,8 +102,8 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
-  // ── Splash screen amber al bootstrap ──────────────────────────────────────
-  if (bootstrapping) {
+  // ── Splash screen amber — sempre 1s minimo ────────────────────────────────
+  if (!splashReady || bootstrapping) {
     return (
       <div style={{
         height: '100vh', width: '100vw',

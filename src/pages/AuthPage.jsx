@@ -466,125 +466,131 @@ const INSTALL_C = {
   dim:      '#a08060',
 }
 
-// ── Illustrazioni SVG per ogni step ──────────────────────────────────────────
+// ── Illustrazioni SVG per ogni step (flow reale iOS Safari) ──────────────────
 
-// iOS Step 1 — Safari bottom bar con tasto Share evidenziato
-function IllustrationIOSShare() {
+// iOS Step 1 — Safari bottom bar: i tre puntini ••• in basso a destra
+function IllustrationIOSThreeDots() {
   return (
-    <svg viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
-      {/* Sfondo telefono / browser */}
-      <rect x="10" y="8" width="280" height="74" rx="12" fill="#f8f8f8" stroke="#e5e7eb" strokeWidth="1.5"/>
-      {/* Barra indirizzi */}
-      <rect x="20" y="14" width="260" height="22" rx="8" fill="#fff" stroke="#e5e7eb" strokeWidth="1"/>
-      <text x="150" y="29" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">endyo.it</text>
+    <svg viewBox="0 0 300 88" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="72" rx="12" fill="#1c1c1e" stroke="#3a3a3c" strokeWidth="1.5"/>
+      {/* Barra indirizzo scura */}
+      <rect x="20" y="14" width="260" height="22" rx="11" fill="#2c2c2e"/>
+      <text x="150" y="29" textAnchor="middle" fontSize="9" fill="#aeaeb2" fontFamily="-apple-system,sans-serif">endyo.it</text>
       {/* Bottom bar Safari */}
-      <rect x="10" y="60" width="280" height="22" rx="0" fill="#f8f8f8"/>
-      <line x1="10" y1="60" x2="290" y2="60" stroke="#e5e7eb" strokeWidth="1"/>
-      {/* Icone bottom bar: indietro, avanti, share, segnalibri, tab */}
-      {/* ← */}
-      <text x="36" y="75" textAnchor="middle" fontSize="14" fill="#c4c4c4" fontFamily="-apple-system,sans-serif">‹</text>
-      {/* → */}
-      <text x="80" y="75" textAnchor="middle" fontSize="14" fill="#e5e5e5" fontFamily="-apple-system,sans-serif">›</text>
-      {/* Share — EVIDENZIATO */}
-      <circle cx="150" cy="71" r="14" fill="rgba(245,158,11,0.18)"/>
-      <circle cx="150" cy="71" r="14" fill="none" stroke="#f59e0b" strokeWidth="2">
-        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+      <rect x="10" y="56" width="280" height="24" rx="0" fill="#1c1c1e"/>
+      <rect x="10" y="68" width="280" height="12" rx="12" fill="#1c1c1e"/>
+      <line x1="10" y1="56" x2="290" y2="56" stroke="#3a3a3c" strokeWidth="1"/>
+      {/* ‹ indietro */}
+      <text x="34" y="72" textAnchor="middle" fontSize="18" fill="#636366">‹</text>
+      {/* icona tab (quadrati) */}
+      <rect x="70" y="62" width="9" height="9" rx="2" fill="none" stroke="#636366" strokeWidth="1.3"/>
+      <rect x="73" y="59" width="9" height="9" rx="2" fill="none" stroke="#636366" strokeWidth="1.3"/>
+      {/* URL bar centrale */}
+      <rect x="98" y="59" width="104" height="14" rx="7" fill="#2c2c2e"/>
+      <text x="150" y="70" textAnchor="middle" fontSize="8" fill="#aeaeb2">endyo.it</text>
+      {/* ricarica */}
+      <text x="222" y="71" textAnchor="middle" fontSize="11" fill="#636366">↻</text>
+      {/* ••• — EVIDENZIATO */}
+      <circle cx="264" cy="67" r="14" fill="rgba(245,158,11,0.2)"/>
+      <circle cx="264" cy="67" r="14" fill="none" stroke="#f59e0b" strokeWidth="2">
+        <animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/>
       </circle>
-      {/* Icona share (quadrato con freccia su) */}
-      <rect x="145" y="67" width="10" height="8" rx="1.5" fill="none" stroke="#f59e0b" strokeWidth="1.6"/>
-      <line x1="150" y1="66" x2="150" y2="61" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round"/>
-      <polyline points="147,63 150,60 153,63" fill="none" stroke="#f59e0b" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-      {/* Segnalibri */}
-      <text x="220" y="76" textAnchor="middle" fontSize="12" fill="#c4c4c4">⊡</text>
-      {/* Tab */}
-      <text x="264" y="76" textAnchor="middle" fontSize="11" fill="#c4c4c4">⊞</text>
-      {/* Label */}
-      <text x="150" y="56" textAnchor="middle" fontSize="8" fill="#f59e0b" fontWeight="700" fontFamily="-apple-system,sans-serif">TAP HERE</text>
+      <circle cx="257" cy="67" r="2" fill="#f59e0b"/>
+      <circle cx="264" cy="67" r="2" fill="#f59e0b"/>
+      <circle cx="271" cy="67" r="2" fill="#f59e0b"/>
     </svg>
   )
 }
 
-// iOS Step 2 — Share sheet con "Aggiungi a schermata Home" evidenziato
-function IllustrationIOSAddHome({ en }) {
+// iOS Step 2 — Menu a tendina con "Condividi" evidenziato
+function IllustrationIOSCondividi({ en }) {
   return (
-    <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
-      <rect x="10" y="8" width="280" height="94" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
-      {/* Titolo sheet */}
-      <text x="150" y="24" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">Share</text>
-      <line x1="10" y1="29" x2="290" y2="29" stroke="#f3f4f6" strokeWidth="1"/>
-      {/* Icone app nella riga */}
-      {[40,80,120,160,200,240].map((x, i) => (
+    <svg viewBox="0 0 300 115" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="99" rx="14" fill="#2c2c2e" stroke="#3a3a3c" strokeWidth="1.5"/>
+      {/* Riga Condividi — EVIDENZIATA */}
+      <rect x="14" y="12" width="272" height="30" rx="10" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" strokeWidth="1.5">
+        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+      </rect>
+      {/* Icona condividi */}
+      <rect x="28" y="20" width="14" height="11" rx="2" fill="none" stroke="#f59e0b" strokeWidth="1.4"/>
+      <line x1="35" y1="19" x2="35" y2="14" stroke="#f59e0b" strokeWidth="1.4" strokeLinecap="round"/>
+      <polyline points="32,16 35,13 38,16" fill="none" stroke="#f59e0b" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <text x="58" y="31" fontSize="11" fontWeight="700" fill="#f59e0b" fontFamily="-apple-system,sans-serif">{en ? 'Share' : 'Condividi'}</text>
+      <line x1="14" y1="42" x2="286" y2="42" stroke="#3a3a3c" strokeWidth="0.8"/>
+      {/* Aggiungi a Segnalibri */}
+      <text x="28" y="59" fontSize="10" fill="#aeaeb2" fontFamily="-apple-system,sans-serif">{en ? 'Add Bookmark' : 'Aggiungi a Segnalibri'}</text>
+      <line x1="14" y1="68" x2="286" y2="68" stroke="#3a3a3c" strokeWidth="0.8"/>
+      {/* Nuovo pannello */}
+      <text x="28" y="84" fontSize="10" fill="#aeaeb2" fontFamily="-apple-system,sans-serif">{en ? 'New Tab' : 'Nuovo pannello'}</text>
+      <line x1="14" y1="93" x2="286" y2="93" stroke="#3a3a3c" strokeWidth="0.8"/>
+      <text x="28" y="105" fontSize="10" fill="#aeaeb2" fontFamily="-apple-system,sans-serif">{en ? 'Private Tab' : 'Nuovo pannello privato'}</text>
+    </svg>
+  )
+}
+
+// iOS Step 3 — Share sheet con "Visualizza altro" (↓) evidenziato in basso a destra
+function IllustrationIOSVisualizzaAltro({ en }) {
+  return (
+    <svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="104" rx="14" fill="#1c1c1e" stroke="#3a3a3c" strokeWidth="1.5"/>
+      {/* Header: icona app + nome */}
+      <rect x="18" y="16" width="26" height="26" rx="7" fill="#f3f4f6"/>
+      <text x="31" y="33" textAnchor="middle" fontSize="14">🧥</text>
+      <text x="52" y="25" fontSize="10" fontWeight="700" fill="#fff" fontFamily="-apple-system,sans-serif">Endyo</text>
+      <text x="52" y="37" fontSize="8" fill="#aeaeb2" fontFamily="-apple-system,sans-serif">endyo.it</text>
+      <line x1="10" y1="48" x2="290" y2="48" stroke="#3a3a3c" strokeWidth="0.8"/>
+      {/* Riga contatti */}
+      {[38,82,126,170].map((x,i) => <circle key={i} cx={x} cy="63" r="14" fill="#3a3a3c"/>)}
+      <line x1="10" y1="84" x2="290" y2="84" stroke="#3a3a3c" strokeWidth="0.8"/>
+      {/* Riga azioni: Copia, Segnalibri, Lettura, [Visualizza altro] */}
+      {[38,88,138].map((x,i) => (
         <g key={i}>
-          <rect x={x-14} y="33" width="28" height="28" rx="7" fill="#f3f4f6"/>
+          <circle cx={x} cy="98" r="12" fill="#3a3a3c"/>
         </g>
       ))}
-      <line x1="10" y1="68" x2="290" y2="68" stroke="#f3f4f6" strokeWidth="1"/>
-      {/* Riga "Aggiungi a schermata Home" — evidenziata */}
-      <rect x="14" y="72" width="272" height="26" rx="8" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="1.5">
-        <animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/>
-      </rect>
-      {/* Icona casa */}
-      <text x="32" y="89" textAnchor="middle" fontSize="13" fontFamily="-apple-system,sans-serif">🏠</text>
-      <text x="154" y="89" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#1a1208" fontFamily="-apple-system,sans-serif">
-        {en ? 'Add to Home Screen' : 'Aggiungi a schermata Home'}
+      {/* "Visualizza altro" (↓) — EVIDENZIATO */}
+      <circle cx="238" cy="98" r="14" fill="rgba(245,158,11,0.2)"/>
+      <circle cx="238" cy="98" r="14" fill="none" stroke="#f59e0b" strokeWidth="2">
+        <animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      {/* freccia giù */}
+      <line x1="238" y1="93" x2="238" y2="102" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+      <polyline points="234,99 238,103 242,99" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <text x="238" y="113" textAnchor="middle" fontSize="7" fill="#f59e0b" fontWeight="700" fontFamily="-apple-system,sans-serif">
+        {en ? 'More' : 'Visualizza altro'}
       </text>
-      {/* freccia */}
-      <text x="272" y="89" textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">›</text>
     </svg>
   )
 }
 
-// iOS Step 3 — Dialog "Aggiungi" in alto a destra
-function IllustrationIOSConfirm({ en }) {
+// iOS Step 4 — Lista espansa con "Aggiungi alla schermata Home" evidenziato
+function IllustrationIOSAddHomeList({ en }) {
+  const items = en
+    ? ['Add Bookmark…', 'Add to Favourites', 'Quick Note', 'Find on Page', 'Add to Home Screen']
+    : ['Aggiungi segnalibro a…', 'Aggiungi ai preferiti', 'Aggiungi a nota rapida', 'Trova nella pagina', 'Aggiungi alla schermata Home']
   return (
-    <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
-      <rect x="10" y="8" width="280" height="84" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
-      {/* Barra in alto con Annulla e Aggiungi */}
-      <rect x="10" y="8" width="280" height="28" rx="12" fill="#f8f8f8"/>
-      <rect x="10" y="24" width="280" height="12" fill="#f8f8f8"/>
-      <line x1="10" y1="36" x2="290" y2="36" stroke="#e5e7eb" strokeWidth="1"/>
-      <text x="36" y="26" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="-apple-system,sans-serif">
-        {en ? 'Cancel' : 'Annulla'}
-      </text>
-      <text x="150" y="26" textAnchor="middle" fontSize="10" fontWeight="600" fill="#1a1208" fontFamily="-apple-system,sans-serif">
-        {en ? 'Add to Home Screen' : 'Aggiungi a schermata'}
-      </text>
-      {/* Aggiungi — EVIDENZIATO */}
-      <rect x="242" y="14" width="48" height="20" rx="6" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5">
-        <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
-      </rect>
-      <text x="266" y="26" textAnchor="middle" fontSize="10" fontWeight="700" fill="#f59e0b" fontFamily="-apple-system,sans-serif">
-        {en ? 'Add' : 'Aggiungi'}
-      </text>
-      {/* Contenuto dialog */}
-      <rect x="116" y="46" width="68" height="28" rx="8" fill="#f3f4f6"/>
-      <text x="150" y="64" textAnchor="middle" fontSize="18">🧥</text>
-      <text x="150" y="83" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">endyo.it</text>
-    </svg>
-  )
-}
-
-// iOS Step 2b — "Mostra altro" nella share sheet (iOS 16+)
-function IllustrationIOSMoreOptions({ en }) {
-  return (
-    <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
-      <rect x="10" y="8" width="280" height="94" rx="12" fill="#fff" stroke="#e5e7eb" strokeWidth="1.5"/>
-      <text x="150" y="24" textAnchor="middle" fontSize="9" fill="#9ca3af" fontFamily="-apple-system,sans-serif">Share</text>
-      <line x1="10" y1="29" x2="290" y2="29" stroke="#f3f4f6" strokeWidth="1"/>
-      {/* Icone app riga 1 */}
-      {[40,80,120,160,200,240].map((x, i) => (
-        <rect key={i} x={x-14} y="33" width="28" height="28" rx="7" fill="#f3f4f6"/>
-      ))}
-      <line x1="10" y1="68" x2="290" y2="68" stroke="#f3f4f6" strokeWidth="1"/>
-      {/* "Mostra altro" — evidenziato */}
-      <rect x="14" y="72" width="272" height="26" rx="8" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="1.5">
-        <animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/>
-      </rect>
-      <text x="32" y="89" textAnchor="middle" fontSize="14" fontFamily="-apple-system,sans-serif">•••</text>
-      <text x="154" y="89" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#1a1208" fontFamily="-apple-system,sans-serif">
-        {en ? 'More…' : 'Mostra altro…'}
-      </text>
-      <text x="272" y="89" textAnchor="end" fontSize="10" fill="#f59e0b" fontWeight="700">←</text>
+    <svg viewBox="0 0 300 135" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 300 }}>
+      <rect x="10" y="8" width="280" height="119" rx="14" fill="#1c1c1e" stroke="#3a3a3c" strokeWidth="1.5"/>
+      {items.map((label, i) => {
+        const y = 20 + i * 22
+        const isTarget = i === items.length - 1
+        return (
+          <g key={i}>
+            {isTarget && (
+              <rect x="13" y={y - 2} width="274" height="22" rx="8" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" strokeWidth="1.5">
+                <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+              </rect>
+            )}
+            <text x="26" y={y + 13} fontSize="9.5"
+              fontWeight={isTarget ? '700' : '400'}
+              fill={isTarget ? '#f59e0b' : '#aeaeb2'}
+              fontFamily="-apple-system,sans-serif">{label}</text>
+            {i < items.length - 1 && (
+              <line x1="14" y1={y + 20} x2="286" y2={y + 20} stroke="#3a3a3c" strokeWidth="0.7"/>
+            )}
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -802,28 +808,28 @@ function InstallScreen() {
         {isIOS ? (
           <>
             <InstallStep n={1} highlight={highlight}
-              illustration={<IllustrationIOSShare />}
+              illustration={<IllustrationIOSThreeDots />}
               text={en
-                ? <><strong>Tap the Share ⬆️ button</strong> at the bottom of Safari</>
-                : <>Tocca il tasto <strong>Condividi ⬆️</strong> in basso in Safari</>}
+                ? <>Tap the <strong>••• button</strong> at the bottom-right of Safari</>
+                : <>Tocca i <strong>tre puntini •••</strong> in basso a destra in Safari</>}
             />
             <InstallStep n={2} highlight={highlight}
-              illustration={<IllustrationIOSMoreOptions en={en} />}
+              illustration={<IllustrationIOSCondividi en={en} />}
               text={en
-                ? <>Scroll down and tap <strong>"More…"</strong> to see all options</>
-                : <>Scorri in basso e tocca <strong>"Mostra altro…"</strong></>}
+                ? <>Tap <strong>"Share"</strong> in the menu that appears</>
+                : <>Tocca <strong>"Condividi"</strong> nel menu che appare</>}
             />
             <InstallStep n={3} highlight={highlight}
-              illustration={<IllustrationIOSAddHome en={en} />}
+              illustration={<IllustrationIOSVisualizzaAltro en={en} />}
               text={en
-                ? <>Find and tap <strong>"Add to Home Screen"</strong></>
-                : <>Trova e tocca <strong>"Aggiungi a schermata Home"</strong></>}
+                ? <>Tap the <strong>↓ "More"</strong> button (bottom-right of the sheet)</>
+                : <>Tocca <strong>"Visualizza altro" ↓</strong> in basso a destra</>}
             />
             <InstallStep n={4} highlight={highlight}
-              illustration={<IllustrationIOSConfirm en={en} />}
+              illustration={<IllustrationIOSAddHomeList en={en} />}
               text={en
-                ? <>Tap <strong>Add</strong> (top-right) to confirm</>
-                : <>Tocca <strong>Aggiungi</strong> in alto a destra</>}
+                ? <>Tap <strong>"Add to Home Screen"</strong> and then <strong>Add</strong></>
+                : <>Tocca <strong>"Aggiungi alla schermata Home"</strong> e poi <strong>Aggiungi</strong></>}
             />
           </>
         ) : (
@@ -850,21 +856,23 @@ function InstallScreen() {
         )}
       </div>
 
-      {/* Freccia animata in basso per iOS */}
+      {/* Indicatore animato in basso a destra per iOS (punta ai •••) */}
       {isIOS && (
         <div style={{
-          position: 'fixed', bottom: 16, left: '50%',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+          position: 'fixed', bottom: 20, right: 24,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
           animation: 'install-bounce 1.4s ease-in-out infinite',
           pointerEvents: 'none',
         }}>
           <span style={{
-            fontSize: 10, color: INSTALL_C.primaryD,
+            fontSize: 9, color: INSTALL_C.primaryD,
             letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700,
           }}>
-            {en ? 'Share' : 'Condividi'}
+            {en ? 'Start here' : 'Inizia qui'}
           </span>
-          <span style={{ fontSize: 26 }}>⬆️</span>
+          <span style={{
+            fontSize: 18, fontWeight: 900, color: INSTALL_C.primaryD, lineHeight: 1,
+          }}>•••</span>
         </div>
       )}
     </div>
