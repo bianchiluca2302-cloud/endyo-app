@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analyzeGarment, confirmGarment, imgUrl } from '../api/client'
+import { analyzeGarment, confirmGarment, imgUrl, fetchChatQuota } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '../i18n'
@@ -151,6 +151,18 @@ export default function MobileUpload() {
   const [duplicates, setDuplicates] = useState([])
   const [result,    setResult]   = useState(null)
   const [showCatSheet, setShowCatSheet] = useState(false)
+
+  // Quota upload giornaliera
+  const [uploadQuota, setUploadQuota] = useState(null)
+  useEffect(() => {
+    fetchChatQuota()
+      .then(q => setUploadQuota({
+        remaining: q.upload_remaining_day ?? null,
+        limit:     q.upload_limit_day     ?? null,
+        extra:     q.upload_extra         ?? 0,
+      }))
+      .catch(() => {})
+  }, [])
 
   const handleFile = (type, file) => {
     if (!file) return
@@ -356,10 +368,42 @@ export default function MobileUpload() {
       <div style={{
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
       }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)', marginBottom: 4 }}>
-          Aggiungi capo
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)', margin: 0 }}>
+            Aggiungi capo
+          </h1>
+          {/* Badge quota giornaliera */}
+          {uploadQuota !== null && uploadQuota.limit !== null && (() => {
+            const UNLIMITED = 999
+            if (uploadQuota.limit >= UNLIMITED) return null
+            const rem   = uploadQuota.remaining ?? 0
+            const lim   = uploadQuota.limit
+            const extra = uploadQuota.extra ?? 0
+            const pct   = Math.min(100, Math.round(((lim - rem) / lim) * 100))
+            const color = rem === 0 ? '#ef4444' : rem <= 2 ? '#f59e0b' : 'var(--primary-light)'
+            const bg    = rem === 0 ? 'rgba(239,68,68,0.08)' : rem <= 2 ? 'rgba(245,158,11,0.10)' : 'var(--primary-dim)'
+            const border= rem === 0 ? 'rgba(239,68,68,0.25)' : rem <= 2 ? 'rgba(245,158,11,0.3)' : 'var(--primary-border)'
+            return (
+              <div style={{
+                flexShrink: 0, background: bg, border: `1px solid ${border}`,
+                borderRadius: 10, padding: '6px 10px', textAlign: 'center', minWidth: 70,
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color, lineHeight: 1 }}>{rem}</div>
+                <div style={{ fontSize: 9, color, opacity: 0.75, marginTop: 1, letterSpacing: '0.03em' }}>
+                  di {lim} oggi
+                </div>
+                {/* Barra progresso */}
+                <div style={{ height: 3, background: 'var(--bg)', borderRadius: 2, overflow: 'hidden', marginTop: 5 }}>
+                  <div style={{ height: '100%', borderRadius: 2, width: `${pct}%`, background: color, transition: 'width 0.4s' }} />
+                </div>
+                {extra > 0 && (
+                  <div style={{ fontSize: 9, color: '#16a34a', marginTop: 3 }}>+{extra} extra</div>
+                )}
+              </div>
+            )
+          })()}
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24, marginTop: 4 }}>
           Scatta o carica una foto — l'AI fa il resto
         </p>
       </div>
