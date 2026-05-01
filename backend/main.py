@@ -229,6 +229,22 @@ async def landing_page():
     return RedirectResponse(url="/portal/brand.html")
 
 
+# ── App HTML con no-cache (evita che iOS PWA usi una versione vecchia) ─────────
+_INDEX_PATH = DIST_DIR / "index.html"
+
+@app.get("/portal/index.html", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
+async def serve_app():
+    """Serve index.html con Cache-Control: no-store per forzare aggiornamenti PWA."""
+    if not _INDEX_PATH.exists():
+        return HTMLResponse("<h1>App not built</h1>", status_code=503)
+    headers = {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache",
+    }
+    return HTMLResponse(content=_INDEX_PATH.read_text(encoding="utf-8"), headers=headers)
+
+
 # ── Pagine legali ─────────────────────────────────────────────────────────────
 _BACKEND_DIR = Path(__file__).parent
 
@@ -510,6 +526,86 @@ async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends
         "refresh_token": refresh_token,
         "token_type":    "bearer",
         "user": user_to_dict(user),
+    }
+
+
+# ── Google OAuth ─────────────────────────────────────────────────────────────
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+class GoogleAuthRequest(BaseModel):
+    credential: str   # Google ID token (JWT) restituito da GSI
+
+@app.get("/auth/google-client-id")
+async def google_client_id():
+    """Restituisce il Google Client ID pubblico al frontend."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Google OAuth non configurato")
+    return {"client_id": GOOGLE_CLIENT_ID}
+
+
+@app.post("/auth/google")
+@limiter.limit("20/minute")
+async def google_auth(request: Request, data: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    """Verifica il Google ID token, crea o recupera l'utente, restituisce JWT Endyo."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Google OAuth non configurato (GOOGLE_CLIENT_ID mancante)")
+
+    # Verifica token con google-auth
+    try:
+        from google.oauth2 import id_token as g_id_token
+        from google.auth.transport import requests as g_requests
+        idinfo = g_id_token.verify_oauth2_token(
+            data.credential,
+            g_requests.Request(),
+            GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10,
+        )
+    except Exception as e:
+        raise HTTPException(401, f"Token Google non valido: {e}")
+
+    google_email = idinfo.get("email", "").lower().strip()
+    google_name  = idinfo.get("name", "")
+    verified     = idinfo.get("email_verified", False)
+
+    if not google_email or not verified:
+        raise HTTPException(400, "Email Google non verificata")
+
+    # Cerca utente esistente per email
+    result = await db.execute(select(User).where(User.email == google_email))
+    user   = result.scalar_one_or_none()
+
+    if not user:
+        # Crea nuovo utente — password casuale (non usata, login solo Google)
+        import secrets as _sec
+        user = User(
+            email         = google_email,
+            password_hash = hash_password(_sec.token_hex(32)),
+            is_verified   = True,   # email già verificata da Google
+            plan          = "free",
+        )
+        db.add(user)
+        await db.flush()   # ottieni l'id
+
+        # Crea profilo con nome Google
+        profile = UserProfile(user_id=user.id, name=google_name)
+        db.add(profile)
+
+    else:
+        # Utente esistente: segna come verificato se non lo era
+        if not user.is_verified:
+            user.is_verified = True
+
+    await db.commit()
+    await db.refresh(user)
+
+    access_token  = create_access_token(user.id)
+    refresh_token_val = create_refresh_token(user.id)
+
+    return {
+        "access_token":  access_token,
+        "refresh_token": refresh_token_val,
+        "token_type":    "bearer",
+        "user":          user_to_dict(user),
     }
 
 

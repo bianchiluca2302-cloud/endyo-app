@@ -68,6 +68,12 @@ export const authLogin = (data) =>
 export const authRefresh = (refreshToken) =>
   api.post('/auth/refresh', { refresh_token: refreshToken }).then(r => r.data)
 
+export const authGoogle = (credential) =>
+  api.post('/auth/google', { credential }).then(r => r.data)
+
+export const fetchGoogleClientId = () =>
+  api.get('/auth/google-client-id').then(r => r.data.client_id).catch(() => null)
+
 export const authForgotPassword = (email) =>
   api.post('/auth/forgot-password', { email }).then(r => r.data)
 

@@ -1,9 +1,96 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { authLogin, authRegister, authForgotPassword, authResendVerification, api } from '../api/client'
+import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, fetchGoogleClientId, api } from '../api/client'
 import logoUrl from '../assets/logo.png'
 import { useT } from '../i18n'
+
+// ── Google Sign-In button ─────────────────────────────────────────────────────
+// Carica Google Identity Services on-demand e renderizza il bottone ufficiale.
+function GoogleButton({ onSuccess, onError }) {
+  const containerRef = useRef(null)
+  const [ready, setReady]     = useState(false)
+  const [loading, setLoading] = useState(false)
+  const setAuth    = useAuthStore(s => s.setAuth)
+  const navigate   = useNavigate()
+
+  useEffect(() => {
+    let cancelled = false
+    fetchGoogleClientId().then(clientId => {
+      if (!clientId || cancelled) return
+
+      const initGSI = () => {
+        if (!window.google?.accounts?.id) return
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response) => {
+            if (!response.credential) return
+            setLoading(true)
+            try {
+              const data = await authGoogle(response.credential)
+              setAuth(data.access_token, data.refresh_token, data.user, true)
+              navigate('/', { replace: true })
+            } catch (e) {
+              onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+            } finally {
+              setLoading(false)
+            }
+          },
+          auto_select: false,
+          use_fedcm_for_prompt: true,
+        })
+        if (containerRef.current) {
+          window.google.accounts.id.renderButton(containerRef.current, {
+            theme: 'outline',
+            size: 'large',
+            width: containerRef.current.offsetWidth || 320,
+            text: 'continue_with',
+            locale: 'it',
+          })
+        }
+        setReady(true)
+      }
+
+      if (window.google?.accounts?.id) {
+        initGSI()
+      } else {
+        const script = document.createElement('script')
+        script.src = 'https://accounts.google.com/gsi/client'
+        script.async = true
+        script.defer = true
+        script.onload = initGSI
+        document.head.appendChild(script)
+      }
+    })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <div ref={containerRef} style={{ width: '100%', minHeight: 44 }} />
+      {loading && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 8,
+          background: 'rgba(255,255,255,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div className="spinner" style={{ width: 22, height: 22, borderWidth: 2 }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Divisore "oppure" ─────────────────────────────────────────────────────────
+function OrDivider() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' }}>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      <span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 500, letterSpacing: '0.05em' }}>OPPURE</span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    </div>
+  )
+}
 
 // ── Password strength checker ─────────────────────────────────────────────────
 function PasswordStrength({ password }) {
@@ -252,6 +339,9 @@ function LoginForm({ onForgot, onRegister }) {
 
       <SubmitBtn loading={loading}>{t('authLoginBtn')}</SubmitBtn>
 
+      <OrDivider />
+      <GoogleButton onError={setError} />
+
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authNoAccount')}{' '}
         <button type="button" onClick={onRegister} style={{ background: 'none', border: 'none', color: 'var(--primary-light)', cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
@@ -383,6 +473,9 @@ function RegisterForm({ onLogin }) {
       )}
 
       <SubmitBtn loading={loading}>{t('authRegisterBtn')}</SubmitBtn>
+
+      <OrDivider />
+      <GoogleButton onError={msg => setError(msg)} />
 
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authHaveAccount')}{' '}
