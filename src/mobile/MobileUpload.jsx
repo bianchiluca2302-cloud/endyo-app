@@ -1,207 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analyzeGarment, confirmGarment, imgUrl } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '../i18n'
 
-/* ── CameraCapture — modale fotocamera getUserMedia con torcia ────────────────
- *  Usa la fotocamera posteriore (environment), attiva il flash (torch) se
- *  disponibile, blocca l'orientamento in ritratto, e restituisce il file
- *  catturato come oggetto File JPEG.
- * ─────────────────────────────────────────────────────────────────────────── */
-function CameraCapture({ label, onCapture, onClose }) {
-  const videoRef   = useRef(null)
-  const streamRef  = useRef(null)
-  const trackRef   = useRef(null)
-  const [torchOn,  setTorchOn]  = useState(false)
-  const [torchOk,  setTorchOk]  = useState(false)  // il dispositivo supporta torch
-  const [ready,    setReady]    = useState(false)
-  const [err,      setErr]      = useState(null)
-
-  // Avvia lo stream al mount
-  useEffect(() => {
-    let cancelled = false
-
-    async function startCamera() {
-      try {
-        // Prima prova con fotocamera posteriore esplicita
-        let stream
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-            audio: false,
-          })
-        } catch {
-          // Fallback senza 'exact' (es. dispositivi con una sola fotocamera)
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-            audio: false,
-          })
-        }
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
-
-        streamRef.current = stream
-        const track = stream.getVideoTracks()[0]
-        trackRef.current = track
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-        }
-
-        // Controlla supporto torch
-        const caps = track.getCapabilities?.() ?? {}
-        if (caps.torch) {
-          setTorchOk(true)
-          // Attiva il flash di default se disponibile
-          try {
-            await track.applyConstraints({ advanced: [{ torch: true }] })
-            setTorchOn(true)
-          } catch {}
-        }
-
-        setReady(true)
-      } catch (e) {
-        if (!cancelled) setErr(e.name === 'NotAllowedError' ? 'Permesso fotocamera negato' : 'Fotocamera non disponibile')
-      }
-    }
-
-    startCamera()
-    return () => {
-      cancelled = true
-      streamRef.current?.getTracks().forEach(t => t.stop())
-    }
-  }, [])
-
-  const toggleTorch = useCallback(async () => {
-    if (!trackRef.current) return
-    const next = !torchOn
-    try {
-      await trackRef.current.applyConstraints({ advanced: [{ torch: next }] })
-      setTorchOn(next)
-    } catch {}
-  }, [torchOn])
-
-  const capture = useCallback(async () => {
-    if (!videoRef.current || !ready) return
-    const video   = videoRef.current
-    const canvas  = document.createElement('canvas')
-    canvas.width  = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext('2d').drawImage(video, 0, 0)
-    canvas.toBlob(blob => {
-      if (!blob) return
-      // Spegni il flash prima di chiudere
-      if (torchOn && trackRef.current) {
-        trackRef.current.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {})
-      }
-      streamRef.current?.getTracks().forEach(t => t.stop())
-      const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' })
-      onCapture(file)
-    }, 'image/jpeg', 0.92)
-  }, [ready, torchOn, onCapture])
-
-  const handleClose = () => {
-    if (torchOn && trackRef.current) {
-      trackRef.current.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {})
-    }
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    onClose()
-  }
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 2000,
-      background: '#000', display: 'flex', flexDirection: 'column',
-    }}>
-      {/* Video feed */}
-      <video
-        ref={videoRef}
-        playsInline
-        muted
-        style={{ flex: 1, width: '100%', objectFit: 'cover' }}
-      />
-
-      {/* Errore */}
-      {err && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 16, padding: 32, background: '#000',
-        }}>
-          <span style={{ fontSize: 40 }}>📷</span>
-          <div style={{ fontSize: 15, color: '#fff', textAlign: 'center' }}>{err}</div>
-          <button onClick={handleClose} style={{
-            padding: '12px 28px', borderRadius: 12, border: 'none',
-            background: 'var(--primary)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-          }}>Chiudi</button>
-        </div>
-      )}
-
-      {/* Overlay UI: label + controlli */}
-      {!err && (
-        <>
-          {/* Intestazione */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            padding: 'calc(env(safe-area-inset-top, 16px) + 8px) 16px 12px',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)',
-          }}>
-            <button onClick={handleClose} style={{
-              background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff',
-              borderRadius: 99, width: 36, height: 36,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            }}>✕</button>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', letterSpacing: '0.03em' }}>{label}</span>
-            {/* Toggle flash */}
-            {torchOk ? (
-              <button onClick={toggleTorch} style={{
-                background: torchOn ? '#f59e0b' : 'rgba(0,0,0,0.4)',
-                border: 'none', color: torchOn ? '#000' : '#fff',
-                borderRadius: 99, width: 36, height: 36,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 18,
-              }}>⚡</button>
-            ) : <div style={{ width: 36 }} />}
-          </div>
-
-          {/* Guida inquadratura */}
-          <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '65%', aspectRatio: '3/4',
-            border: '2px solid rgba(255,255,255,0.35)',
-            borderRadius: 16, pointerEvents: 'none',
-          }} />
-
-          {/* Pulsante scatto */}
-          <div style={{
-            position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
-            left: 0, right: 0,
-            display: 'flex', justifyContent: 'center',
-          }}>
-            <button
-              onClick={capture}
-              disabled={!ready}
-              style={{
-                width: 72, height: 72, borderRadius: '50%',
-                background: ready ? '#fff' : 'rgba(255,255,255,0.4)',
-                border: '4px solid rgba(255,255,255,0.6)',
-                cursor: ready ? 'pointer' : 'not-allowed',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: ready ? '#fff' : 'rgba(255,255,255,0.4)' }} />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
 
 /* ── Duplicate check (same as Upload.jsx) ────────────────────────────────────── */
 function findDuplicates(analysis, garments) {
@@ -242,84 +45,63 @@ const ChevronIcon = () => (
 )
 
 /* ── Photo slot ──────────────────────────────────────────────────────────────── */
+// Usa <input type="file" accept="image/*"> senza capture: il sistema operativo
+// mostra il pannello nativo con le opzioni "Scatta foto / Libreria / File".
 function PhotoSlot({ label, preview, onChange, required, small, style: extraStyle = {} }) {
-  const [showCamera, setShowCamera] = useState(false)
-  const galleryRef = useRef(null)
-
-  // Usa getUserMedia se disponibile (controllo flash, orientamento); altrimenti file input nativo
-  const hasGetUserMedia = !!(navigator.mediaDevices?.getUserMedia)
-
-  const handleClick = () => {
-    if (hasGetUserMedia) {
-      setShowCamera(true)
-    } else {
-      galleryRef.current?.click()
-    }
-  }
+  const inputRef = useRef(null)
 
   return (
-    <>
-      <div
-        onClick={handleClick}
-        style={{
-          borderRadius: small ? 14 : 20,
-          border: `2px dashed ${preview ? 'var(--primary-border)' : 'var(--border)'}`,
-          background: preview ? 'transparent' : 'var(--card)',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          position: 'relative',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: small ? 5 : 8,
-          WebkitTapHighlightColor: 'transparent',
-          transition: 'border-color 0.2s',
-          ...extraStyle,
-        }}
-      >
-        {preview ? (
-          <img src={preview} alt={label}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
-        ) : (
-          <>
-            <div style={{ color: required ? 'var(--primary-light)' : 'var(--text-dim)', opacity: small ? 0.7 : 1 }}>
-              {small
-                ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                : <CameraIcon />
-              }
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: small ? 11 : 14, fontWeight: 600, color: required ? 'var(--text)' : 'var(--text-muted)' }}>
-                {label}
-              </div>
-              {required && (
-                <div style={{ fontSize: 11, color: 'var(--primary-light)', marginTop: 2 }}>Obbligatoria</div>
-              )}
-            </div>
-          </>
-        )}
-        {/* Fallback: input galleria (nessun capture, solo libreria) */}
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={e => {
-            const f = e.target.files[0]
-            if (f) onChange(f)
-            e.target.value = ''   // reset per permettere ri-selezione
-          }}
+    <div
+      onClick={() => inputRef.current?.click()}
+      style={{
+        borderRadius: small ? 14 : 20,
+        border: `2px dashed ${preview ? 'var(--primary-border)' : 'var(--border)'}`,
+        background: preview ? 'transparent' : 'var(--card)',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: small ? 5 : 8,
+        WebkitTapHighlightColor: 'transparent',
+        transition: 'border-color 0.2s',
+        ...extraStyle,
+      }}
+    >
+      {preview ? (
+        <img src={preview} alt={label}
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
-      </div>
-
-      {/* Modal fotocamera custom */}
-      {showCamera && (
-        <CameraCapture
-          label={label}
-          onCapture={file => { onChange(file); setShowCamera(false) }}
-          onClose={() => setShowCamera(false)}
-        />
+      ) : (
+        <>
+          <div style={{ color: required ? 'var(--primary-light)' : 'var(--text-dim)', opacity: small ? 0.7 : 1 }}>
+            {small
+              ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              : <CameraIcon />
+            }
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: small ? 11 : 14, fontWeight: 600, color: required ? 'var(--text)' : 'var(--text-muted)' }}>
+              {label}
+            </div>
+            {required && (
+              <div style={{ fontSize: 11, color: 'var(--primary-light)', marginTop: 2 }}>Obbligatoria</div>
+            )}
+          </div>
+        </>
       )}
-    </>
+      {/* Input nativo: apre il pannello OS (Scatta / Libreria / File) */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={e => {
+          const f = e.target.files[0]
+          if (f) onChange(f)
+          e.target.value = ''
+        }}
+      />
+    </div>
   )
 }
 
@@ -580,6 +362,18 @@ export default function MobileUpload() {
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>
           Scatta o carica una foto — l'AI fa il resto
         </p>
+      </div>
+
+      {/* Suggerimento foto */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
+        borderRadius: 10, padding: '9px 12px', marginBottom: 12,
+      }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>☀️</span>
+        <span style={{ fontSize: 12, color: 'var(--primary-light)', lineHeight: 1.4 }}>
+          Per risultati migliori usa <strong>luce naturale</strong> e uno <strong>sfondo neutro</strong> (bianco o grigio)
+        </span>
       </div>
 
       {/* Griglia foto: principale a sx, retro+etichetta a dx */}
