@@ -49,6 +49,9 @@ class User(Base):
     upload_week_reset_at     = Column(DateTime(timezone=True), nullable=True)
     upload_extra             = Column(Integer,   default=0,      nullable=False, server_default='0')  # crediti extra acquistati
 
+    # ── Google OAuth ───────────────────────────────────────────────────────────
+    google_linked        = Column(Boolean, default=False, nullable=False, server_default='false')  # account collegato a Google
+
     created_at          = Column(DateTime(timezone=True), server_default=func.now())
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -131,7 +134,9 @@ class UserProfile(Base):
     id                  = Column(Integer, primary_key=True, index=True)
     user_id             = Column(Integer, ForeignKey("users.id"), nullable=True, index=True, unique=True)
     name                = Column(String(100), nullable=True)
+    last_name           = Column(String(100), nullable=True)
     gender              = Column(String(20),  nullable=True)
+    birth_year          = Column(Integer, nullable=True)
 
     # ── Misure ────────────────────────────────────────────────────────────────
     height_cm           = Column(Integer, nullable=True)

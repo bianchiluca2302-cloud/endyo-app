@@ -80,6 +80,12 @@ export const checkUsernameAvailable = (username) =>
 export const updateUsername = (username) =>
   api.patch('/user/username', { username }).then(r => r.data)
 
+export const updatePhone = (phone) =>
+  api.patch('/user/phone', { phone }).then(r => r.data)
+
+export const authGoogleLink = (credential, password) =>
+  api.post('/auth/google/link', { credential, password }).then(r => r.data)
+
 export const authForgotPassword = (email) =>
   api.post('/auth/forgot-password', { email }).then(r => r.data)
 

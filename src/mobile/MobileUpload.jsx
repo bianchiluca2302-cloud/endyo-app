@@ -129,6 +129,78 @@ function LoadingScreen({ title, subtitle }) {
   )
 }
 
+/* ── EXIF orientation fix ────────────────────────────────────────────────────── */
+// Le foto scattate con la fotocamera frontale (selfie) su iOS hanno EXIF
+// orientation=2 (flip orizzontale). Questa funzione legge l'orientamento EXIF
+// e ridisegna l'immagine su canvas applicando la trasformazione corretta.
+async function fixImageOrientation(file) {
+  // Legge i primi 64KB per trovare l'header EXIF
+  const orientation = await new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      try {
+        const view = new DataView(e.target.result)
+        if (view.getUint16(0) !== 0xFFD8) { resolve(1); return }   // non è JPEG
+        let offset = 2
+        while (offset < view.byteLength) {
+          const marker = view.getUint16(offset)
+          if (marker === 0xFFE1) {                                   // APP1
+            if (view.getUint32(offset + 4) === 0x45786966) {        // 'Exif'
+              const little = view.getUint16(offset + 10) === 0x4949
+              const ifd0   = view.getUint32(offset + 14, little)
+              const count  = view.getUint16(offset + 10 + ifd0, little)
+              for (let i = 0; i < count; i++) {
+                const entry = offset + 10 + ifd0 + 2 + i * 12
+                if (view.getUint16(entry, little) === 0x0112) {     // Orientation tag
+                  resolve(view.getUint16(entry + 8, little)); return
+                }
+              }
+            }
+            break
+          }
+          if (marker === 0xFFDA) break                               // SOS — dati immagine
+          offset += 2 + view.getUint16(offset + 2)
+        }
+      } catch {}
+      resolve(1)
+    }
+    reader.onerror = () => resolve(1)
+    reader.readAsArrayBuffer(file.slice(0, 65536))
+  })
+
+  // Orientamento 1 = normale, nessuna correzione necessaria
+  if (orientation === 1) return file
+
+  const url = URL.createObjectURL(file)
+  const img = await new Promise((res, rej) => {
+    const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url
+  })
+  URL.revokeObjectURL(url)
+
+  const swap = [5, 6, 7, 8].includes(orientation)
+  const canvas = document.createElement('canvas')
+  canvas.width  = swap ? img.naturalHeight : img.naturalWidth
+  canvas.height = swap ? img.naturalWidth  : img.naturalHeight
+  const ctx = canvas.getContext('2d')
+
+  switch (orientation) {
+    case 2: ctx.transform(-1, 0,  0,  1, canvas.width, 0);             break
+    case 3: ctx.transform(-1, 0,  0, -1, canvas.width, canvas.height); break
+    case 4: ctx.transform( 1, 0,  0, -1, 0, canvas.height);            break
+    case 5: ctx.transform( 0, 1,  1,  0, 0, 0);                        break
+    case 6: ctx.transform( 0, 1, -1,  0, canvas.height, 0);            break
+    case 7: ctx.transform( 0,-1, -1,  0, canvas.height, canvas.width); break
+    case 8: ctx.transform( 0,-1,  1,  0, 0, canvas.width);             break
+  }
+  ctx.drawImage(img, 0, 0)
+
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(
+      new File([blob], file.name, { type: 'image/jpeg' })
+    ), 'image/jpeg', 0.93)
+  })
+}
+
 /* ── Cache a livello di modulo: sopravvive ai re-mount iOS ───────────────────── */
 // Su iOS Safari, aprire il file picker può causare il reset dello stato React.
 // Salvando i File e le preview URL fuori dal componente, le foto persistono.
@@ -186,12 +258,14 @@ export default function MobileUpload() {
   const [manualLoading, setManualLoading] = useState(false)
   const [manualError,   setManualError]   = useState(null)
 
-  const handleFile = (type, file) => {
+  const handleFile = async (type, file) => {
     if (!file) return
-    const url = URL.createObjectURL(file)
-    _photoCache[type]   = file
+    // Corregge l'orientamento EXIF (es. foto specchiata da fotocamera frontale)
+    const fixed = await fixImageOrientation(file).catch(() => file)
+    const url = URL.createObjectURL(fixed)
+    _photoCache[type]   = fixed
     _previewCache[type] = url
-    setPhotos(p => ({ ...p, [type]: file }))
+    setPhotos(p => ({ ...p, [type]: fixed }))
     setPreviews(p => ({ ...p, [type]: url }))
   }
 

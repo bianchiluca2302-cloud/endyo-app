@@ -183,6 +183,22 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
   }, [dragging, startPos, scale, clampOffset])
   const handleMouseUp = () => setDragging(false)
 
+  // ── Touch events (mobile) ─────────────────────────────────────────────────
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      e.preventDefault()
+      setDragging(true)
+      setStartPos({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y })
+    }
+  }
+  const handleTouchMove = useCallback((e) => {
+    if (!dragging || e.touches.length !== 1) return
+    e.preventDefault()
+    const raw = { x: e.touches[0].clientX - startPos.x, y: e.touches[0].clientY - startPos.y }
+    setOffset(clampOffset(raw.x, raw.y, scale))
+  }, [dragging, startPos, scale, clampOffset])
+  const handleTouchEnd = () => setDragging(false)
+
   // Quando l'immagine è caricata: calcola minScale e imposta lo zoom iniziale
   const handleImageLoad = useCallback(() => {
     const ms = computeMinScale()
@@ -262,6 +278,10 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
             style={{
               width: SIZE, height: SIZE,
               borderRadius: '50%',
@@ -272,6 +292,7 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
               boxShadow: '0 0 0 4px rgba(108,63,199,0.2)',
               background: 'var(--card)',
               userSelect: 'none',
+              touchAction: 'none',
             }}
           >
             {objectUrl && (

@@ -94,6 +94,11 @@ async def _migrate_db():
         ("brands", "updated_at",            "TIMESTAMP WITH TIME ZONE"),
         # Tabella outfits
         ("outfits", "is_usual",             "BOOLEAN NOT NULL DEFAULT FALSE"),
+        # Tabella users — Google OAuth + profilo esteso
+        ("users", "google_linked",          "BOOLEAN NOT NULL DEFAULT FALSE"),
+        # Tabella user_profile — profilo esteso
+        ("user_profile", "last_name",       "VARCHAR(100)"),
+        ("user_profile", "birth_year",      "INTEGER"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -403,10 +408,14 @@ async def get_current_user(
 import re as _re
 
 class RegisterRequest(BaseModel):
-    email:    EmailStr
-    username: Annotated[str, Field(min_length=3, max_length=30)]
-    password: Annotated[str, Field(min_length=8, max_length=128)]
-    phone:    Annotated[Optional[str], Field(default=None, max_length=20)]
+    email:      EmailStr
+    username:   Annotated[str, Field(min_length=3, max_length=30)]
+    password:   Annotated[str, Field(min_length=8, max_length=128)]
+    phone:      Annotated[Optional[str], Field(default=None, max_length=20)]
+    first_name: Annotated[Optional[str], Field(default=None, max_length=100)]
+    last_name:  Annotated[Optional[str], Field(default=None, max_length=100)]
+    gender:     Annotated[Optional[str], Field(default=None, max_length=30)]
+    birth_year: Optional[int] = None
 
     @field_validator("username")
     @classmethod
@@ -460,6 +469,7 @@ def user_to_dict(u: User) -> dict:
         "id": u.id, "email": u.email, "username": u.username,
         "phone": u.phone, "is_verified": u.is_verified,
         "plan": u.plan or "free",
+        "google_linked": bool(u.google_linked),
     }
 
 
@@ -495,6 +505,17 @@ async def register(request: Request, data: RegisterRequest, db: AsyncSession = D
         verify_token_expires=token_expiry(VERIFY_TOKEN_TTL),
     )
     db.add(user)
+    await db.flush()  # ottieni l'id senza commit
+
+    # Crea profilo con dati opzionali forniti durante la registrazione
+    profile = UserProfile(
+        user_id    = user.id,
+        name       = (data.first_name or '').strip() or None,
+        last_name  = (data.last_name  or '').strip() or None,
+        gender     = data.gender     or None,
+        birth_year = data.birth_year or None,
+    )
+    db.add(profile)
     await db.commit()
     await db.refresh(user)
 
@@ -582,6 +603,7 @@ async def google_auth(request: Request, data: GoogleAuthRequest, db: AsyncSessio
             password_hash = hash_password(_sec.token_hex(32)),
             is_verified   = True,   # email già verificata da Google
             plan          = "free",
+            google_linked = True,
         )
         db.add(user)
         await db.flush()   # ottieni l'id
@@ -590,8 +612,21 @@ async def google_auth(request: Request, data: GoogleAuthRequest, db: AsyncSessio
         profile = UserProfile(user_id=user.id, name=google_name)
         db.add(profile)
 
+    elif not user.google_linked:
+        # Utente esistente con account normale (non collegato a Google)
+        # → chiediamo di collegare l'account
+        return JSONResponse(
+            status_code=409,
+            content={
+                "action":      "link_required",
+                "email":       google_email,
+                "google_name": google_name,
+                "detail":      "Esiste già un account con questa email. Vuoi collegarlo a Google?",
+            }
+        )
+
     else:
-        # Utente esistente: segna come verificato se non lo era
+        # Utente Google già esistente: segna come verificato se non lo era
         if not user.is_verified:
             user.is_verified = True
 
@@ -604,6 +639,58 @@ async def google_auth(request: Request, data: GoogleAuthRequest, db: AsyncSessio
     return {
         "access_token":  access_token,
         "refresh_token": refresh_token_val,
+        "token_type":    "bearer",
+        "user":          user_to_dict(user),
+    }
+
+
+class GoogleLinkRequest(BaseModel):
+    credential: str   # Google ID token
+    password:   Annotated[str, Field(max_length=128)]
+
+
+@app.post("/auth/google/link")
+@limiter.limit("10/minute")
+async def google_link(request: Request, data: GoogleLinkRequest, db: AsyncSession = Depends(get_db)):
+    """Collega un account Google a un account Endyo esistente verificando la password."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Google OAuth non configurato")
+
+    # Verifica token Google
+    try:
+        from google.oauth2 import id_token as g_id_token
+        from google.auth.transport import requests as g_requests
+        idinfo = g_id_token.verify_oauth2_token(
+            data.credential, g_requests.Request(), GOOGLE_CLIENT_ID, clock_skew_in_seconds=10,
+        )
+    except Exception as e:
+        raise HTTPException(401, f"Token Google non valido: {e}")
+
+    google_email = idinfo.get("email", "").lower().strip()
+    if not google_email or not idinfo.get("email_verified", False):
+        raise HTTPException(400, "Email Google non verificata")
+
+    # Cerca account Endyo
+    result = await db.execute(select(User).where(User.email == google_email))
+    user   = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "Nessun account trovato con questa email")
+    if user.google_linked:
+        raise HTTPException(400, "Account già collegato a Google")
+
+    # Verifica password account normale
+    if not verify_password(data.password, user.password_hash):
+        raise HTTPException(403, "Password non corretta")
+
+    # Collega account
+    user.google_linked = True
+    user.is_verified   = True
+    await db.commit()
+    await db.refresh(user)
+
+    return {
+        "access_token":  create_access_token(user.id),
+        "refresh_token": create_refresh_token(user.id),
         "token_type":    "bearer",
         "user":          user_to_dict(user),
     }
@@ -2038,6 +2125,23 @@ async def update_username(
     await db.commit()
     await db.refresh(current_user)
     return {"username": current_user.username}
+
+
+class PhoneUpdateRequest(BaseModel):
+    phone: Annotated[Optional[str], Field(default=None, max_length=20)]
+
+@app.patch("/user/phone")
+async def update_phone(
+    data: PhoneUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Aggiorna o rimuove il numero di telefono dell'utente."""
+    phone = (data.phone or '').strip() or None
+    current_user.phone = phone
+    await db.commit()
+    await db.refresh(current_user)
+    return {"phone": current_user.phone}
 
 
 @app.get("/user/chat-quota")

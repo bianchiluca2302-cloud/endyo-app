@@ -9,7 +9,7 @@ import {
   SHOE_SIZE_SYSTEMS, CLOTHING_SIZE_SYSTEMS, STYLIST_TONES,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername } from '../api/client'
+import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone } from '../api/client'
 import {
   IconAlertTriangle, IconStar, IconCalendar, IconRefreshCw, IconCheck,
   IconLightbulb, IconPalette, IconGlobe,
@@ -466,6 +466,77 @@ function UsernameEditor({ user, language, onUpdateUser }) {
                 transition: 'background 0.2s',
               }}
             >
+              {loading ? '…' : (en ? 'Save' : 'Salva')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Editor numero di telefono inline ─────────────────────────────────────────
+function PhoneEditor({ user, language, onUpdateUser }) {
+  const [editing, setEditing] = useState(false)
+  const [value,   setValue]   = useState(user?.phone || '')
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
+  const [saved,   setSaved]   = useState(false)
+  const en = language === 'en'
+
+  const handleSave = async () => {
+    setLoading(true); setError(null)
+    try {
+      const data = await updatePhone(value.trim() || null)
+      onUpdateUser({ ...user, phone: data.phone })
+      setSaved(true); setEditing(false)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      setError(err?.response?.data?.detail || (en ? 'Error, try again' : 'Errore, riprova'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: '10px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)', marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>
+        {en ? 'Phone number' : 'Numero di telefono'}{' '}
+        <span style={{ opacity: 0.6 }}>({en ? 'recovery' : 'recupero account'})</span>
+      </div>
+      {!editing ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+            {user?.phone
+              ? <span>{user.phone}</span>
+              : <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>{en ? 'Not set' : 'Non impostato'}</span>
+            }
+            {saved && <span style={{ fontSize: 11, color: '#22c55e', marginLeft: 8 }}>✓ {en ? 'Saved' : 'Salvato'}</span>}
+          </div>
+          <button
+            onClick={() => { setEditing(true); setValue(user?.phone || ''); setError(null) }}
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+          >
+            {en ? 'Edit' : 'Modifica'}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <input
+            type="tel"
+            className="input"
+            value={value}
+            onChange={e => { setValue(e.target.value); setError(null) }}
+            placeholder="+39 333 1234567"
+            autoComplete="tel"
+            style={{ width: '100%', marginBottom: 6, fontSize: 13 }}
+          />
+          {error && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 6 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => setEditing(false)} style={{ flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              {en ? 'Cancel' : 'Annulla'}
+            </button>
+            <button onClick={handleSave} disabled={loading} style={{ flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 7, border: 'none', background: 'var(--primary)', color: '#fff', cursor: loading ? 'wait' : 'pointer', fontWeight: 600 }}>
               {loading ? '…' : (en ? 'Save' : 'Salva')}
             </button>
           </div>
@@ -1109,6 +1180,9 @@ export default function Settings() {
 
         {/* Username editor */}
         <UsernameEditor user={user} language={language} onUpdateUser={updateUser} />
+
+        {/* Phone editor */}
+        <PhoneEditor user={user} language={language} onUpdateUser={updateUser} />
 
         {/* Logout */}
         <Row label={t('logoutLabel')} desc={t('logoutDesc')}>

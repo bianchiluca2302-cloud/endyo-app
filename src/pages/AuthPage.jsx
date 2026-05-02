@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
+import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, authGoogleLink, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
 import logoUrl from '../assets/logo.png'
 import { useT } from '../i18n'
 
@@ -119,7 +119,7 @@ function UsernameSetupScreen({ onDone }) {
 // Carica Google Identity Services on-demand e renderizza il bottone ufficiale.
 // onSuccess(user) viene chiamato dopo il login — il chiamante decide se navigare
 // o mostrare il picker per lo username (se user.username è null).
-function GoogleButton({ onSuccess, onError }) {
+function GoogleButton({ onSuccess, onError, onLinkRequired }) {
   const containerRef = useRef(null)
   const [ready, setReady]     = useState(false)
   const [loading, setLoading] = useState(false)
@@ -142,7 +142,12 @@ function GoogleButton({ onSuccess, onError }) {
               setAuth(data.access_token, data.refresh_token, data.user, true)
               onSuccess?.(data.user)
             } catch (e) {
-              onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+              // 409 → email già registrata con account normale → proponi collegamento
+              if (e.response?.status === 409 && e.response?.data?.action === 'link_required') {
+                onLinkRequired?.({ ...e.response.data, credential: response.credential })
+              } else {
+                onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+              }
             } finally {
               setLoading(false)
             }
@@ -358,7 +363,7 @@ function VerifyEmailPending({ email, onResend, onBack }) {
 }
 
 // ── Form di Login ─────────────────────────────────────────────────────────────
-function LoginForm({ onForgot, onRegister, onGoogleSuccess }) {
+function LoginForm({ onForgot, onRegister, onGoogleSuccess, onGoogleLinkRequired }) {
   const t = useT()
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
@@ -451,7 +456,7 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess }) {
       <SubmitBtn loading={loading}>{t('authLoginBtn')}</SubmitBtn>
 
       <OrDivider />
-      <GoogleButton onSuccess={onGoogleSuccess} onError={setError} />
+      <GoogleButton onSuccess={onGoogleSuccess} onError={setError} onLinkRequired={onGoogleLinkRequired} />
 
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authNoAccount')}{' '}
@@ -464,13 +469,17 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess }) {
 }
 
 // ── Form di Registrazione ─────────────────────────────────────────────────────
-function RegisterForm({ onLogin, onGoogleSuccess }) {
+function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
   const t = useT()
   const [email, setEmail]       = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm]   = useState('')
   const [phone, setPhone]       = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName,  setLastName]  = useState('')
+  const [gender,    setGender]    = useState('')
+  const [birthYear, setBirthYear] = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -495,7 +504,16 @@ function RegisterForm({ onLogin, onGoogleSuccess }) {
     setFieldErrors({})
     setLoading(true)
     try {
-      await authRegister({ email, username: username.toLowerCase(), password, phone: phone || undefined })
+      await authRegister({
+        email,
+        username: username.toLowerCase(),
+        password,
+        phone:      phone      || undefined,
+        first_name: firstName  || undefined,
+        last_name:  lastName   || undefined,
+        gender:     gender     || undefined,
+        birth_year: birthYear  ? parseInt(birthYear, 10) : undefined,
+      })
       setRegistered(true)
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -561,6 +579,48 @@ function RegisterForm({ onLogin, onGoogleSuccess }) {
       <Field label={t('authConfirmLabel')} type="password" value={confirm} onChange={v => { setConfirm(v); clearFieldError('confirm') }}
         placeholder={t('authConfirmPlaceholder')} autoComplete="new-password" error={fieldErrors.confirm} />
 
+      {/* ── Dati opzionali ──────────────────────────────────────────── */}
+      <div style={{ margin: '4px 0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 500, letterSpacing: '0.05em', flexShrink: 0 }}>DATI OPZIONALI</span>
+        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      </div>
+
+      {/* Nome e Cognome */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Nome</label>
+          <input type="text" className="input" style={{ width: '100%' }} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Mario" autoComplete="given-name" />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Cognome</label>
+          <input type="text" className="input" style={{ width: '100%' }} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Rossi" autoComplete="family-name" />
+        </div>
+      </div>
+
+      {/* Genere e Anno di nascita */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Genere</label>
+          <select className="input" style={{ width: '100%' }} value={gender} onChange={e => setGender(e.target.value)}>
+            <option value="">— Seleziona —</option>
+            <option value="uomo">Uomo</option>
+            <option value="donna">Donna</option>
+            <option value="non_binario">Non binario</option>
+            <option value="altro">Altro</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Anno di nascita</label>
+          <select className="input" style={{ width: '100%' }} value={birthYear} onChange={e => setBirthYear(e.target.value)}>
+            <option value="">— Anno —</option>
+            {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 13 - i).map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Telefono opzionale */}
       <div style={{ marginBottom: 14 }}>
         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
@@ -586,7 +646,7 @@ function RegisterForm({ onLogin, onGoogleSuccess }) {
       <SubmitBtn loading={loading}>{t('authRegisterBtn')}</SubmitBtn>
 
       <OrDivider />
-      <GoogleButton onSuccess={onGoogleSuccess} onError={msg => setError(msg)} />
+      <GoogleButton onSuccess={onGoogleSuccess} onError={msg => setError(msg)} onLinkRequired={onGoogleLinkRequired} />
 
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authHaveAccount')}{' '}
@@ -653,6 +713,97 @@ function ForgotForm({ onBack }) {
         </button>
       </div>
     </form>
+  )
+}
+
+// ── Schermata collegamento account Google ─────────────────────────────────────
+function LinkAccountScreen({ email, googleName, credential, onDone, onCancel }) {
+  const [password, setPassword] = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState(null)
+  const setAuth = useAuthStore(s => s.setAuth)
+
+  const handleLink = async (e) => {
+    e.preventDefault()
+    if (!password) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await authGoogleLink(credential, password)
+      setAuth(data.access_token, data.refresh_token, data.user, true)
+      onDone()
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Errore, riprova'
+      if (err.response?.status === 403) setError('Password non corretta')
+      else setError(detail)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{
+      height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔗</div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
+            Collega account Google
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            Esiste già un account Endyo con <strong style={{ color: 'var(--text)' }}>{email}</strong>.<br />
+            Inserisci la password per collegarlo a Google.
+          </p>
+        </div>
+
+        <form onSubmit={handleLink}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
+              Password dell'account Endyo
+            </label>
+            <input
+              type="password"
+              className="input"
+              style={{ width: '100%' }}
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(null) }}
+              placeholder="••••••••"
+              autoFocus
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && (
+            <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, color: '#f87171', fontSize: 12, marginBottom: 14 }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ padding: '10px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 18, lineHeight: 1.5 }}>
+            Collegando l'account potrai accedere con Google o con email+password in futuro.
+          </div>
+
+          <button
+            type="submit"
+            disabled={!password || loading}
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '13px', fontSize: 15, fontWeight: 700 }}
+          >
+            {loading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : 'Collega e accedi'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', padding: '8px 0' }}
+          >
+            Annulla
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }
 
@@ -1195,6 +1346,9 @@ export default function AuthPage() {
   // Stato: dopo Google OAuth l'utente esiste ma non ha ancora uno username
   const [needsUsername, setNeedsUsername] = useState(false)
 
+  // Stato: Google OAuth ha trovato email già registrata → proponi collegamento
+  const [linkData, setLinkData] = useState(null) // { email, google_name, credential }
+
   // Se aperto da browser mobile (non PWA standalone) → mostra istruzioni installazione
   const isMobileBrowser = (
     /android|iphone|ipad|ipod/i.test(navigator.userAgent) &&
@@ -1216,9 +1370,27 @@ export default function AuthPage() {
     }
   }
 
+  // Callback quando Google trova un account già esistente non collegato
+  const handleLinkRequired = (data) => {
+    setLinkData(data)
+  }
+
   // Schermata scelta username — mostrata subito dopo Google OAuth per nuovi utenti
   if (needsUsername) {
     return <UsernameSetupScreen onDone={() => navigate('/', { replace: true })} />
+  }
+
+  // Schermata collegamento account Google
+  if (linkData) {
+    return (
+      <LinkAccountScreen
+        email={linkData.email}
+        googleName={linkData.google_name}
+        credential={linkData.credential}
+        onDone={() => navigate('/', { replace: true })}
+        onCancel={() => setLinkData(null)}
+      />
+    )
   }
 
   const titles = {
@@ -1251,8 +1423,8 @@ export default function AuthPage() {
           )}
         </div>
 
-        {view === 'login'    && <LoginForm    onForgot={() => setView('forgot')}   onRegister={() => setView('register')} onGoogleSuccess={handleGoogleSuccess} />}
-        {view === 'register' && <RegisterForm onLogin={() => setView('login')} onGoogleSuccess={handleGoogleSuccess} />}
+        {view === 'login'    && <LoginForm    onForgot={() => setView('forgot')}   onRegister={() => setView('register')} onGoogleSuccess={handleGoogleSuccess} onGoogleLinkRequired={handleLinkRequired} />}
+        {view === 'register' && <RegisterForm onLogin={() => setView('login')} onGoogleSuccess={handleGoogleSuccess} onGoogleLinkRequired={handleLinkRequired} />}
         {view === 'forgot'   && <ForgotForm   onBack={() => setView('login')} />}
       </div>
     </div>
