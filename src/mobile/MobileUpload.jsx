@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analyzeGarment, confirmGarment, imgUrl, fetchChatQuota } from '../api/client'
+import { analyzeGarment, confirmGarment, createGarmentManual, imgUrl, fetchChatQuota } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '../i18n'
@@ -159,17 +159,32 @@ export default function MobileUpload() {
   const [result,    setResult]   = useState(null)
   const [showCatSheet, setShowCatSheet] = useState(false)
 
-  // Quota upload giornaliera
-  const [uploadQuota, setUploadQuota] = useState(null)
+  // Quota upload giornaliera — inizializza subito da cache localStorage, poi aggiorna
+  const QUOTA_CACHE_KEY = 'endyo_upload_quota'
+  const [uploadQuota, setUploadQuota] = useState(() => {
+    try {
+      const c = localStorage.getItem(QUOTA_CACHE_KEY)
+      return c ? JSON.parse(c) : null
+    } catch { return null }
+  })
   useEffect(() => {
     fetchChatQuota()
-      .then(q => setUploadQuota({
-        remaining: q.upload_remaining_day ?? null,
-        limit:     q.upload_limit_day     ?? null,
-        extra:     q.upload_extra         ?? 0,
-      }))
+      .then(q => {
+        const quota = {
+          remaining: q.upload_remaining_day ?? null,
+          limit:     q.upload_limit_day     ?? null,
+          extra:     q.upload_extra         ?? 0,
+        }
+        setUploadQuota(quota)
+        try { localStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quota)) } catch {}
+      })
       .catch(() => {})
   }, [])
+
+  // Stato form manuale (quando crediti esauriti)
+  const [manualForm, setManualForm] = useState({ name: '', category: '', brand: '', color: '', size: '' })
+  const [manualLoading, setManualLoading] = useState(false)
+  const [manualError,   setManualError]   = useState(null)
 
   const handleFile = (type, file) => {
     if (!file) return
@@ -219,13 +234,37 @@ export default function MobileUpload() {
   }
 
   const handleReset = () => {
-    // Svuota anche la cache di modulo così la prossima sessione parte pulita
     _photoCache.front   = null; _photoCache.back   = null; _photoCache.label   = null
     _previewCache.front = null; _previewCache.back = null; _previewCache.label = null
     setPhotos({ front: null, back: null, label: null })
     setPreviews({ front: null, back: null, label: null })
     setCategory(''); setResult(null); setAnalysis(null)
     setTmpFiles(null); setDuplicates([]); setError(null); setStep('upload')
+    setManualForm({ name: '', category: '', brand: '', color: '', size: '' })
+    setManualError(null)
+  }
+
+  const handleManualSubmit = async () => {
+    if (!manualForm.name.trim() || !manualForm.category) {
+      setManualError('Nome e categoria sono obbligatori'); return
+    }
+    setManualLoading(true); setManualError(null)
+    try {
+      const fd = new FormData()
+      fd.append('name',          manualForm.name.trim())
+      fd.append('category',      manualForm.category)
+      if (manualForm.brand)      fd.append('brand',         manualForm.brand.trim())
+      if (manualForm.color)      fd.append('color_primary', manualForm.color.trim())
+      if (manualForm.size)       fd.append('size',          manualForm.size.trim())
+      if (photos.front)          fd.append('photo_front',   photos.front)
+      const garment = await createGarmentManual(fd)
+      addGarment(garment)
+      setResult(garment); setStep('done')
+    } catch (e) {
+      setManualError(e.response?.data?.detail || e.message)
+    } finally {
+      setManualLoading(false)
+    }
   }
 
   /* ── STEP: analyzing ─────────────────────────────────────────────────────── */
@@ -362,7 +401,7 @@ export default function MobileUpload() {
           flex: 1, padding: '14px 0', borderRadius: 14, border: '1px solid var(--border)',
           background: 'transparent', color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>
-          Riprendi
+          Annulla
         </button>
         <button onClick={handleConfirm} disabled={loading} style={{
           flex: 2, padding: '14px 0', borderRadius: 14, border: 'none',
@@ -505,20 +544,112 @@ export default function MobileUpload() {
         </div>
       )}
 
-      {/* CTA */}
-      <button
-        onClick={handleAnalyze}
-        disabled={!photos.front || loading}
-        style={{
-          width: '100%', padding: '16px', borderRadius: 16, border: 'none',
-          background: photos.front ? 'var(--primary)' : 'var(--primary-dim)',
-          color: photos.front ? 'white' : 'var(--text-dim)',
-          fontSize: 16, fontWeight: 700, cursor: photos.front ? 'pointer' : 'not-allowed',
-          transition: 'background 0.2s, color 0.2s',
-        }}
-      >
-        Analizza con AI
-      </button>
+      {/* CTA — Analizza AI oppure form manuale se crediti esauriti */}
+      {(() => {
+        const rem   = uploadQuota?.remaining ?? 1
+        const extra = uploadQuota?.extra     ?? 0
+        const quotaOk = uploadQuota === null || rem > 0 || extra > 0
+
+        if (quotaOk) {
+          return (
+            <button
+              onClick={handleAnalyze}
+              disabled={!photos.front || loading}
+              style={{
+                width: '100%', padding: '16px', borderRadius: 16, border: 'none',
+                background: photos.front ? 'var(--primary)' : 'var(--primary-dim)',
+                color: photos.front ? 'white' : 'var(--text-dim)',
+                fontSize: 16, fontWeight: 700, cursor: photos.front ? 'pointer' : 'not-allowed',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              Analizza con AI
+            </button>
+          )
+        }
+
+        // Crediti esauriti → form manuale
+        return (
+          <div style={{
+            border: '1px solid var(--border)', borderRadius: 16,
+            overflow: 'hidden',
+          }}>
+            {/* Banner crediti esauriti */}
+            <div style={{
+              background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)',
+              padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 12, color: '#f87171',
+            }}>
+              <span style={{ fontSize: 15 }}>⚠️</span>
+              <div>
+                <strong>Crediti AI esauriti per oggi</strong> — puoi comunque inserire il capo a mano.
+                {extra === 0 && <span style={{ color: 'var(--text-dim)' }}> Acquista crediti extra in Impostazioni.</span>}
+              </div>
+            </div>
+
+            {/* Campi form manuale */}
+            <div style={{ padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { key: 'name',     label: 'Nome capo *',      placeholder: 'es. Felpa oversize grigia' },
+                { key: 'brand',    label: 'Brand',             placeholder: 'es. Zara, H&M…' },
+                { key: 'color',    label: 'Colore principale', placeholder: 'es. Grigio melange' },
+                { key: 'size',     label: 'Taglia',            placeholder: 'es. M, 42, L…' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'block', marginBottom: 3 }}>{label}</label>
+                  <input
+                    className="input"
+                    value={manualForm[key]}
+                    onChange={e => setManualForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
+
+              {/* Categoria — bottone che apre lo sheet esistente */}
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'block', marginBottom: 3 }}>Categoria *</label>
+                <button
+                  onClick={() => setShowCatSheet(true)}
+                  style={{
+                    width: '100%', padding: '10px 14px', borderRadius: 10,
+                    background: 'var(--surface)', border: `1px solid ${manualForm.category ? 'var(--primary)' : 'var(--border)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                    color: manualForm.category ? 'var(--text)' : 'var(--text-muted)', fontSize: 14,
+                  }}
+                >
+                  <span>{manualForm.category ? (CATEGORY_LABELS[manualForm.category] || manualForm.category) : 'Scegli categoria…'}</span>
+                  <ChevronIcon />
+                </button>
+              </div>
+
+              {manualError && (
+                <div style={{ fontSize: 12, color: '#f87171', padding: '6px 0' }}>{manualError}</div>
+              )}
+
+              <button
+                onClick={() => {
+                  setManualForm(f => ({ ...f, category: manualForm.category || category || '' }))
+                  handleManualSubmit()
+                }}
+                disabled={!manualForm.name.trim() || !manualForm.category || manualLoading}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 12, border: 'none',
+                  background: manualForm.name && manualForm.category ? 'var(--primary)' : 'var(--border)',
+                  color: manualForm.name && manualForm.category ? 'white' : 'var(--text-dim)',
+                  fontSize: 15, fontWeight: 700,
+                  cursor: manualForm.name && manualForm.category ? 'pointer' : 'not-allowed',
+                  margin: '4px 0 14px',
+                }}
+              >
+                {manualLoading ? 'Salvataggio…' : 'Salva capo manualmente'}
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Category sheet overlay */}
       {showCatSheet && (
@@ -544,7 +675,7 @@ export default function MobileUpload() {
             {CATEGORIES.map(cat => (
               <button
                 key={cat.value}
-                onClick={() => { setCategory(cat.value); setShowCatSheet(false) }}
+                onClick={() => { setCategory(cat.value); setManualForm(f => ({ ...f, category: cat.value })); setShowCatSheet(false) }}
                 style={{
                   width: '100%', padding: '14px 20px', background: 'transparent',
                   border: 'none', textAlign: 'left', cursor: 'pointer',

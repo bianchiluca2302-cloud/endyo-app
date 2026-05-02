@@ -707,15 +707,24 @@ function StylistUsage({ language }) {
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 2px 0' }}>
         {s.uploadLabel}
       </div>
-      <UsageBar label={s.daily}  used={upUsedDay}  limit={dispUpLimDay}  pct={upPctDay}  resetNote={s.resetDay}  />
-      <UsageBar label={s.weekly} used={upUsedWeek} limit={dispUpLimWeek} pct={upPctWeek} resetNote={s.resetWeek} />
+      <UsageBar label={s.daily} used={upUsedDay} limit={dispUpLimDay} pct={upPctDay} resetNote={s.resetDay} />
 
-      {/* Crediti extra */}
-      {upExtra > 0 && (
-        <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.07)', borderRadius: 10, border: '1px solid rgba(34,197,94,0.2)', fontSize: 12, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
-          ✦ {s.extraCredits}: <strong>{upExtra}</strong>
+      {/* Crediti extra — sezione separata al posto del limite settimanale */}
+      <div style={{ padding: '12px 14px', background: upExtra > 0 ? 'rgba(34,197,94,0.06)' : 'var(--card)', borderRadius: 10, border: `1px solid ${upExtra > 0 ? 'rgba(34,197,94,0.2)' : 'var(--border)'}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <IconStar size={13} /> {s.extraCredits}
+          </span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: upExtra > 0 ? '#22c55e' : 'var(--text-dim)' }}>
+            {upExtra > 0 ? `+${upExtra}` : '0'}
+          </span>
         </div>
-      )}
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5 }}>
+          {language === 'en'
+            ? 'Used automatically when your daily limit runs out.'
+            : 'Utilizzati automaticamente quando i caricamenti giornalieri sono esauriti.'}
+        </div>
+      </div>
 
       {/* Pacchetti upload */}
       <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>

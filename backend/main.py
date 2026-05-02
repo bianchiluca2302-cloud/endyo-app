@@ -1015,6 +1015,50 @@ async def confirm_garment(
     return garment_to_dict(garment)
 
 
+@app.post("/garments/manual")
+async def create_garment_manual(
+    background_tasks: BackgroundTasks,
+    photo_front: Optional[UploadFile] = File(None),
+    name:          str           = Form(...),
+    category:      str           = Form(...),
+    brand:         Optional[str] = Form(None),
+    color_primary: Optional[str] = Form(None),
+    size:          Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Crea un capo manualmente senza AI — nessun controllo quota.
+    Usato quando i crediti giornalieri sono esauriti.
+    Accetta un'unica foto opzionale (frontale) e i campi compilati dall'utente.
+    """
+    front_path = None
+    if photo_front and photo_front.filename:
+        front_name = await save_upload(photo_front, "front")
+        front_path = front_name
+
+    garment = Garment(
+        user_id=current_user.id,
+        name=name.strip() or "Capo senza nome",
+        category=category,
+        brand=brand or None,
+        color_primary=color_primary or None,
+        size=size or None,
+        photo_front=front_path,
+        ai_analysis={},
+        tryon_status="none",
+        bg_status="processing" if front_path else "none",
+    )
+    db.add(garment)
+    await db.commit()
+    await db.refresh(garment)
+
+    if front_path:
+        background_tasks.add_task(_run_bg_removal_background, garment.id)
+
+    return garment_to_dict(garment)
+
+
 @app.get("/garments")
 async def list_garments(
     db: AsyncSession = Depends(get_db),
@@ -1803,63 +1847,49 @@ def _check_and_increment_armocromia_quota(user: User) -> dict:
 
 
 def _check_and_increment_upload_quota(user: User) -> dict:
-    """Controlla limite giornaliero e settimanale degli upload vestiti.
-    Scala automaticamente i contatori, decurta crediti extra se presenti.
-    Lancia HTTPException 429 se tutti i limiti sono esauriti.
-    Ritorna dict con remaining_day, remaining_week, upload_extra.
+    """Controlla solo il limite GIORNALIERO degli upload vestiti (il settimanale è rimosso).
+    Scala automaticamente i contatori, decurta crediti extra se il giornaliero è esaurito.
+    Lancia HTTPException 429 solo se giornaliero E crediti extra sono entrambi esauriti.
+    Ritorna dict con remaining_day, upload_extra.
     """
     plan = user.plan or 'free'
     if plan == 'premium_annual':      plan = 'premium'
     if plan == 'premium_plus_annual': plan = 'premium_plus'
 
     if plan == 'premium_plus':
-        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_PREMIUM_PLUS, UPLOAD_WEEKLY_LIMIT_PREMIUM_PLUS
+        daily_lim = UPLOAD_DAILY_LIMIT_PREMIUM_PLUS
     elif plan == 'premium':
-        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_PREMIUM, UPLOAD_WEEKLY_LIMIT_PREMIUM
+        daily_lim = UPLOAD_DAILY_LIMIT_PREMIUM
     else:
-        daily_lim, weekly_lim = UPLOAD_DAILY_LIMIT_FREE, UPLOAD_WEEKLY_LIMIT_FREE
+        daily_lim = UPLOAD_DAILY_LIMIT_FREE
 
-    now        = datetime.now(timezone.utc)
-    week_start = (now - timedelta(days=now.weekday())).date()
+    now = datetime.now(timezone.utc)
 
     # Reset giornaliero
     if user.upload_reset_at is None or user.upload_reset_at.date() < now.date():
         user.upload_count    = 0
         user.upload_reset_at = now
-    # Reset settimanale
-    if user.upload_week_reset_at is None or user.upload_week_reset_at.date() < week_start:
-        user.upload_week_count    = 0
-        user.upload_week_reset_at = now
 
-    day_count  = user.upload_count      or 0
-    week_count = user.upload_week_count or 0
-    extra      = user.upload_extra      or 0
+    day_count = user.upload_count or 0
+    extra     = user.upload_extra or 0
 
-    # Se entro i limiti normali → usa quelli
-    if day_count < daily_lim and week_count < weekly_lim:
-        user.upload_count      = day_count  + 1
-        user.upload_week_count = week_count + 1
+    # Entro il limite giornaliero → incrementa contatore normale
+    if day_count < daily_lim:
+        user.upload_count = day_count + 1
     elif extra > 0:
-        # Fuori limite ma ha crediti extra → consuma 1 credito extra
+        # Limite giornaliero esaurito ma ha crediti extra → consuma 1 credito extra
         user.upload_extra = extra - 1
     else:
         # Nessun credito disponibile
-        if day_count >= daily_lim:
-            raise HTTPException(status_code=429, detail=(
-                f"Hai raggiunto il limite di {daily_lim} upload giornalieri. "
-                "Riprova domani o acquista un pacchetto upload extra."
-            ))
         raise HTTPException(status_code=429, detail=(
-            f"Hai raggiunto il limite di {weekly_lim} upload settimanali. "
-            "Riprova la prossima settimana o acquista un pacchetto upload extra."
+            f"Hai raggiunto il limite di {daily_lim} upload giornalieri. "
+            "Riprova domani o acquista un pacchetto upload extra."
         ))
 
     return {
-        "remaining_day":  max(0, daily_lim  - (user.upload_count      or 0)),
-        "remaining_week": max(0, weekly_lim - (user.upload_week_count or 0)),
-        "limit_day":      daily_lim,
-        "limit_week":     weekly_lim,
-        "upload_extra":   user.upload_extra or 0,
+        "remaining_day": max(0, daily_lim - (user.upload_count or 0)),
+        "limit_day":     daily_lim,
+        "upload_extra":  user.upload_extra or 0,
     }
 
 

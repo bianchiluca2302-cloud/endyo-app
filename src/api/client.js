@@ -125,6 +125,13 @@ export const analyzeShoppingAdvisor = (formData) =>
 export const confirmGarment = (data) =>
   api.post('/garments/confirm', data, { timeout: 30000 }).then(r => r.data)
 
+// Caricamento manuale (senza AI, nessuna quota consumata)
+export const createGarmentManual = (formData) =>
+  api.post('/garments/manual', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  }).then(r => r.data)
+
 export const updateGarment = (id, data) =>
   api.patch(`/garments/${id}`, data).then(r => r.data)
 
