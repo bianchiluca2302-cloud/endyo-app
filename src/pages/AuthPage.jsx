@@ -1,18 +1,129 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, fetchGoogleClientId, api } from '../api/client'
+import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
 import logoUrl from '../assets/logo.png'
 import { useT } from '../i18n'
 
+// ── Schermata scelta username dopo Google OAuth ───────────────────────────────
+function UsernameSetupScreen({ onDone }) {
+  const [value, setValue]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]   = useState(null)
+  const status = useUsernameCheck(value)
+  const updateUser = useAuthStore(s => s.updateUser)
+  const user       = useAuthStore(s => s.user)
+
+  const hint = {
+    null:      value.length > 0 && value.length < 3 ? { text: 'Almeno 3 caratteri', color: 'var(--text-dim)' } : null,
+    invalid:   { text: 'Solo lettere, numeri, _ . -', color: '#ef4444' },
+    checking:  { text: 'Controllo disponibilità…', color: 'var(--text-dim)' },
+    available: { text: '✓ Disponibile', color: '#22c55e' },
+    taken:     { text: '✗ Già in uso', color: '#ef4444' },
+  }[status ?? 'null']
+
+  const canSubmit = status === 'available' && !loading
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!canSubmit) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await updateUsername(value.trim().toLowerCase())
+      // Aggiorna lo store con il nuovo username
+      updateUser({ ...user, username: data.username })
+      onDone()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Errore, riprova')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{
+      height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <img src={logoUrl} alt="Endyo" style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 14, boxShadow: '0 4px 16px rgba(139,92,246,0.25)' }} />
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+            Scegli il tuo username
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            È il tuo ID pubblico su Endyo.<br/>Potrai cambiarlo in seguito dalle impostazioni.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 14, color: 'var(--text-dim)', pointerEvents: 'none',
+              }}>@</span>
+              <input
+                className="input"
+                value={value}
+                onChange={e => setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
+                placeholder="il_tuo_username"
+                maxLength={30}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                style={{ paddingLeft: 30 }}
+              />
+            </div>
+            {hint && (
+              <div style={{ fontSize: 11, color: hint.color, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                {status === 'checking' && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5, display: 'inline-block' }} />}
+                {hint.text}
+              </div>
+            )}
+          </div>
+
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 18, lineHeight: 1.5 }}>
+            Lettere, numeri, <code style={{ background: 'var(--card)', padding: '1px 4px', borderRadius: 3 }}>_</code>{' '}
+            <code style={{ background: 'var(--card)', padding: '1px 4px', borderRadius: 3 }}>.</code>{' '}
+            <code style={{ background: 'var(--card)', padding: '1px 4px', borderRadius: 3 }}>-</code> · Min 3, max 30 caratteri
+          </div>
+
+          {error && (
+            <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, color: '#f87171', fontSize: 12, marginBottom: 14 }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              background: canSubmit ? 'var(--primary)' : 'var(--border)',
+              color: canSubmit ? '#fff' : 'var(--text-dim)',
+              fontSize: 15, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed',
+              transition: 'background 0.2s, color 0.2s',
+            }}
+          >
+            {loading ? 'Salvataggio…' : 'Continua'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Google Sign-In button ─────────────────────────────────────────────────────
 // Carica Google Identity Services on-demand e renderizza il bottone ufficiale.
+// onSuccess(user) viene chiamato dopo il login — il chiamante decide se navigare
+// o mostrare il picker per lo username (se user.username è null).
 function GoogleButton({ onSuccess, onError }) {
   const containerRef = useRef(null)
   const [ready, setReady]     = useState(false)
   const [loading, setLoading] = useState(false)
   const setAuth    = useAuthStore(s => s.setAuth)
-  const navigate   = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -29,7 +140,7 @@ function GoogleButton({ onSuccess, onError }) {
             try {
               const data = await authGoogle(response.credential)
               setAuth(data.access_token, data.refresh_token, data.user, true)
-              navigate('/', { replace: true })
+              onSuccess?.(data.user)
             } catch (e) {
               onError?.(e.response?.data?.detail || 'Errore accesso con Google')
             } finally {
@@ -247,7 +358,7 @@ function VerifyEmailPending({ email, onResend, onBack }) {
 }
 
 // ── Form di Login ─────────────────────────────────────────────────────────────
-function LoginForm({ onForgot, onRegister }) {
+function LoginForm({ onForgot, onRegister, onGoogleSuccess }) {
   const t = useT()
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
@@ -340,7 +451,7 @@ function LoginForm({ onForgot, onRegister }) {
       <SubmitBtn loading={loading}>{t('authLoginBtn')}</SubmitBtn>
 
       <OrDivider />
-      <GoogleButton onError={setError} />
+      <GoogleButton onSuccess={onGoogleSuccess} onError={setError} />
 
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authNoAccount')}{' '}
@@ -353,7 +464,7 @@ function LoginForm({ onForgot, onRegister }) {
 }
 
 // ── Form di Registrazione ─────────────────────────────────────────────────────
-function RegisterForm({ onLogin }) {
+function RegisterForm({ onLogin, onGoogleSuccess }) {
   const t = useT()
   const [email, setEmail]       = useState('')
   const [username, setUsername] = useState('')
@@ -475,7 +586,7 @@ function RegisterForm({ onLogin }) {
       <SubmitBtn loading={loading}>{t('authRegisterBtn')}</SubmitBtn>
 
       <OrDivider />
-      <GoogleButton onError={msg => setError(msg)} />
+      <GoogleButton onSuccess={onGoogleSuccess} onError={msg => setError(msg)} />
 
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-dim)' }}>
         {t('authHaveAccount')}{' '}
@@ -779,6 +890,59 @@ function IllustrationAndroidConfirm({ en }) {
   )
 }
 
+// ── AdSense banner nella pagina di installazione (pubblica, crawlabile) ───────
+// Per attivare:
+//   1. Vai su adsense.google.com → Annunci → Per sito → Blocchi annuncio
+//   2. Crea un nuovo blocco "Banner adattivo nella pagina"
+//   3. Sostituisci INSTALL_AD_SLOT con il codice slot generato (es. "1234567890")
+const INSTALL_AD_CLIENT = 'ca-pub-2435292000410787'
+const INSTALL_AD_SLOT   = 'CCCCCCCCCC'  // ← sostituisci con il tuo slot ID
+
+function InstallAdBanner() {
+  const slotRef = useRef(null)
+  const pushed  = useRef(false)
+
+  useEffect(() => {
+    if (pushed.current || INSTALL_AD_SLOT.includes('CCC')) return
+    if (!slotRef.current) return
+    try {
+      pushed.current = true
+      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+    } catch (_) {}
+  }, [])
+
+  // Placeholder visibile finché lo slot non è configurato
+  if (INSTALL_AD_SLOT.includes('CCC')) {
+    return (
+      <div style={{
+        width: '100%', maxWidth: 400, margin: '10px 0',
+        height: 60, borderRadius: 10, flexShrink: 0,
+        background: 'rgba(245,158,11,0.07)',
+        border: '1px dashed rgba(245,158,11,0.3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ fontSize: 11, color: 'rgba(146,64,14,0.4)', letterSpacing: '0.04em' }}>
+          AdSense · slot da configurare
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ width: '100%', maxWidth: 400, margin: '10px 0', flexShrink: 0 }}>
+      <ins
+        ref={slotRef}
+        className="adsbygoogle"
+        style={{ display: 'block', width: '100%', height: 60 }}
+        data-ad-client={INSTALL_AD_CLIENT}
+        data-ad-slot={INSTALL_AD_SLOT}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  )
+}
+
 function InstallScreen({ onBack }) {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -955,6 +1119,9 @@ function InstallScreen({ onBack }) {
         )}
       </div>
 
+      {/* ── Banner AdSense — pagina pubblica, visibile senza login ─────── */}
+      <InstallAdBanner />
+
       {/* Spazio safe-area bottom */}
       <div style={{ height: 'calc(env(safe-area-inset-bottom,0px) + 16px)', flexShrink: 0 }} />
 
@@ -1022,7 +1189,11 @@ function InstallStep({ n, illustration, text, highlight }) {
 
 export default function AuthPage() {
   const t = useT()
+  const navigate = useNavigate()
   const [view, setView] = useState('login') // 'login' | 'register' | 'forgot'
+
+  // Stato: dopo Google OAuth l'utente esiste ma non ha ancora uno username
+  const [needsUsername, setNeedsUsername] = useState(false)
 
   // Se aperto da browser mobile (non PWA standalone) → mostra istruzioni installazione
   const isMobileBrowser = (
@@ -1034,6 +1205,21 @@ export default function AuthPage() {
 
   const [bypassInstall, setBypassInstall] = useState(false)
   if (isMobileBrowser && !bypassInstall) return <InstallScreen onBack={() => setBypassInstall(true)} />
+
+  // Callback per Google login: naviga direttamente se ha già username, altrimenti
+  // mostra il picker dello username (solo per nuovi account Google).
+  const handleGoogleSuccess = (user) => {
+    if (user?.username) {
+      navigate('/', { replace: true })
+    } else {
+      setNeedsUsername(true)
+    }
+  }
+
+  // Schermata scelta username — mostrata subito dopo Google OAuth per nuovi utenti
+  if (needsUsername) {
+    return <UsernameSetupScreen onDone={() => navigate('/', { replace: true })} />
+  }
 
   const titles = {
     login:    t('authLoginTitle'),
@@ -1065,8 +1251,8 @@ export default function AuthPage() {
           )}
         </div>
 
-        {view === 'login'    && <LoginForm    onForgot={() => setView('forgot')}   onRegister={() => setView('register')} />}
-        {view === 'register' && <RegisterForm onLogin={() => setView('login')} />}
+        {view === 'login'    && <LoginForm    onForgot={() => setView('forgot')}   onRegister={() => setView('register')} onGoogleSuccess={handleGoogleSuccess} />}
+        {view === 'register' && <RegisterForm onLogin={() => setView('login')} onGoogleSuccess={handleGoogleSuccess} />}
         {view === 'forgot'   && <ForgotForm   onBack={() => setView('login')} />}
       </div>
     </div>

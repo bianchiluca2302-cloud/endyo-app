@@ -74,6 +74,12 @@ export const authGoogle = (credential) =>
 export const fetchGoogleClientId = () =>
   api.get('/auth/google-client-id').then(r => r.data.client_id).catch(() => null)
 
+export const checkUsernameAvailable = (username) =>
+  api.get(`/auth/check-username/${encodeURIComponent(username)}`).then(r => r.data)
+
+export const updateUsername = (username) =>
+  api.patch('/user/username', { username }).then(r => r.data)
+
 export const authForgotPassword = (email) =>
   api.post('/auth/forgot-password', { email }).then(r => r.data)
 

@@ -1984,6 +1984,32 @@ async def ai_chat_stream(
 
 
 # ── Quota chat utente ─────────────────────────────────────────────────────────
+class UsernameUpdateRequest(BaseModel):
+    username: Annotated[str, Field(min_length=3, max_length=30)]
+
+@app.patch("/user/username")
+async def update_username(
+    data: UsernameUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Imposta o aggiorna lo username dell'utente. Ritorna 409 se già in uso."""
+    new_username = data.username.strip().lower()
+    # Valida formato
+    if not _re.match(r'^[a-zA-Z0-9_.-]+$', new_username):
+        raise HTTPException(400, "Username può contenere solo lettere, numeri, _, . e -")
+    # Controlla unicità (esclude l'utente corrente)
+    result = await db.execute(
+        select(User).where(User.username == new_username, User.id != current_user.id)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(409, "Username già in uso, scegline un altro")
+    current_user.username = new_username
+    await db.commit()
+    await db.refresh(current_user)
+    return {"username": current_user.username}
+
+
 @app.get("/user/chat-quota")
 async def get_chat_quota(
     db: AsyncSession = Depends(get_db),

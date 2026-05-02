@@ -3,8 +3,59 @@
  * Palette amber (come la landing). Contenuto realistico e dettagliato.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import useSettingsStore from '../store/settingsStore'
+
+// ── AdSense banner nel tutorial ───────────────────────────────────────────────
+// Crea uno slot "Banner adattivo nella pagina" su adsense.google.com e
+// sostituisci TUTORIAL_AD_SLOT con il codice slot generato (es. "1234567890").
+const TUTORIAL_AD_CLIENT = 'ca-pub-2435292000410787'
+const TUTORIAL_AD_SLOT   = 'DDDDDDDDDD'  // ← sostituisci con il tuo slot ID
+
+function TutorialAdBanner() {
+  const slotRef = useRef(null)
+  const pushed  = useRef(false)
+
+  useEffect(() => {
+    if (pushed.current || TUTORIAL_AD_SLOT.includes('DDD')) return
+    if (!slotRef.current) return
+    try {
+      pushed.current = true
+      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+    } catch (_) {}
+  }, [])
+
+  if (TUTORIAL_AD_SLOT.includes('DDD')) {
+    return (
+      <div style={{
+        margin: '0 20px 8px',
+        height: 50, borderRadius: 8,
+        background: 'rgba(245,158,11,0.07)',
+        border: '1px dashed rgba(245,158,11,0.3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 10, color: 'rgba(146,64,14,0.4)', letterSpacing: '0.04em' }}>
+          AdSense · slot da configurare
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ margin: '0 20px 8px', flexShrink: 0 }}>
+      <ins
+        ref={slotRef}
+        className="adsbygoogle"
+        style={{ display: 'block', height: 50 }}
+        data-ad-client={TUTORIAL_AD_CLIENT}
+        data-ad-slot={TUTORIAL_AD_SLOT}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  )
+}
 
 const STORAGE_KEY = 'endyo_tutorial_done'
 
@@ -298,6 +349,9 @@ export default function MobileTutorial({ onDone }) {
             </div>
           )}
         </div>
+
+        {/* Banner AdSense */}
+        <TutorialAdBanner />
 
         {/* Footer tasti */}
         <div style={{

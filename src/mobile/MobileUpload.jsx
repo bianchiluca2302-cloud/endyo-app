@@ -129,6 +129,12 @@ function LoadingScreen({ title, subtitle }) {
   )
 }
 
+/* ── Cache a livello di modulo: sopravvive ai re-mount iOS ───────────────────── */
+// Su iOS Safari, aprire il file picker può causare il reset dello stato React.
+// Salvando i File e le preview URL fuori dal componente, le foto persistono.
+const _photoCache   = { front: null, back: null, label: null }
+const _previewCache = { front: null, back: null, label: null }
+
 /* ── Main component ──────────────────────────────────────────────────────────── */
 export default function MobileUpload() {
   const navigate    = useNavigate()
@@ -140,8 +146,9 @@ export default function MobileUpload() {
   const CATEGORY_LABELS = useCategoryLabels()
   const translateTag    = useTagTranslator()
 
-  const [photos,    setPhotos]   = useState({ front: null, back: null, label: null })
-  const [previews,  setPreviews] = useState({ front: null, back: null, label: null })
+  // Inizializza da cache: se il componente si rimonta (iOS), le foto non spariscono
+  const [photos,    setPhotos]   = useState(() => ({ ..._photoCache }))
+  const [previews,  setPreviews] = useState(() => ({ ..._previewCache }))
   const [category,  setCategory] = useState('')
   const [loading,   setLoading]  = useState(false)
   const [error,     setError]    = useState(null)
@@ -166,8 +173,11 @@ export default function MobileUpload() {
 
   const handleFile = (type, file) => {
     if (!file) return
+    const url = URL.createObjectURL(file)
+    _photoCache[type]   = file
+    _previewCache[type] = url
     setPhotos(p => ({ ...p, [type]: file }))
-    setPreviews(p => ({ ...p, [type]: URL.createObjectURL(file) }))
+    setPreviews(p => ({ ...p, [type]: url }))
   }
 
   const handleAnalyze = async () => {
@@ -209,6 +219,9 @@ export default function MobileUpload() {
   }
 
   const handleReset = () => {
+    // Svuota anche la cache di modulo così la prossima sessione parte pulita
+    _photoCache.front   = null; _photoCache.back   = null; _photoCache.label   = null
+    _previewCache.front = null; _previewCache.back = null; _previewCache.label = null
     setPhotos({ front: null, back: null, label: null })
     setPreviews({ front: null, back: null, label: null })
     setCategory(''); setResult(null); setAnalysis(null)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useSettingsStore from '../store/settingsStore'
 import useIsMobile from '../hooks/useIsMobile'
@@ -9,7 +9,7 @@ import {
   SHOE_SIZE_SYSTEMS, CLOTHING_SIZE_SYSTEMS, STYLIST_TONES,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout } from '../api/client'
+import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername } from '../api/client'
 import {
   IconAlertTriangle, IconStar, IconCalendar, IconRefreshCw, IconCheck,
   IconLightbulb, IconPalette, IconGlobe,
@@ -339,6 +339,142 @@ function DeleteAccountModal({ onSuccess, onCancel, t }) {
   )
 }
 
+// ── Hook: controllo username disponibilità (debounced 400ms) ─────────────────
+function useUsernameAvail(username) {
+  const [status, setStatus] = useState(null) // null|'checking'|'available'|'taken'|'invalid'
+  const timerRef = useRef(null)
+  useEffect(() => {
+    const v = (username || '').trim().toLowerCase()
+    if (!v || v.length < 3) { setStatus(null); return }
+    setStatus('checking')
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      checkUsernameAvailable(v)
+        .then(r => setStatus(r.available ? 'available' : r.reason === 'invalid' ? 'invalid' : 'taken'))
+        .catch(() => setStatus(null))
+    }, 400)
+    return () => clearTimeout(timerRef.current)
+  }, [username])
+  return status
+}
+
+// ── Editor username inline ────────────────────────────────────────────────────
+function UsernameEditor({ user, language, onUpdateUser }) {
+  const [editing, setEditing]   = useState(false)
+  const [value,   setValue]     = useState(user?.username || '')
+  const [loading, setLoading]   = useState(false)
+  const [error,   setError]     = useState(null)
+  const [saved,   setSaved]     = useState(false)
+  const status = useUsernameAvail(editing ? value : '')
+
+  const en = language === 'en'
+  const hint = {
+    null:      value.length > 0 && value.length < 3
+                 ? { text: en ? 'Min 3 characters' : 'Almeno 3 caratteri', color: 'var(--text-dim)' }
+                 : null,
+    invalid:   { text: en ? 'Letters, numbers, _ . - only' : 'Solo lettere, numeri, _ . -', color: '#ef4444' },
+    checking:  { text: en ? 'Checking…' : 'Controllo…', color: 'var(--text-dim)' },
+    available: { text: '✓ ' + (en ? 'Available' : 'Disponibile'), color: '#22c55e' },
+    taken:     { text: '✗ ' + (en ? 'Already taken' : 'Già in uso'), color: '#ef4444' },
+  }[status ?? 'null']
+
+  const canSave = status === 'available' && !loading
+
+  const handleSave = async () => {
+    if (!canSave) return
+    setLoading(true); setError(null)
+    try {
+      const data = await updateUsername(value.trim().toLowerCase())
+      onUpdateUser({ ...user, username: data.username })
+      setSaved(true); setEditing(false)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      setError(err.response?.data?.detail || (en ? 'Error, try again' : 'Errore, riprova'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: '10px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>Username</div>
+      {!editing ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+            {user?.username
+              ? <span>@{user.username}</span>
+              : <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>{en ? 'Not set' : 'Non impostato'}</span>
+            }
+            {saved && <span style={{ fontSize: 11, color: '#22c55e', marginLeft: 8 }}>✓ {en ? 'Saved' : 'Salvato'}</span>}
+          </div>
+          <button
+            onClick={() => { setEditing(true); setValue(user?.username || ''); setError(null) }}
+            style={{
+              fontSize: 11, padding: '4px 10px', borderRadius: 6,
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--primary-light)', cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            {en ? 'Change' : 'Modifica'}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ position: 'relative', marginBottom: 6 }}>
+            <span style={{
+              position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 13, color: 'var(--text-dim)', pointerEvents: 'none',
+            }}>@</span>
+            <input
+              className="input"
+              value={value}
+              onChange={e => setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
+              placeholder="username"
+              maxLength={30}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
+              style={{ paddingLeft: 26, width: '100%' }}
+            />
+          </div>
+          {hint && (
+            <div style={{ fontSize: 11, color: hint.color, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {status === 'checking' && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5, display: 'inline-block' }} />}
+              {hint.text}
+            </div>
+          )}
+          {error && <div style={{ fontSize: 11, color: '#f87171', marginBottom: 8 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button
+              onClick={() => { setEditing(false); setError(null) }}
+              style={{
+                flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 7,
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text-muted)', cursor: 'pointer',
+              }}
+            >
+              {en ? 'Cancel' : 'Annulla'}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!canSave}
+              style={{
+                flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 7, border: 'none',
+                background: canSave ? 'var(--primary)' : 'var(--border)',
+                color: canSave ? '#fff' : 'var(--text-dim)',
+                cursor: canSave ? 'pointer' : 'not-allowed', fontWeight: 600,
+                transition: 'background 0.2s',
+              }}
+            >
+              {loading ? '…' : (en ? 'Save' : 'Salva')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Sezione utilizzo Stylist AI ───────────────────────────────────────────────
 const PLAN_META = {
   free:                { label: 'Free',         limDay: 2,   limWeek: 8,   shLimDay: 1,  shLimWeek: 4,   arLimWeek: 0,  upLimDay: 10,  upLimWeek: 40,   color: 'var(--text-muted)',  bg: 'var(--bg)',                     border: 'var(--border)',              isPlus: false },
@@ -636,6 +772,7 @@ export default function Settings() {
   const removeOutfit   = useWardrobeStore(s => s.removeOutfit)
   const clearData      = useWardrobeStore(s => s.clearData)
   const user           = useAuthStore(s => s.user)
+  const updateUser     = useAuthStore(s => s.updateUser)
   const logout         = useAuthStore(s => s.logout)
   const navigate       = useNavigate()
 
@@ -960,6 +1097,9 @@ export default function Settings() {
             <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{user.email}</div>
           </div>
         )}
+
+        {/* Username editor */}
+        <UsernameEditor user={user} language={language} onUpdateUser={updateUser} />
 
         {/* Logout */}
         <Row label={t('logoutLabel')} desc={t('logoutDesc')}>

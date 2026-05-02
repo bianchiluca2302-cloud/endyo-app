@@ -78,6 +78,18 @@ export default function App() {
     return () => clearTimeout(t)
   }, [])
 
+  // Splash fade-out: mostra lo splash finché non è pronto, poi fa il fade
+  const [showSplash,   setShowSplash]   = useState(() => isPWA)
+  const [splashFading, setSplashFading] = useState(false)
+  useEffect(() => {
+    if (!showSplash) return
+    if (splashReady && !bootstrapping) {
+      setSplashFading(true)
+      const t = setTimeout(() => setShowSplash(false), 420)
+      return () => clearTimeout(t)
+    }
+  }, [splashReady, bootstrapping]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── 1. Applica tema all'avvio + listener per tema automatico ──────────────
   useEffect(() => {
     applyTheme(settings)
@@ -124,8 +136,8 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
-  // ── Splash screen amber — solo su PWA standalone, sempre 1s minimo ─────────
-  if (isPWA && (!splashReady || bootstrapping)) {
+  // ── Splash screen amber — solo su PWA standalone, con fade-out ─────────────
+  if (showSplash) {
     return (
       <div style={{
         height: '100vh', width: '100vw',
@@ -133,6 +145,9 @@ export default function App() {
         alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(160deg, #f59e0b 0%, #fffdf5 100%)',
         position: 'fixed', inset: 0, zIndex: 9999,
+        opacity: splashFading ? 0 : 1,
+        transition: splashFading ? 'opacity 0.4s ease' : 'none',
+        pointerEvents: 'none',
       }}>
         <style>{`
           @keyframes splashFade { 0%{opacity:0;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
@@ -166,9 +181,10 @@ export default function App() {
     )
   }
 
-  // Blocca orizzontale su mobile
-  if (isMobile && isLandscape) {
-    return (
+  return (
+    <>
+    {/* Blocca orizzontale su mobile: overlay fisso sopra tutto, NON smonta il router */}
+    {isMobile && isLandscape && (
       <div style={{
         height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 20,
@@ -184,10 +200,7 @@ export default function App() {
           <div style={{ fontSize: 13, opacity: 0.7 }}>Endyo funziona solo in modalità verticale</div>
         </div>
       </div>
-    )
-  }
-
-  return (
+    )}
     <HashRouter future={ROUTER_FUTURE}>
       <Routes>
         {/* ── Route pubbliche (senza Navbar) ──────────────────────────────── */}
@@ -249,6 +262,7 @@ export default function App() {
         } />
       </Routes>
     </HashRouter>
+    </>
   )
 }
 
