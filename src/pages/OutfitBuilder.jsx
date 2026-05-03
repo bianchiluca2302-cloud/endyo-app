@@ -1581,7 +1581,7 @@ export default function OutfitBuilder() {
       {!isMobile && <PageTutorial pageId="outfits" steps={OUTFIT_TOUR} />}
 
       {/* ── Left: selettore capi ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? 'calc(108px + env(safe-area-inset-bottom, 0px))' : 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom, 0px))' : 0 }}>
 
         {/* Titolo pagina — sopra i tab */}
         <div style={{

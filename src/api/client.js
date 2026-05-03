@@ -287,9 +287,11 @@ export const importWardrobe = (data) =>
 // ── Follow system ─────────────────────────────────────────────────────────────
 export const searchUsers    = (q) => api.get('/users/search', { params: { q } }).then(r => r.data)
 export const followUser     = (username) => api.post('/friends/request', { username }).then(r => r.data)
-export const fetchFollowing = () => api.get('/friends').then(r => r.data)        // chi seguo
-export const fetchFollowers = () => api.get('/followers').then(r => r.data)      // chi mi segue
-export const unfollowUser   = (id) => api.delete(`/friends/${id}`).then(r => r.data)
+export const fetchFollowing        = () => api.get('/friends').then(r => r.data)              // chi seguo
+export const fetchFollowers        = () => api.get('/followers').then(r => r.data)             // chi mi segue
+export const fetchUserFollowers    = (username) => api.get(`/users/${encodeURIComponent(username)}/followers`).then(r => r.data)
+export const fetchUserFollowing    = (username) => api.get(`/users/${encodeURIComponent(username)}/following`).then(r => r.data)
+export const unfollowUser          = (id) => api.delete(`/friends/${id}`).then(r => r.data)
 // alias per compatibilità
 export const sendFriendRequest = followUser
 export const removeFriend      = unfollowUser

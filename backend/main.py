@@ -4027,15 +4027,17 @@ async def get_user_posts(
 
     # Conteggio follower (chi segue target)
     followers_res = await db.execute(
-        select(Friendship).where(Friendship.addressee_id == target.id, Friendship.status == 'accepted')
+        select(Friendship).where(Friendship.addressee_id == target.id, Friendship.status == 'following')
     )
-    followers_count = len(followers_res.scalars().all())
+    followers_rows = followers_res.scalars().all()
+    followers_count = len(followers_rows)
 
     # Conteggio following (chi target segue)
     following_res = await db.execute(
-        select(Friendship).where(Friendship.requester_id == target.id, Friendship.status == 'accepted')
+        select(Friendship).where(Friendship.requester_id == target.id, Friendship.status == 'following')
     )
-    following_count = len(following_res.scalars().all())
+    following_rows = following_res.scalars().all()
+    following_count = len(following_rows)
 
     posts_res = await db.execute(
         select(SocialPost)
@@ -4056,6 +4058,60 @@ async def get_user_posts(
         },
         "posts": built_posts,
     }
+
+
+@app.get("/users/{username}/followers")
+async def get_user_followers(
+    username: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lista degli utenti che seguono {username}."""
+    target_res = await db.execute(select(User).where(User.username == username))
+    target = target_res.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    rows_res = await db.execute(
+        select(Friendship).where(Friendship.addressee_id == target.id, Friendship.status == 'following')
+    )
+    out = []
+    for f in rows_res.scalars().all():
+        user_res = await db.execute(select(User).where(User.id == f.requester_id))
+        u = user_res.scalar_one_or_none()
+        if u:
+            prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == u.id))
+            prof = prof_res.scalar_one_or_none()
+            out.append({"id": u.id, "username": u.username,
+                        "profile_picture": prof.profile_picture if prof else None})
+    return out
+
+
+@app.get("/users/{username}/following")
+async def get_user_following(
+    username: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lista degli utenti che {username} segue."""
+    target_res = await db.execute(select(User).where(User.username == username))
+    target = target_res.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    rows_res = await db.execute(
+        select(Friendship).where(Friendship.requester_id == target.id, Friendship.status == 'following')
+    )
+    out = []
+    for f in rows_res.scalars().all():
+        user_res = await db.execute(select(User).where(User.id == f.addressee_id))
+        u = user_res.scalar_one_or_none()
+        if u:
+            prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == u.id))
+            prof = prof_res.scalar_one_or_none()
+            out.append({"id": u.id, "username": u.username,
+                        "profile_picture": prof.profile_picture if prof else None})
+    return out
 
 
 @app.delete("/social/posts/{post_id}")

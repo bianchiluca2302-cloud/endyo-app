@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { imgUrl, removeGarmentBackground, reEnrichGarment } from '../api/client'
+import { imgUrl, removeGarmentBackground, reEnrichGarment, fetchBgStatus } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useTagTranslator, useColorOptions } from '../i18n'
@@ -174,6 +174,26 @@ export default function MobileGarmentSheet({ garment, onClose }) {
   const bgStatus     = liveGarment.bg_status || 'none'
   const bgProcessing = bgStatus === 'processing'
   const bgDone       = bgStatus === 'done'
+  const bgPollRef    = useRef(null)
+
+  // Polling: quando bgProcessing è true, controlla ogni 3s fino a completamento
+  useEffect(() => {
+    if (!bgProcessing) { clearInterval(bgPollRef.current); return }
+    bgPollRef.current = setInterval(async () => {
+      try {
+        const data = await fetchBgStatus(garment.id)
+        if (data.bg_status !== 'processing') {
+          clearInterval(bgPollRef.current)
+          updateGarmentBg(garment.id, data.bg_status, {
+            photo_front: data.photo_front,
+            photo_back:  data.photo_back,
+            photo_label: data.photo_label,
+          })
+        }
+      } catch { /* riprova al prossimo tick */ }
+    }, 3000)
+    return () => clearInterval(bgPollRef.current)
+  }, [bgProcessing, garment.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRemoveBg = () => {
     if (bgProcessing || bgDone) return

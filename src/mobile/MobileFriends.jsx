@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   getSocialFeed, toggleLike, imgUrl,
   searchUsers, followUser, unfollowUser, fetchFollowing,
-  getUserPosts, deleteSocialPost,
+  getUserPosts, deleteSocialPost, fetchUserFollowers, fetchUserFollowing,
 } from '../api/client'
 import useAuthStore from '../store/authStore'
 import useWardrobeStore from '../store/wardrobeStore'
@@ -560,13 +560,17 @@ function PostCard({ post, currentUser, garments, onTapUser, onDelete, onTap, sho
 }
 
 /* ── User profile page (fullscreen, slide-in da destra) ─────────────────────── */
-function UserProfileSheet({ username, currentUsername, onClose, language = 'it' }) {
+function UserProfileSheet({ username, currentUsername, onClose, language = 'it', onViewProfile }) {
   const [data,         setData]         = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [following,    setFollowing]    = useState(false)
   const [followId,     setFollowId]     = useState(null)
   const [toggling,     setToggling]     = useState(false)
   const [selectedPost, setSelectedPost] = useState(null)
+  // Lista follower / seguiti
+  const [listMode,     setListMode]     = useState(null)   // null | 'followers' | 'following'
+  const [listUsers,    setListUsers]    = useState([])
+  const [listLoading,  setListLoading]  = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -601,6 +605,19 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it' 
       }
     } catch {}
     finally { setToggling(false) }
+  }
+
+  const openList = async (mode) => {
+    setListMode(mode)
+    setListLoading(true)
+    setListUsers([])
+    try {
+      const list = mode === 'followers'
+        ? await fetchUserFollowers(username)
+        : await fetchUserFollowing(username)
+      setListUsers(list)
+    } catch {}
+    finally { setListLoading(false) }
   }
 
   const profilePic     = data?.profile?.profile_picture || data?.posts?.[0]?.author?.profile_picture
@@ -660,7 +677,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it' 
       </div>
 
       {/* ── Corpo scrollabile ── */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
 
         {/* Header profilo */}
         <div style={{ padding: '20px 16px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -674,14 +691,27 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it' 
             {/* Stats */}
             <div style={{ display: 'flex', gap: 20 }}>
               {[
-                { label: language === 'en' ? 'Posts' : 'Post',       value: postCount },
-                { label: language === 'en' ? 'Followers' : 'Follower', value: followersCount },
-                { label: language === 'en' ? 'Following' : 'Seguiti',  value: followingCount },
-                { label: 'Like',                                         value: totalLikes, color: '#f43f5e' },
+                { label: language === 'en' ? 'Posts' : 'Post',         value: postCount,      listKey: null },
+                { label: language === 'en' ? 'Followers' : 'Follower',  value: followersCount, listKey: 'followers' },
+                { label: language === 'en' ? 'Following' : 'Seguiti',   value: followingCount, listKey: 'following' },
+                { label: 'Like',                                          value: totalLikes,     listKey: null, color: '#f43f5e' },
               ].map(s => (
-                <div key={s.label} style={{ textAlign: 'center' }}>
+                <div
+                  key={s.label}
+                  onClick={s.listKey ? () => openList(s.listKey) : undefined}
+                  style={{
+                    textAlign: 'center',
+                    cursor: s.listKey ? 'pointer' : 'default',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
                   <div style={{ fontSize: 16, fontWeight: 800, color: s.color || 'var(--text)' }}>{s.value}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 1 }}>{s.label}</div>
+                  <div style={{
+                    fontSize: 10, color: s.listKey ? 'var(--primary-light)' : 'var(--text-dim)',
+                    fontWeight: s.listKey ? 600 : 400, marginTop: 1,
+                    textDecoration: s.listKey ? 'underline' : 'none',
+                    textDecorationColor: 'transparent',
+                  }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -742,6 +772,69 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it' 
             setData(d => d ? { ...d, posts: d.posts.filter(p => p.id !== postId) } : d)
           }}
         />
+      )}
+
+      {/* ── Lista follower / seguiti ─────────────────────────────────────────── */}
+      {listMode && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 10,
+          background: 'var(--bg)', display: 'flex', flexDirection: 'column',
+          animation: 'slideInRight 0.22s ease forwards',
+        }}>
+          {/* header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+            borderBottom: '1px solid var(--border)', background: 'var(--bg)', flexShrink: 0,
+          }}>
+            <button
+              onClick={() => setListMode(null)}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                border: '1px solid var(--border)', background: 'var(--card)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text)', WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+            </button>
+            <div style={{ flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+              {listMode === 'followers'
+                ? (language === 'en' ? 'Followers' : 'Follower')
+                : (language === 'en' ? 'Following' : 'Seguiti')}
+            </div>
+          </div>
+          {/* body */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+            {listLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+                <div className="spinner" style={{ width: 28, height: 28, borderWidth: 3 }} />
+              </div>
+            ) : listUsers.length === 0 ? (
+              <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                {language === 'en' ? 'Nobody yet' : 'Nessuno ancora'}
+              </div>
+            ) : listUsers.map(u => (
+              <div
+                key={u.username}
+                onClick={() => {
+                  setListMode(null)
+                  if (u.username !== username) onViewProfile?.(u.username)
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 16px', cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <Avatar src={u.profile_picture} username={u.username} size={42} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>@{u.username}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -1432,7 +1525,7 @@ export default function MobileFriends() {
 
         {/* ── FEED ── */}
         {tab === 'feed' && (
-          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
             {loading && posts.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
@@ -1514,7 +1607,7 @@ export default function MobileFriends() {
 
         {/* ── I MIEI POST ── */}
         {tab === 'myposts' && (
-          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
             <MyPostsTab
               user={user}
               onCreatePost={() => setShowCreate(true)}
@@ -1544,6 +1637,7 @@ export default function MobileFriends() {
           currentUsername={user?.username}
           onClose={() => setProfileUser(null)}
           language={language}
+          onViewProfile={(u) => setProfileUser(u)}
         />
       )}
       {selectedPost && (
