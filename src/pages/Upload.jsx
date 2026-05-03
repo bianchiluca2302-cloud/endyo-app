@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analyzeGarment, confirmGarment } from '../api/client'
+import { analyzeGarment, confirmGarment, fetchChatQuota } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { imgUrl } from '../api/client'
@@ -61,6 +61,28 @@ export default function Upload() {
   const [error,    setError]    = useState(null)
   const [step,     setStep]     = useState('upload') // upload | analyzing | review | confirming | done
   const [showCatPicker, setShowCatPicker] = useState(!isMobile)
+
+  // Quota upload giornaliera
+  const QUOTA_CACHE_KEY = 'endyo_upload_quota'
+  const [uploadQuota, setUploadQuota] = useState(() => {
+    try {
+      const c = localStorage.getItem(QUOTA_CACHE_KEY)
+      return c ? JSON.parse(c) : null
+    } catch { return null }
+  })
+  useEffect(() => {
+    fetchChatQuota()
+      .then(q => {
+        const quota = {
+          remaining: q.upload_remaining_day ?? null,
+          limit:     q.upload_limit_day     ?? null,
+          extra:     q.upload_extra         ?? 0,
+        }
+        setUploadQuota(quota)
+        try { localStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify(quota)) } catch {}
+      })
+      .catch(() => {})
+  }, [])
 
   // Risultato analisi + duplicati
   const [analysis,   setAnalysis]   = useState(null)
@@ -372,11 +394,56 @@ export default function Upload() {
   }
 
   // ── Upload form ────────────────────────────────────────────────────────────
+  // Badge quota — renderizzato solo se il piano ha un limite (< 999)
+  const QuotaBadge = () => {
+    if (!uploadQuota || uploadQuota.limit === null) return null
+    const UNLIMITED = 999
+    if (uploadQuota.limit >= UNLIMITED) return null
+    const rem   = uploadQuota.remaining ?? 0
+    const lim   = uploadQuota.limit
+    const extra = uploadQuota.extra ?? 0
+    const pct   = Math.min(100, Math.round(((lim - rem) / lim) * 100))
+    const color  = rem === 0 ? '#ef4444' : rem <= 2 ? '#f59e0b' : 'var(--primary-light)'
+    const bg     = rem === 0 ? 'rgba(239,68,68,0.08)' : rem <= 2 ? 'rgba(245,158,11,0.10)' : 'var(--primary-dim)'
+    const border = rem === 0 ? 'rgba(239,68,68,0.25)' : rem <= 2 ? 'rgba(245,158,11,0.3)' : 'var(--primary-border)'
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 10,
+        background: bg, border: `1px solid ${border}`,
+        borderRadius: 12, padding: '8px 14px',
+        marginBottom: isMobile ? 16 : 20,
+      }}>
+        {/* Numero grande */}
+        <div style={{ textAlign: 'center', minWidth: 36 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{rem}</div>
+          <div style={{ fontSize: 10, color, opacity: 0.75, marginTop: 1, whiteSpace: 'nowrap' }}>
+            {language === 'en' ? `of ${lim} today` : `di ${lim} oggi`}
+          </div>
+        </div>
+        {/* Barra + extra */}
+        <div style={{ minWidth: 80 }}>
+          <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 2, width: `${pct}%`, background: color, transition: 'width 0.4s' }} />
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+            {rem === 0
+              ? (language === 'en' ? 'Daily limit reached' : 'Limite giornaliero raggiunto')
+              : (language === 'en' ? 'AI analyses remaining' : 'analisi AI rimaste')}
+          </div>
+          {extra > 0 && (
+            <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>+{extra} extra</div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: isMobile ? '16px 14px' : '24px 28px' }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <h1 className="page-title" style={{ marginBottom: 4 }}>{t('uploadSectionTitle')}</h1>
-        <p className="page-subtitle" style={{ marginBottom: isMobile ? 16 : 28 }}>{t('uploadSectionDesc')}</p>
+        <p className="page-subtitle" style={{ marginBottom: 12 }}>{t('uploadSectionDesc')}</p>
+        <QuotaBadge />
 
         {/* Category picker — collapsible on mobile */}
         <div data-pagetour="upload-category" style={{ marginBottom: 16 }}>
