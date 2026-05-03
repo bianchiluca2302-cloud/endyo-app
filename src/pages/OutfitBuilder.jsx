@@ -1516,6 +1516,8 @@ export default function OutfitBuilder() {
   const [saveMsg,   setSaveMsg]   = useState(null)
   const [completing, setCompleting] = useState(false)
   const [completeNotes, setCompleteNotes] = useState(null)
+  // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
+  const { weather } = useWeather(language)
   // Lampeggio del tab Stylist quando si seleziona il primo capo
   const [stylistPulse, setStylistPulse] = useState(false)
   const prevSelCountRef = useRef(0)
@@ -1651,7 +1653,7 @@ export default function OutfitBuilder() {
           {[
           ['builder', t('wardrobeStep2Cta')],
           ['saved', t('outfitsTitle')],
-          ...(isMobile ? [['mixer', 'Mixer'], ['stylist', '✨ Stylist']] : []),
+          ...(isMobile ? [['mixer', 'Mixer'], ['stylist', 'Stylist']] : []),
         ].map(([id, label]) => {
             const isStylist = id === 'stylist'
             const isActive  = tab === id
@@ -1694,48 +1696,6 @@ export default function OutfitBuilder() {
             }
           `}</style>
         </div>
-
-        {/* ── Mobile: mini strip capi selezionati ────────────────────────────── */}
-        {isMobile && tab === 'builder' && selectedGarments.length > 0 && (
-          <MobileSelectionStrip
-            garments={selectedGarments}
-            onRemove={(g) => toggleGarment(g)}
-          />
-        )}
-
-        {/* ── Mobile: barra nome + salva (visibile quando ci sono capi selezionati) ── */}
-        {isMobile && tab === 'builder' && selectedGarments.length > 0 && (
-          <div style={{
-            display: 'flex', gap: 8, padding: '8px 12px',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--surface)', flexShrink: 0,
-          }}>
-            <input
-              className="input"
-              placeholder={t('outfitsNamePlaceholder')}
-              value={outfitName}
-              onChange={e => setOutfitName(e.target.value)}
-              style={{
-                flex: 1, padding: '9px 12px', fontSize: 14,
-                borderColor: !outfitName.trim() ? 'rgba(168,85,247,0.4)' : undefined,
-              }}
-            />
-            <button
-              onClick={handleSave}
-              disabled={!outfitName.trim()}
-              style={{
-                padding: '9px 16px', borderRadius: 12, border: 'none',
-                background: outfitName.trim() ? 'var(--primary)' : 'var(--border)',
-                color: outfitName.trim() ? '#fff' : 'var(--text-dim)',
-                fontSize: 13, fontWeight: 700, cursor: outfitName.trim() ? 'pointer' : 'default',
-                flexShrink: 0, transition: 'background 0.15s',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              {t('outfitsSave') || 'Salva'}
-            </button>
-          </div>
-        )}
 
         {/* Tab: builder */}
         {tab === 'builder' && (
@@ -1822,6 +1782,14 @@ export default function OutfitBuilder() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Mobile: capi selezionati — striscia sotto la lista capi */}
+        {isMobile && tab === 'builder' && (
+          <MobileSelectionStrip
+            garments={selectedGarments}
+            onRemove={(g) => toggleGarment(g)}
+          />
         )}
 
         {/* Tab: saved outfits */}
@@ -1914,21 +1882,16 @@ export default function OutfitBuilder() {
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
         {isMobile && tab === 'stylist' && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
-            {/* Hint selezione capi */}
-            {selectedGarments.length === 0 && (
-              <div style={{
-                margin: '14px 16px 0', padding: '10px 14px',
-                background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
-                borderRadius: 12, fontSize: 12, color: 'var(--primary-light)', lineHeight: 1.5,
-              }}>
-                ✨ {language === 'en'
-                  ? 'Select garments in the Builder tab — I\'ll help you put together an outfit!'
-                  : 'Seleziona dei capi nel tab Builder — ti aiuto a creare un outfit!'}
+            {/* Header meteo */}
+            {weather && (
+              <div style={{ padding: '8px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
+                <WeatherBadge weather={weather} language={language} chatOpen={false} onOpenChat={() => {}} />
               </div>
             )}
             <StylistChat
               selectedGarments={selectedGarments}
               compact={false}
+              weather={weather}
               onApplyOutfit={(ids, name, notes) => {
                 const newSel = {}
                 for (const id of (ids || [])) {
@@ -1946,8 +1909,8 @@ export default function OutfitBuilder() {
           </div>
         )}
 
-        {/* Stylist AI — barra scorrevole su desktop + mobile tab builder/saved/mixer */}
-        {!(isMobile && (tab === 'mixer' || tab === 'stylist')) && (
+        {/* Stylist AI — barra scorrevole solo su desktop */}
+        {!isMobile && (
           <div data-pagetour="outfit-stylist" style={{ flexShrink: 0 }}>
             <StylistSlider
               currentTab={tab}

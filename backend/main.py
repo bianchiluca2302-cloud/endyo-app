@@ -45,7 +45,7 @@ from database import get_db, init_db
 from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, Brand, BrandProduct, BrandProductImpression, BrandProductFeedback, WearLog, SocialPost, PostLike, PostComment
 from ai_service import analyze_garment, reenrich_garment, generate_outfit_recommendations, chat_with_stylist, complete_outfit, stream_chat_with_stylist
 from tryon_service import generate_tryon, generate_outfit_tryon, fashn_supported, get_fashn_key
-from bg_service import remove_background, preload_model_sync
+from bg_service import remove_background, remove_background_batch, preload_model_sync
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Annotated
 from auth import (
@@ -1009,6 +1009,10 @@ async def _run_bg_removal_background(garment_id: int):
     """
     Background task: rimuove lo sfondo da fronte e retro (NON etichetta) e aggiorna il DB.
     Aggiorna bg_status: processing → done (o torna a none in caso di errore).
+
+    IMPORTANTE: fronte e retro vengono processati in un SINGOLO sottoprocesso,
+    così il modello u2netp viene caricato una sola volta e la RAM del subprocess
+    viene liberata interamente alla fine, senza doppio picco.
     """
     from database import AsyncSessionLocal
     async with AsyncSessionLocal() as db:
@@ -1018,17 +1022,40 @@ async def _run_bg_removal_background(garment_id: int):
             if not g:
                 return
 
-            # Solo fronte e retro — l'etichetta rimane originale
+            # Costruisci le coppie (input, output) per fronte e retro
+            # L'etichetta NON viene processata (rimane originale per scopi diagnostici)
+            pairs: list[tuple[str, str]] = []
+            field_map: dict[str, str] = {}  # input_path → field name
             for field in ("photo_front", "photo_back"):
                 filename = getattr(g, field)
                 if not filename:
                     continue
-                full_path = str(UPLOAD_DIR / filename)
-                new_path = await remove_background(full_path)
-                new_filename = Path(new_path).name
-                if new_filename != filename:
-                    setattr(g, field, new_filename)
-                    logger.info("BG rimosso %s → %s (garment %d)", filename, new_filename, garment_id)
+                p = Path(UPLOAD_DIR / filename)
+                if not p.exists():
+                    logger.warning("BG: file non trovato per %s (garment %d): %s", field, garment_id, p)
+                    continue
+                if p.stem.endswith("_nobg"):
+                    continue  # già processato
+                out_path = str(p.parent / f"{p.stem}_nobg.png")
+                pairs.append((str(p), out_path))
+                field_map[str(p)] = field
+
+            if pairs:
+                # Un unico sottoprocesso carica il modello e processa tutte le immagini
+                result_map = await remove_background_batch(pairs)
+                for inp, out in result_map.items():
+                    field = field_map.get(inp)
+                    if not field:
+                        continue
+                    new_filename = Path(out).name
+                    old_filename = getattr(g, field)
+                    if new_filename != old_filename:
+                        setattr(g, field, new_filename)
+                        logger.info("BG rimosso %s.%s: %s → %s (garment %d)",
+                                    field, Path(inp).suffix, old_filename, new_filename, garment_id)
+                    else:
+                        logger.warning("BG invariato per %s (garment %d) — rimozione fallita o non necessaria",
+                                       field, garment_id)
 
             g.bg_status = "done"
             await db.commit()
