@@ -134,7 +134,7 @@ function detectSystemLanguage() {
 // ── Default settings ──────────────────────────────────────────────────────────
 const DEFAULTS = {
   accentColor:        'amber',
-  theme:              'auto',
+  theme:              'light',   // default: tema chiaro
   language:           detectSystemLanguage(),
   shoeSizeSystem:     'eu',
   clothingSizeSystem: 'eu',
@@ -179,7 +179,14 @@ const useSettingsStore = create(
     }),
     {
       name: 'mirrorfit-settings',
-      version: 2,
+      version: 3,
+      // Migrazione dalla v2: tema 'auto' → 'light' (nuovo default prodotto)
+      migrate: (persisted, version) => {
+        if (version < 3 && persisted.theme === 'auto') {
+          return { ...persisted, theme: 'light' }
+        }
+        return persisted
+      },
       // Applica il tema immediatamente dopo la reidratazione da localStorage
       // In modo che i CSS variables siano corretti senza dover toccare le impostazioni
       onRehydrateStorage: () => (state) => {

@@ -685,7 +685,7 @@ const SUGGESTIONS = {
  * @param {number}   props.remainingQuota    — richieste rimanenti (da StylistSlider)
  * @param {function} props.onQuotaUpdate     — (remaining) => void
  */
-function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remainingQuota, onQuotaUpdate, weather = null, occasion = null }) {
+function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remainingQuota, onQuotaUpdate, weather = null, occasion = null, onInputFocus, onInputBlur }) {
   const garments = useWardrobeStore(s => s.garments)
   const language = useSettingsStore(s => s.language) || 'it'
   const t = useT()
@@ -996,8 +996,8 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
             resize: 'none', outline: 'none', lineHeight: 1.5,
             opacity: !canSend ? 0.5 : 1,
           }}
-          onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 3px var(--primary-dim)' }}
-          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
+          onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 3px var(--primary-dim)'; onInputFocus?.() }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; onInputBlur?.() }}
         />
         <button
           onClick={() => send(input)}
@@ -1157,6 +1157,7 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
       prevTabRef.current = currentTab
     }
   }, [currentTab])
+  const [inputFocused,  setInputFocused]  = useState(false)
   const [pulsing,       setPulsing]       = useState(false)
   const [remaining,     setRemaining]     = useState(null)
   const [remainingWeek, setRemainingWeek] = useState(null)
@@ -1207,12 +1208,24 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
         : `${selectedGarments.length} capo/i selezionati — tocca per consigli`)
     : (language === 'en' ? 'Ask your AI stylist…' : 'Chiedi allo Stylist AI…')
 
+  // Su mobile: quando l'input è focused (tastiera aperta) convertiamo il pannello
+  // in position:fixed. Gli elementi fixed su iOS tracciano il visual viewport, quindi
+  // salgono sopra la tastiera — l'input rimane sempre visibile.
+  const fixedMode = isMobile && isOpen && inputFocused
+
   return (
-    <div style={{ flexShrink: 0, background: 'var(--surface)' }}>
+    <div style={{
+      ...(fixedMode ? {
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 600,
+        borderTop: '1px solid var(--border)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.18)',
+      } : { flexShrink: 0 }),
+      background: 'var(--surface)',
+    }}>
 
       {/* Barra handle cliccabile */}
       <div
-        onClick={() => setIsOpen(o => !o)}
+        onClick={() => { setIsOpen(o => !o); if (inputFocused) setInputFocused(false) }}
         style={{
           height: 52, display: 'flex', alignItems: 'center', gap: 10,
           padding: '0 14px', cursor: 'pointer', userSelect: 'none',
@@ -1279,11 +1292,11 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
 
       {/* Area chat espandibile */}
       <div style={{
-        maxHeight: isOpen ? `${chatHeight}px` : '0px',
+        maxHeight: isOpen ? (fixedMode ? '65dvh' : `${chatHeight}px`) : '0px',
         overflow: 'hidden',
-        transition: 'max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: fixedMode ? 'none' : 'max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
-        <div style={{ height: chatHeight, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ height: fixedMode ? '65dvh' : chatHeight, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <StylistChat
             selectedGarments={selectedGarments}
             compact
@@ -1292,6 +1305,8 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
             onQuotaUpdate={(r, rw) => { setRemaining(r); if (rw != null) setRemainingWeek(rw) }}
             weather={weather?.summary ?? null}
             occasion={stylePrefs}
+            onInputFocus={() => setInputFocused(true)}
+            onInputBlur={() => setTimeout(() => setInputFocused(false), 100)}
           />
         </div>
       </div>
@@ -1636,6 +1651,40 @@ export default function OutfitBuilder() {
             garments={selectedGarments}
             onRemove={(g) => toggleGarment(g)}
           />
+        )}
+
+        {/* ── Mobile: barra nome + salva (visibile quando ci sono capi selezionati) ── */}
+        {isMobile && tab === 'builder' && selectedGarments.length > 0 && (
+          <div style={{
+            display: 'flex', gap: 8, padding: '8px 12px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--surface)', flexShrink: 0,
+          }}>
+            <input
+              className="input"
+              placeholder={t('outfitsNamePlaceholder')}
+              value={outfitName}
+              onChange={e => setOutfitName(e.target.value)}
+              style={{
+                flex: 1, padding: '9px 12px', fontSize: 14,
+                borderColor: !outfitName.trim() ? 'rgba(168,85,247,0.4)' : undefined,
+              }}
+            />
+            <button
+              onClick={handleSave}
+              disabled={!outfitName.trim()}
+              style={{
+                padding: '9px 16px', borderRadius: 12, border: 'none',
+                background: outfitName.trim() ? 'var(--primary)' : 'var(--border)',
+                color: outfitName.trim() ? '#fff' : 'var(--text-dim)',
+                fontSize: 13, fontWeight: 700, cursor: outfitName.trim() ? 'pointer' : 'default',
+                flexShrink: 0, transition: 'background 0.15s',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {t('outfitsSave') || 'Salva'}
+            </button>
+          </div>
         )}
 
         {/* Tab: builder */}

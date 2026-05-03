@@ -7,15 +7,10 @@ import { imgUrl } from '../api/client'
 
 /* ── Avatar ──────────────────────────────────────────────────────────────────── */
 function Avatar({ src, username, size = 72 }) {
+  const [imgError, setImgError] = useState(false)
   const picSrc = src ? imgUrl(src) : null
   const initial = (username || '?')[0].toUpperCase()
-  if (picSrc) {
-    return <img src={picSrc} alt={username} style={{
-      width: size, height: size, borderRadius: '50%', objectFit: 'cover',
-      border: '3px solid var(--primary-border)',
-    }} />
-  }
-  return (
+  const fallback = (
     <div style={{
       width: size, height: size, borderRadius: '50%',
       background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
@@ -25,6 +20,13 @@ function Avatar({ src, username, size = 72 }) {
       flexShrink: 0,
     }}>{initial}</div>
   )
+  if (picSrc && !imgError) {
+    return <img src={picSrc} alt={username} onError={() => setImgError(true)} style={{
+      width: size, height: size, borderRadius: '50%', objectFit: 'cover',
+      border: '3px solid var(--primary-border)', flexShrink: 0,
+    }} />
+  }
+  return fallback
 }
 
 /* ── Stat bubble ─────────────────────────────────────────────────────────────── */

@@ -253,6 +253,11 @@ export default function MobileUpload() {
     try {
       const garment = await confirmGarment({ ...tmpFiles, analysis, category: analysis.category })
       addGarment(garment)
+      // Pulisci la cache del modulo subito dopo il salvataggio: se l'utente
+      // naviga via dalla schermata "done" senza premere "Aggiungi altro",
+      // le foto non riappaiono al prossimo accesso alla pagina.
+      _photoCache.front   = null; _photoCache.back   = null; _photoCache.label   = null
+      _previewCache.front = null; _previewCache.back = null; _previewCache.label = null
       setResult(garment)
       setStep('done')
     } catch (e) {
@@ -289,6 +294,9 @@ export default function MobileUpload() {
       if (photos.front)          fd.append('photo_front',   photos.front)
       const garment = await createGarmentManual(fd)
       addGarment(garment)
+      // Pulisci la cache del modulo subito dopo il salvataggio
+      _photoCache.front   = null; _photoCache.back   = null; _photoCache.label   = null
+      _previewCache.front = null; _previewCache.back = null; _previewCache.label = null
       setResult(garment); setStep('done')
     } catch (e) {
       setManualError(e.response?.data?.detail || e.message)

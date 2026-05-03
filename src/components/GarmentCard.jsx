@@ -30,12 +30,28 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
   const liveGarment  = useWardrobeStore(s => s.garments.find(g => g.id === garment.id)) || garment
   const bgProcessing = liveGarment.bg_status === 'processing'
   const pollRef      = useRef(null)
+  const pollAttempts = useRef(0)
+  const pollErrors   = useRef(0)
 
   useEffect(() => {
-    if (!bgProcessing) { clearInterval(pollRef.current); return }
+    if (!bgProcessing) {
+      clearInterval(pollRef.current)
+      pollAttempts.current = 0
+      pollErrors.current   = 0
+      return
+    }
+    pollAttempts.current = 0
+    pollErrors.current   = 0
     pollRef.current = setInterval(async () => {
+      pollAttempts.current += 1
+      if (pollAttempts.current > 35) {          // ~2.5 min max
+        clearInterval(pollRef.current)
+        updateGarmentBg(garment.id, 'none')
+        return
+      }
       try {
         const data = await fetchBgStatus(garment.id)
+        pollErrors.current = 0
         if (data.bg_status !== 'processing') {
           clearInterval(pollRef.current)
           updateGarmentBg(garment.id, data.bg_status, {
@@ -44,8 +60,14 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             photo_label: data.photo_label,
           })
         }
-      } catch { /* silently retry */ }
-    }, 3000)
+      } catch {
+        pollErrors.current += 1
+        if (pollErrors.current >= 5) {          // 5 errori consecutivi → abbandona
+          clearInterval(pollRef.current)
+          updateGarmentBg(garment.id, 'none')
+        }
+      }
+    }, 4000)
     return () => clearInterval(pollRef.current)
   }, [bgProcessing, garment.id])
 

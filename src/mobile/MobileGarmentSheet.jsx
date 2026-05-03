@@ -176,12 +176,29 @@ export default function MobileGarmentSheet({ garment, onClose }) {
   const bgDone       = bgStatus === 'done'
   const bgPollRef    = useRef(null)
 
-  // Polling: quando bgProcessing è true, controlla ogni 3s fino a completamento
+  // Polling: quando bgProcessing è true, controlla ogni 4s fino a max 35 tentativi (~2.5 min)
+  const bgPollAttempts = useRef(0)
+  const bgPollErrors   = useRef(0)
   useEffect(() => {
-    if (!bgProcessing) { clearInterval(bgPollRef.current); return }
+    if (!bgProcessing) {
+      clearInterval(bgPollRef.current)
+      bgPollAttempts.current = 0
+      bgPollErrors.current   = 0
+      return
+    }
+    bgPollAttempts.current = 0
+    bgPollErrors.current   = 0
     bgPollRef.current = setInterval(async () => {
+      bgPollAttempts.current += 1
+      // Timeout: dopo 35 tentativi (~2.5 min) abbandona e resetta a 'none'
+      if (bgPollAttempts.current > 35) {
+        clearInterval(bgPollRef.current)
+        updateGarmentBg(garment.id, 'none')
+        return
+      }
       try {
         const data = await fetchBgStatus(garment.id)
+        bgPollErrors.current = 0  // reset errori consecutivi su successo
         if (data.bg_status !== 'processing') {
           clearInterval(bgPollRef.current)
           updateGarmentBg(garment.id, data.bg_status, {
@@ -190,8 +207,15 @@ export default function MobileGarmentSheet({ garment, onClose }) {
             photo_label: data.photo_label,
           })
         }
-      } catch { /* riprova al prossimo tick */ }
-    }, 3000)
+      } catch {
+        bgPollErrors.current += 1
+        // Dopo 5 errori consecutivi (server giù) → abbandona
+        if (bgPollErrors.current >= 5) {
+          clearInterval(bgPollRef.current)
+          updateGarmentBg(garment.id, 'none')
+        }
+      }
+    }, 4000)
     return () => clearInterval(bgPollRef.current)
   }, [bgProcessing, garment.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
