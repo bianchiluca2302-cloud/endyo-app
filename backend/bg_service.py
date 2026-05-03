@@ -127,14 +127,32 @@ def _remove_bg_sync(input_path: str) -> str:
         return input_path
 
 
+# ── Semaforo: max 1 rimozione sfondo alla volta ──────────────────────────────
+# rembg durante l'inferenza occupa ~400-800 MB di RAM. Su Railway con pochi GB
+# disponibili, due rimozioni parallele causano OOM → crash 502.
+# Il semaforo serializza le richieste: ogni task aspetta che la precedente finisca.
+_bg_semaphore: asyncio.Semaphore | None = None
+
+
+def _get_bg_semaphore() -> asyncio.Semaphore:
+    """Lazy-init: crea il semaforo nel loop corretto (quello di FastAPI)."""
+    global _bg_semaphore
+    if _bg_semaphore is None:
+        _bg_semaphore = asyncio.Semaphore(1)
+    return _bg_semaphore
+
+
 async def remove_background(input_path: str) -> str:
     """
     Async wrapper per la rimozione dello sfondo.
     Gira in un thread separato per non bloccare l'event loop.
+    Il semaforo garantisce che al massimo 1 rimozione sia attiva alla volta,
+    evitando OOM sul server.
     Ritorna il path del file risultante (PNG se riuscito, originale se fallito).
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _remove_bg_sync, input_path)
+    async with _get_bg_semaphore():
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _remove_bg_sync, input_path)
 
 
 def preload_model_sync():

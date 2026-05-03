@@ -706,6 +706,17 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
   const [messages, setMessages]           = useState([{ role: 'assistant', content: makeWelcome(selectedGarments, language) }])
   const [input,    setInput]              = useState('')
   const [loading,  setLoading]            = useState(false)
+  // Quota standalone: caricata qui quando StylistChat è usato come pagina intera
+  const [standaloneQuota, setStandaloneQuota] = useState(remainingQuota)
+  useEffect(() => {
+    if (remainingQuota == null) {
+      fetchChatQuota().then(q => {
+        const r = q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null)
+        setStandaloneQuota(r)
+      }).catch(() => {})
+    }
+  }, []) // eslint-disable-line
+  const effectiveQuota = remainingQuota ?? standaloneQuota
   const endRef     = useRef(null)
   const topRef     = useRef(null)
   const inputRef   = useRef(null)
@@ -801,7 +812,7 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
     })
   }
 
-  const canSend = remainingQuota == null || remainingQuota !== 0
+  const canSend = effectiveQuota == null || effectiveQuota !== 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -947,7 +958,7 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
       )}
 
       {/* Upgrade card — appare solo quando il limite è esaurito, mai prima */}
-      {remainingQuota === 0 && (
+      {effectiveQuota === 0 && (
         <div style={{
           margin: '0 10px 8px', borderRadius: 12, flexShrink: 0,
           background: 'linear-gradient(135deg, rgba(108,63,199,0.12), rgba(192,132,252,0.08))',
@@ -1505,6 +1516,9 @@ export default function OutfitBuilder() {
   const [saveMsg,   setSaveMsg]   = useState(null)
   const [completing, setCompleting] = useState(false)
   const [completeNotes, setCompleteNotes] = useState(null)
+  // Lampeggio del tab Stylist quando si seleziona il primo capo
+  const [stylistPulse, setStylistPulse] = useState(false)
+  const prevSelCountRef = useRef(0)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [detailOutfit, setDetailOutfit] = useState(null)
   const [wearCounts,     setWearCounts]     = useState({})  // { outfitId: count }
@@ -1526,6 +1540,18 @@ export default function OutfitBuilder() {
   const selectedGarments = Object.values(selected)
     .map(id => getById(id))
     .filter(Boolean)
+
+  // Lampeggio tab Stylist: si attiva ogni volta che la selezione cresce
+  // (e si è sul tab builder, non già sullo stylist)
+  useEffect(() => {
+    const count = selectedGarments.length
+    if (count > prevSelCountRef.current && tab !== 'stylist') {
+      setStylistPulse(true)
+      const t = setTimeout(() => setStylistPulse(false), 2000)
+      return () => clearTimeout(t)
+    }
+    prevSelCountRef.current = count
+  }, [selectedGarments.length]) // eslint-disable-line
 
   const toggleGarment = (garment) => {
     const cat = garment.category
@@ -1625,24 +1651,48 @@ export default function OutfitBuilder() {
           {[
           ['builder', t('wardrobeStep2Cta')],
           ['saved', t('outfitsTitle')],
-          ...(isMobile ? [['mixer', 'Mixer']] : []),
-        ].map(([id, label]) => (
+          ...(isMobile ? [['mixer', 'Mixer'], ['stylist', '✨ Stylist']] : []),
+        ].map(([id, label]) => {
+            const isStylist = id === 'stylist'
+            const isActive  = tab === id
+            return (
             <button
               key={id}
-              onClick={() => setTab(id)}
+              onClick={() => { setTab(id); if (isStylist) setStylistPulse(false) }}
               style={{
                 padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 99,
                 cursor: 'pointer', transition: 'all 0.18s',
-                color: tab === id ? 'var(--primary-light)' : 'var(--text-muted)',
-                background: tab === id ? 'var(--primary-dim)' : 'transparent',
-                border: `1px solid ${tab === id ? 'var(--primary-border)' : 'transparent'}`,
+                color: isActive ? 'var(--primary-light)' : (isStylist && stylistPulse) ? 'var(--primary-light)' : 'var(--text-muted)',
+                background: isActive ? 'var(--primary-dim)' : 'transparent',
+                border: `1px solid ${isActive ? 'var(--primary-border)' : 'transparent'}`,
+                animation: (!isActive && isStylist && stylistPulse) ? 'stylistTabPulse 0.55s ease-in-out infinite alternate' : 'none',
+                position: 'relative',
               }}
-              onMouseEnter={e => { if (tab !== id) { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)' } }}
-              onMouseLeave={e => { if (tab !== id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)' } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}
             >
               {label}
+              {/* Pallino di notifica quando lampeggia */}
+              {isStylist && stylistPulse && !isActive && (
+                <span style={{
+                  position: 'absolute', top: 4, right: 4,
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: 'var(--primary)', boxShadow: '0 0 0 2px var(--surface)',
+                  animation: 'stylistDotPulse 0.7s ease-in-out infinite alternate',
+                }} />
+              )}
             </button>
-          ))}
+          )})}
+          <style>{`
+            @keyframes stylistTabPulse {
+              from { background: transparent; border-color: transparent; color: var(--text-muted); }
+              to   { background: var(--primary-dim); border-color: var(--primary-border); color: var(--primary-light); }
+            }
+            @keyframes stylistDotPulse {
+              from { transform: scale(1); opacity: 0.7; }
+              to   { transform: scale(1.3); opacity: 1; }
+            }
+          `}</style>
         </div>
 
         {/* ── Mobile: mini strip capi selezionati ────────────────────────────── */}
@@ -1861,25 +1911,61 @@ export default function OutfitBuilder() {
           />
         )}
 
-        {/* Stylist AI — barra scorrevole sempre visibile (nascosta sul mixer mobile) */}
-        {!(isMobile && tab === 'mixer') && <div data-pagetour="outfit-stylist" style={{ flexShrink: 0 }}>
-        <StylistSlider
-          currentTab={tab}
-          selectedGarments={selectedGarments}
-          onApplyOutfit={(ids, name, notes) => {
-            // Seleziona i capi nell'editor
-            const newSel = {}
-            for (const id of (ids || [])) {
-              const g = getById(id)
-              if (g) newSel[g.category] = g.id
-            }
-            setSelected(newSel)
-            if (name) setOutfitName(name)
-            if (notes) setCompleteNotes(notes)
-            setTab('builder')
-          }}
-        />
-        </div>}
+        {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
+        {isMobile && tab === 'stylist' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+            {/* Hint selezione capi */}
+            {selectedGarments.length === 0 && (
+              <div style={{
+                margin: '14px 16px 0', padding: '10px 14px',
+                background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
+                borderRadius: 12, fontSize: 12, color: 'var(--primary-light)', lineHeight: 1.5,
+              }}>
+                ✨ {language === 'en'
+                  ? 'Select garments in the Builder tab — I\'ll help you put together an outfit!'
+                  : 'Seleziona dei capi nel tab Builder — ti aiuto a creare un outfit!'}
+              </div>
+            )}
+            <StylistChat
+              selectedGarments={selectedGarments}
+              compact={false}
+              onApplyOutfit={(ids, name, notes) => {
+                const newSel = {}
+                for (const id of (ids || [])) {
+                  const g = getById(id)
+                  if (g) newSel[g.category] = g.id
+                }
+                setSelected(newSel)
+                if (name) setOutfitName(name)
+                if (notes) setCompleteNotes(notes)
+                setTab('builder')
+              }}
+              remainingQuota={null}
+              onQuotaUpdate={() => {}}
+            />
+          </div>
+        )}
+
+        {/* Stylist AI — barra scorrevole su desktop + mobile tab builder/saved/mixer */}
+        {!(isMobile && (tab === 'mixer' || tab === 'stylist')) && (
+          <div data-pagetour="outfit-stylist" style={{ flexShrink: 0 }}>
+            <StylistSlider
+              currentTab={tab}
+              selectedGarments={selectedGarments}
+              onApplyOutfit={(ids, name, notes) => {
+                const newSel = {}
+                for (const id of (ids || [])) {
+                  const g = getById(id)
+                  if (g) newSel[g.category] = g.id
+                }
+                setSelected(newSel)
+                if (name) setOutfitName(name)
+                if (notes) setCompleteNotes(notes)
+                setTab('builder')
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Right: Outfit mixer + controlli (hidden on mobile) ── */}
