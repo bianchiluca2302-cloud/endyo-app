@@ -1,165 +1,145 @@
 """
-bg_service.py — rimozione sfondo dai capi del guardaroba usando rembg + silueta model.
+bg_service.py — rimozione sfondo tramite sottoprocesso Python isolato.
 
-Il modello 'silueta' (~45 MB) è ottimizzato per figure umane e vestiti.
-Se rembg non è installato, viene installato automaticamente nel venv corrente.
-Il modello viene scaricato alla prima esecuzione in ~/.u2net/silueta.onnx
+STRATEGIA MEMORIA:
+    rembg durante l'inferenza occupa 400-800 MB di RAM anche con un singolo capo.
+    Su Railway (piano base ~512 MB) questo causa OOM → crash 502 anche per una
+    sola richiesta.
+
+    Soluzione: il processo FastAPI principale non carica mai rembg.
+    Ogni rimozione spawna un sottoprocesso Python dedicato che:
+      1. Importa rembg + onnxruntime
+      2. Carica il modello (u2netp, ~4 MB su disco, ~150 MB RAM durante inferenza)
+      3. Processa l'immagine e salva il PNG
+      4. Esce → tutta la RAM viene liberata dal sistema operativo
+
+    Il processo principale rimane leggero (<200 MB) e non rischia mai OOM.
+
+MODELLO:
+    Usiamo 'u2netp' (versione leggera di U2Net, ~4 MB).
+    Qualità leggermente inferiore a 'silueta', ma sufficientemente buona per
+    le anteprime dei capi e compatibile con i piani Railway a bassa RAM.
+
+CACHE MODELLO:
+    Il modello viene scaricato da rembg in ~/.u2net/ al primo utilizzo.
+    Su Railway persiste durante il lifetime del container (non tra i restart),
+    ma essendo solo 4 MB il re-download è rapido (~2-3 s).
 """
 
 import asyncio
-import io
 import logging
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Sessione rembg condivisa (evita di ricaricare il modello ogni volta)
-_rembg_session = None
-_rembg_available = None  # None = non ancora verificato
+# ── Script che gira nel sottoprocesso ────────────────────────────────────────
+# Costruito come stringa e passato a `python -c "..."`.
+# Riceve input_path e output_path come argomenti argv[1] e argv[2].
+_BG_WORKER_SCRIPT = textwrap.dedent("""\
+    import sys, io
+    from pathlib import Path
 
+    input_path  = sys.argv[1]
+    output_path = sys.argv[2]
 
-def _ensure_rembg() -> bool:
-    """
-    Verifica che rembg sia disponibile; se non lo è, lo installa automaticamente
-    nel venv corrente usando lo stesso Python dell'interprete in esecuzione.
-    Ritorna True se rembg è utilizzabile, False in caso di errore.
-    """
-    global _rembg_available
-    if _rembg_available is not None:
-        return _rembg_available
-
-    try:
-        import rembg  # noqa: F401
-        _rembg_available = True
-        logger.info("rembg già disponibile")
-        return True
-    except ImportError:
-        pass
-
-    logger.info("rembg non trovato — installazione automatica in corso (potrebbe richiedere 1-2 minuti)...")
-    try:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "rembg[cpu]", "onnxruntime", "--quiet"],
-            timeout=180,
-        )
-        # Verifica che l'installazione sia andata a buon fine
-        import importlib
-        importlib.invalidate_caches()
-        import rembg  # noqa: F401
-        _rembg_available = True
-        logger.info("rembg installato con successo")
-        return True
-    except Exception as e:
-        logger.error("Impossibile installare rembg: %s", e)
-        _rembg_available = False
-        return False
-
-
-def _get_session():
-    """Restituisce la sessione rembg con il modello silueta (lazy init)."""
-    global _rembg_session
-    if _rembg_session is None:
-        if not _ensure_rembg():
-            return None
-        try:
-            from rembg import new_session
-            _rembg_session = new_session("silueta")
-            logger.info("rembg: modello silueta caricato")
-        except Exception as e:
-            logger.warning("rembg: impossibile caricare la sessione: %s", e)
-    return _rembg_session
-
-
-def _remove_bg_sync(input_path: str) -> str:
-    """
-    Rimuove lo sfondo dall'immagine.
-    Salva il risultato come PNG (con trasparenza) nella stessa directory.
-    Cancella il file originale se diverso.
-    Ritorna il path del file risultante.
-    """
     p = Path(input_path)
     if not p.exists():
-        logger.warning("BG removal: file non trovato: %s", input_path)
-        return input_path
-
-    # Già processato
-    if p.stem.endswith("_nobg"):
-        return input_path
-
-    if not _ensure_rembg():
-        logger.warning("rembg non disponibile — sfondo non rimosso per %s", p.name)
-        return input_path
+        print(f"FILE_NOT_FOUND: {input_path}", file=sys.stderr)
+        sys.exit(1)
 
     try:
-        from rembg import remove
+        from rembg import new_session, remove
+        from PIL import Image
 
-        session = _get_session()
+        # u2netp: il modello più leggero di rembg (~4 MB, ~150 MB RAM durante inferenza)
+        session = new_session("u2netp")
 
         with open(p, "rb") as f:
             data = f.read()
 
-        # Rimuovi sfondo
-        if session:
-            output = remove(data, session=session)
-        else:
-            output = remove(data)
+        output = remove(data, session=session)
 
-        # Salva come PNG con trasparenza
-        from PIL import Image
         img = Image.open(io.BytesIO(output))
-        new_path = p.parent / f"{p.stem}_nobg.png"
-        img.save(str(new_path), "PNG")
+        img.save(output_path, "PNG")
 
-        # Rimuovi originale se diverso
-        if str(new_path) != str(p):
+        # Rimuovi originale solo se diverso dall'output
+        if str(p) != output_path:
             try:
                 p.unlink()
             except Exception:
                 pass
 
-        logger.info("BG rimosso: %s → %s", p.name, new_path.name)
-        return str(new_path)
-
+        print("OK")
     except Exception as e:
-        logger.warning("BG removal fallito per %s: %s", p.name, e)
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(2)
+""")
+
+
+def _remove_bg_subprocess_sync(input_path: str) -> str:
+    """
+    Esegue la rimozione sfondo in un sottoprocesso Python isolato.
+
+    Il sottoprocesso carica rembg + modello, processa, salva, ed esce.
+    Quando il processo figlio termina, tutta la sua RAM viene liberata —
+    il processo FastAPI principale non vede mai il picco di memoria.
+
+    Ritorna il path del PNG risultante, oppure input_path se fallisce.
+    """
+    p = Path(input_path)
+
+    if not p.exists():
+        logger.warning("BG removal: file non trovato: %s", input_path)
         return input_path
 
+    # Già processato in un run precedente
+    if p.stem.endswith("_nobg"):
+        return input_path
 
-# ── Semaforo: max 1 rimozione sfondo alla volta ──────────────────────────────
-# rembg durante l'inferenza occupa ~400-800 MB di RAM. Su Railway con pochi GB
-# disponibili, due rimozioni parallele causano OOM → crash 502.
-# Il semaforo serializza le richieste: ogni task aspetta che la precedente finisca.
-_bg_semaphore: asyncio.Semaphore | None = None
+    output_path = str(p.parent / f"{p.stem}_nobg.png")
 
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", _BG_WORKER_SCRIPT, input_path, output_path],
+            timeout=180,       # 3 min max (include eventuale download modello)
+            capture_output=True,
+            text=True,
+        )
 
-def _get_bg_semaphore() -> asyncio.Semaphore:
-    """Lazy-init: crea il semaforo nel loop corretto (quello di FastAPI)."""
-    global _bg_semaphore
-    if _bg_semaphore is None:
-        _bg_semaphore = asyncio.Semaphore(1)
-    return _bg_semaphore
+        if result.returncode == 0 and Path(output_path).exists():
+            logger.info("BG rimosso: %s → %s (rc=0)", p.name, Path(output_path).name)
+            return output_path
+        else:
+            logger.warning(
+                "BG subprocess fallito per %s (rc=%d): %s",
+                p.name, result.returncode, result.stderr.strip()[-300:],
+            )
+            return input_path
+
+    except subprocess.TimeoutExpired:
+        logger.error("BG subprocess timeout per %s (>180 s)", p.name)
+        return input_path
+    except Exception as e:
+        logger.error("BG subprocess eccezione per %s: %s", p.name, e)
+        return input_path
 
 
 async def remove_background(input_path: str) -> str:
     """
-    Async wrapper per la rimozione dello sfondo.
-    Gira in un thread separato per non bloccare l'event loop.
-    Il semaforo garantisce che al massimo 1 rimozione sia attiva alla volta,
-    evitando OOM sul server.
-    Ritorna il path del file risultante (PNG se riuscito, originale se fallito).
+    Async wrapper: esegue _remove_bg_subprocess_sync in un thread separato
+    per non bloccare l'event loop di FastAPI durante l'attesa del sottoprocesso.
     """
-    async with _get_bg_semaphore():
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, _remove_bg_sync, input_path)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _remove_bg_subprocess_sync, input_path)
 
 
 def preload_model_sync():
     """
-    Scarica e inizializza il modello silueta in modo sincrono.
-    Da chiamare in un thread al primo avvio per evitare attese al primo utilizzo.
+    Stub di compatibilità — con l'approccio a sottoprocesso non pre-carichiamo
+    nulla nel processo principale. Il modello verrà scaricato al primo utilizzo
+    nel processo figlio.
     """
-    if _ensure_rembg():
-        _get_session()
-        logger.info("rembg: modello pronto")
+    logger.info("bg_service: approccio subprocess — nessun preload nel processo principale")
