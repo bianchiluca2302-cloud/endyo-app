@@ -207,7 +207,7 @@ export default function MobileProfile() {
       </div>
 
       {/* ── Scrollable body ──────────────────────────────────────────────────── */}
-      <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+      <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
 
         {/* Account */}
         <div style={{ animation: 'slideUp 0.38s ease 60ms backwards' }}>

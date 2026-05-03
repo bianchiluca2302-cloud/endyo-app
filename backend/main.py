@@ -106,6 +106,8 @@ async def _migrate_db():
         # Token collegamento Google via email
         ("users", "google_link_token",          "VARCHAR(100)"),
         ("users", "google_link_token_expires",  "TIMESTAMP WITH TIME ZONE"),
+        # Notifiche — timestamp ultimo accesso
+        ("users", "notifications_seen_at",      "TIMESTAMP WITH TIME ZONE"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -3929,6 +3931,92 @@ async def _build_post(post: SocialPost, current_user_id: int, db: AsyncSession) 
                 }
 
     return base
+
+
+@app.get("/notifications")
+async def get_notifications(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Restituisce le ultime 60 notifiche dell'utente corrente:
+    - like ricevuti sui propri post
+    - nuovi follower
+    Ordinati per created_at desc. Include 'is_new' se successive a notifications_seen_at.
+    """
+    seen_at = current_user.notifications_seen_at
+    notifications = []
+
+    # ── Like ai propri post ───────────────────────────────────────────────────
+    my_posts_res = await db.execute(
+        select(SocialPost).where(SocialPost.user_id == current_user.id)
+    )
+    my_post_ids = [p.id for p in my_posts_res.scalars().all()]
+
+    if my_post_ids:
+        likes_res = await db.execute(
+            select(PostLike)
+            .where(PostLike.post_id.in_(my_post_ids), PostLike.user_id != current_user.id)
+            .order_by(PostLike.created_at.desc())
+            .limit(40)
+        )
+        for like in likes_res.scalars().all():
+            # Chi ha messo like
+            liker_res = await db.execute(select(User).where(User.id == like.user_id))
+            liker = liker_res.scalar_one_or_none()
+            if not liker: continue
+            prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == liker.id))
+            prof = prof_res.scalar_one_or_none()
+            # Post corrispondente
+            post_res = await db.execute(select(SocialPost).where(SocialPost.id == like.post_id))
+            post = post_res.scalar_one_or_none()
+            notifications.append({
+                "id":       f"like_{like.id}",
+                "type":     "like",
+                "actor":    liker.username,
+                "actor_pic": prof.profile_picture if prof else None,
+                "post_id":  like.post_id,
+                "post_thumb": post.photo_url if post else None,
+                "created_at": like.created_at.isoformat() if like.created_at else None,
+                "is_new":   (seen_at is None or like.created_at > seen_at) if like.created_at else False,
+            })
+
+    # ── Nuovi follower ────────────────────────────────────────────────────────
+    followers_res = await db.execute(
+        select(Friendship)
+        .where(Friendship.addressee_id == current_user.id, Friendship.status == 'following')
+        .order_by(Friendship.created_at.desc())
+        .limit(40)
+    )
+    for f in followers_res.scalars().all():
+        follower_res = await db.execute(select(User).where(User.id == f.requester_id))
+        follower = follower_res.scalar_one_or_none()
+        if not follower: continue
+        prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == follower.id))
+        prof = prof_res.scalar_one_or_none()
+        notifications.append({
+            "id":       f"follow_{f.id}",
+            "type":     "follow",
+            "actor":    follower.username,
+            "actor_pic": prof.profile_picture if prof else None,
+            "created_at": f.created_at.isoformat() if f.created_at else None,
+            "is_new":   (seen_at is None or f.created_at > seen_at) if f.created_at else False,
+        })
+
+    # Ordina per data desc
+    notifications.sort(key=lambda n: n["created_at"] or "", reverse=True)
+    return notifications[:60]
+
+
+@app.post("/notifications/seen")
+async def mark_notifications_seen(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Segna le notifiche come viste (aggiorna notifications_seen_at)."""
+    current_user.notifications_seen_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"ok": True}
 
 
 @app.post("/social/posts", status_code=201)

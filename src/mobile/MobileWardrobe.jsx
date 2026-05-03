@@ -313,7 +313,7 @@ function ShoppingTab() {
 
   if (state === 'results' && analysis && compat) {
     return (
-      <div style={{ padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+      <div style={{ padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
 
         {/* Photo + score */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
@@ -402,7 +402,7 @@ function ShoppingTab() {
   }
 
   return (
-    <div style={{ padding: '16px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+    <div style={{ padding: '16px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
       {/* Intro card */}
       <div style={{ padding: '16px', borderRadius: 14, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary-light)', marginBottom: 4 }}>
@@ -605,7 +605,7 @@ function AnalisiTab() {
   const maxCat = stats.catEntries[0]?.[1] || 1
 
   return (
-    <div style={{ padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+    <div style={{ padding: '12px 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
 
       {/* Summary card */}
       <div style={{
@@ -904,7 +904,7 @@ export default function MobileWardrobe() {
           </div>
 
           {/* Grid */}
-          <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+          <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
             {loading && garments.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
@@ -926,14 +926,14 @@ export default function MobileWardrobe() {
 
       {/* ── Shopping tab ───────────────────────────────────────────────────────── */}
       {activeTab === 'shopping' && (
-        <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+        <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
           <ShoppingTab />
         </div>
       )}
 
       {/* ── Analisi tab ────────────────────────────────────────────────────────── */}
       {activeTab === 'analisi' && (
-        <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+        <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
           <AnalisiTab />
         </div>
       )}

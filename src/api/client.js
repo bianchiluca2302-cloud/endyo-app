@@ -361,6 +361,10 @@ export const wearOutfit     = (outfitId, note = null) =>
 export const fetchWearStats = () =>
   api.get('/outfits/wear-stats').then(r => r.data)
 
+// ── Notifiche ─────────────────────────────────────────────────────────────────
+export const fetchNotifications     = () => api.get('/notifications').then(r => r.data)
+export const markNotificationsSeen  = () => api.post('/notifications/seen').then(r => r.data)
+
 // ── Social Feed ───────────────────────────────────────────────────────────────
 export const getSocialFeed   = (page = 1) => api.get('/social/feed', { params: { page } }).then(r => r.data)
 

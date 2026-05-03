@@ -3,6 +3,7 @@ import {
   getSocialFeed, toggleLike, imgUrl,
   searchUsers, followUser, unfollowUser, fetchFollowing,
   getUserPosts, deleteSocialPost, fetchUserFollowers, fetchUserFollowing,
+  fetchNotifications, markNotificationsSeen,
 } from '../api/client'
 import useAuthStore from '../store/authStore'
 import useWardrobeStore from '../store/wardrobeStore'
@@ -677,7 +678,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
       </div>
 
       {/* ── Corpo scrollabile ── */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
 
         {/* Header profilo */}
         <div style={{ padding: '20px 16px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -1309,111 +1310,101 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
     catch { setFollowing(s => { const n = new Set(s); isF ? n.add(u.username) : n.delete(u.username); return n }) }
   }
 
+  // Full-screen overlay: input in cima, sempre visibile anche con tastiera aperta
   return (
-    <div onClick={handleClose} style={{
-      position: 'fixed', inset: 0, background: `rgba(0,0,0,${visible ? 0.6 : 0})`,
-      zIndex: 600, display: 'flex', alignItems: 'flex-end',
-      transition: 'background 0.3s ease',
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 800,
+      background: 'var(--bg)',
+      display: 'flex', flexDirection: 'column',
+      animation: 'slideInRight 0.22s ease forwards',
     }}>
-      <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{
-        width: '100%', background: 'var(--surface)',
-        borderRadius: '22px 22px 0 0',
-        maxHeight: '80dvh', display: 'flex', flexDirection: 'column',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -8px 40px rgba(0,0,0,0.3)',
-        transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)',
-        transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
-        willChange: 'transform',
+      {/* ── Header con input ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg)', flexShrink: 0,
       }}>
-        {/* Sticky drag header */}
-        <div
-          onTouchStart={onHandleTouchStart}
-          onTouchMove={onHandleTouchMove}
-          onTouchEnd={onHandleTouchEnd}
+        <button
+          onClick={handleClose}
           style={{
-            position: 'sticky', top: 0, zIndex: 10,
-            background: 'var(--surface)',
-            borderBottom: '2px solid var(--border)',
-            touchAction: 'none', cursor: 'grab',
+            width: 36, height: 36, borderRadius: '50%',
+            border: '1px solid var(--border)', background: 'var(--card)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text)', flexShrink: 0,
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
-            <div style={{ width: 40, height: 4, borderRadius: 99, background: 'var(--border)' }} />
-          </div>
-          <div style={{ padding: '6px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-              {language === 'en' ? 'Search users' : 'Cerca utenti'}
-            </div>
-          </div>
-        </div>
-        <div style={{ padding: '12px 16px 8px' }}>
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder={language === 'en' ? 'Search users…' : 'Cerca utenti…'}
-            autoFocus
-            style={{
-              width: '100%', padding: '12px 16px', borderRadius: 14,
-              background: 'var(--card)', border: '1px solid var(--border)',
-              color: 'var(--text)', fontSize: 15, outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {/* Suggeriti — visibili solo prima di digitare */}
-          {!query.trim() && (
-            <div style={{ padding: '12px 16px 4px' }}>
-              <SuggestedUsers
-                language={language}
-                garments={garments}
-                onSelectUser={username => { onSelectUser(username); handleClose() }}
-              />
-            </div>
-          )}
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={language === 'en' ? 'Search users…' : 'Cerca utenti…'}
+          autoFocus
+          style={{
+            flex: 1, padding: '10px 14px', borderRadius: 14,
+            background: 'var(--card)', border: '1px solid var(--border)',
+            color: 'var(--text)', fontSize: 15, outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+      </div>
 
-          {loading && (
-            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
-              {language === 'en' ? 'Searching…' : 'Ricerca…'}
-            </div>
-          )}
-          {results.map(u => (
-            <div key={u.id} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-              borderBottom: '1px solid var(--border)',
-            }}>
-              <button
-                onClick={() => { onSelectUser(u.username); handleClose() }}
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flex: 1, textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Avatar src={u.profile_picture} username={u.username} size={40} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>@{u.username}</div>
-                  {u.name && <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{u.name}</div>}
-                </div>
+      {/* ── Risultati / suggeriti ── */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {!query.trim() && (
+          <div style={{ padding: '12px 16px 4px' }}>
+            <SuggestedUsers
+              language={language}
+              garments={garments}
+              onSelectUser={username => { onSelectUser(username); handleClose() }}
+            />
+          </div>
+        )}
+        {loading && (
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+            {language === 'en' ? 'Searching…' : 'Ricerca…'}
+          </div>
+        )}
+        {results.map(u => (
+          <div key={u.id} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            borderBottom: '1px solid var(--border)',
+          }}>
+            <button
+              onClick={() => { onSelectUser(u.username); handleClose() }}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flex: 1, textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Avatar src={u.profile_picture} username={u.username} size={40} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>@{u.username}</div>
+                {u.name && <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{u.name}</div>}
+              </div>
+            </button>
+            {u.username !== currentUser && (
+              <button onClick={() => toggleFollow(u)} style={{
+                padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600,
+                background: following.has(u.username) ? 'var(--card)' : 'var(--primary)',
+                color: following.has(u.username) ? 'var(--text-muted)' : '#fff',
+                WebkitTapHighlightColor: 'transparent',
+                border: following.has(u.username) ? '1px solid var(--border)' : 'none',
+              }}>
+                {following.has(u.username)
+                ? (language === 'en' ? 'Following' : 'Seguito')
+                : (language === 'en' ? 'Follow' : 'Segui')}
               </button>
-              {u.username !== currentUser && (
-                <button onClick={() => toggleFollow(u)} style={{
-                  padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600,
-                  background: following.has(u.username) ? 'var(--card)' : 'var(--primary)',
-                  color: following.has(u.username) ? 'var(--text-muted)' : '#fff',
-                  WebkitTapHighlightColor: 'transparent',
-                  border: following.has(u.username) ? '1px solid var(--border)' : 'none',
-                }}>
-                  {following.has(u.username)
-                  ? (language === 'en' ? 'Following' : 'Seguito')
-                  : (language === 'en' ? 'Follow' : 'Segui')}
-                </button>
-              )}
-            </div>
-          ))}
-          {!loading && query.trim() && results.length === 0 && (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
-              {language === 'en' ? 'No users found' : 'Nessun utente trovato'}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ))}
+        {!loading && query.trim() && results.length === 0 && (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+            {language === 'en' ? 'No users found' : 'Nessun utente trovato'}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1435,6 +1426,34 @@ export default function MobileFriends() {
   const [profileUser,            setProfileUser]            = useState(null)
   const [selectedPost,           setSelectedPost]           = useState(null)
   const [selectedPostFromMyPosts, setSelectedPostFromMyPosts] = useState(false)
+  // Notifiche
+  const [notifications,     setNotifications]     = useState([])
+  const [notifLoading,      setNotifLoading]      = useState(false)
+  const [unreadCount,       setUnreadCount]       = useState(0)
+
+  const loadNotifications = useCallback(async () => {
+    setNotifLoading(true)
+    try {
+      const list = await fetchNotifications()
+      setNotifications(list)
+      setUnreadCount(list.filter(n => n.is_new).length)
+    } catch {}
+    finally { setNotifLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    loadNotifications()
+  }, [loadNotifications])
+
+  const handleTabNotifiche = () => {
+    setTab('notifiche')
+    // Segna come viste dopo 800ms (dà tempo all'utente di vedere il badge)
+    setTimeout(() => {
+      markNotificationsSeen().catch(() => {})
+      setUnreadCount(0)
+      setNotifications(prev => prev.map(n => ({ ...n, is_new: false })))
+    }, 800)
+  }
 
   const loadFeed = useCallback(async (p = 1) => {
     try {
@@ -1501,11 +1520,12 @@ export default function MobileFriends() {
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: 4 }}>
           {[
-            { id: 'feed',    label: 'Feed' },
-            { id: 'myposts', label: language === 'en' ? 'My posts' : 'I miei post' },
+            { id: 'feed',       label: 'Feed',   onClick: () => setTab('feed') },
+            { id: 'myposts',    label: language === 'en' ? 'My posts' : 'I miei post', onClick: () => setTab('myposts') },
+            { id: 'notifiche',  label: null,     onClick: handleTabNotifiche },
           ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: '8px 16px', borderRadius: '10px 10px 0 0',
+            <button key={t.id} onClick={t.onClick} style={{
+              padding: '8px 14px', borderRadius: '10px 10px 0 0',
               fontSize: 13, fontWeight: 600, cursor: 'pointer',
               border: 'none',
               background: tab === t.id ? 'var(--card)' : 'transparent',
@@ -1513,8 +1533,29 @@ export default function MobileFriends() {
               borderBottom: tab === t.id ? '2px solid var(--primary)' : '2px solid transparent',
               WebkitTapHighlightColor: 'transparent',
               transition: 'all 0.15s',
+              position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {t.label}
+              {t.id === 'notifiche' ? (
+                <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth={tab === 'notifiche' ? 2.4 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: 'absolute', top: -5, right: -7,
+                      background: '#ef4444', color: '#fff',
+                      fontSize: 9, fontWeight: 800, lineHeight: 1,
+                      padding: '2px 4px', borderRadius: 99,
+                      minWidth: 14, textAlign: 'center',
+                    }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </span>
+              ) : t.label}
             </button>
           ))}
         </div>
@@ -1525,7 +1566,7 @@ export default function MobileFriends() {
 
         {/* ── FEED ── */}
         {tab === 'feed' && (
-          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
             {loading && posts.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
@@ -1607,13 +1648,106 @@ export default function MobileFriends() {
 
         {/* ── I MIEI POST ── */}
         {tab === 'myposts' && (
-          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
             <MyPostsTab
               user={user}
               onCreatePost={() => setShowCreate(true)}
               onSelectPost={p => { setSelectedPost(p); setSelectedPostFromMyPosts(true) }}
               language={language}
             />
+          </div>
+        )}
+
+        {/* ── NOTIFICHE ── */}
+        {tab === 'notifiche' && (
+          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+            {notifLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+                <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />
+              </div>
+            ) : notifications.length === 0 ? (
+              <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12 }}>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+                  {language === 'en' ? 'No notifications yet' : 'Nessuna notifica ancora'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                  {language === 'en' ? 'Likes and new followers will appear here' : 'I like e i nuovi follower appariranno qui'}
+                </div>
+              </div>
+            ) : (
+              <div>
+                {notifications.map(n => (
+                  <div
+                    key={n.id}
+                    onClick={() => n.actor && setProfileUser(n.actor)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '13px 16px',
+                      borderBottom: '1px solid var(--border)',
+                      background: n.is_new ? 'var(--primary-dim)' : 'transparent',
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {/* Avatar */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <Avatar src={n.actor_pic} username={n.actor} size={44} />
+                      {/* Icona tipo notifica */}
+                      <div style={{
+                        position: 'absolute', bottom: -2, right: -2,
+                        width: 18, height: 18, borderRadius: '50%',
+                        background: n.type === 'like' ? '#ef4444' : 'var(--primary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid var(--bg)',
+                      }}>
+                        {n.type === 'like' ? (
+                          <svg width={9} height={9} viewBox="0 0 24 24" fill="#fff" stroke="none">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                          </svg>
+                        ) : (
+                          <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
+                            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Testo */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: n.is_new ? 700 : 500 }}>
+                        <strong>@{n.actor}</strong>{' '}
+                        {n.type === 'like'
+                          ? (language === 'en' ? 'liked your post' : 'ha messo like al tuo post')
+                          : (language === 'en' ? 'started following you' : 'ha iniziato a seguirti')}
+                      </span>
+                      {n.created_at && (
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                          {new Date(n.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Thumb post (solo per like) */}
+                    {n.type === 'like' && n.post_thumb && (
+                      <img
+                        src={imgUrl(n.post_thumb)}
+                        alt=""
+                        style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    )}
+
+                    {/* Punto blu non letta */}
+                    {n.is_new && (
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

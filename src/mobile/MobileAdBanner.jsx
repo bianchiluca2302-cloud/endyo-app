@@ -153,8 +153,10 @@ export default function MobileAdBanner({ position = 'bottom' }) {
   const slot        = position === 'top' ? ADSENSE_SLOT_TOP : ADSENSE_SLOT_BOTTOM
   const currentAd = ads.length > 0 ? ads[idx % ads.length] : null
 
-  // Nessun position:fixed — entrambi i banner sono flex children nel layout colonna di App.jsx
-  const positionStyle = {}
+  // Il banner inferiore è position:fixed a bottom:0, sotto la tab bar (che è a bottom:50px)
+  const positionStyle = position === 'bottom'
+    ? { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 490 }
+    : {}
   const borderStyle = position === 'top'
     ? { borderBottom: '1px solid var(--border)' }
     : { borderTop:    '1px solid var(--border)' }
