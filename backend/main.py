@@ -54,7 +54,7 @@ from auth import (
     generate_secure_token, token_expiry,
     VERIFY_TOKEN_TTL, RESET_TOKEN_TTL,
 )
-from email_service import send_verification_email, send_reset_email, DEV_MODE as EMAIL_DEV_MODE
+from email_service import send_verification_email, send_reset_email, send_google_link_email, DEV_MODE as EMAIL_DEV_MODE
 
 logger = logging.getLogger(__name__)
 _bearer = HTTPBearer(auto_error=False)
@@ -99,6 +99,13 @@ async def _migrate_db():
         # Tabella user_profile — profilo esteso
         ("user_profile", "last_name",       "VARCHAR(100)"),
         ("user_profile", "birth_year",      "INTEGER"),
+        # Consensi GDPR
+        ("users", "terms_accepted_at",          "TIMESTAMP WITH TIME ZONE"),
+        ("users", "marketing_email",            "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("users", "marketing_phone",            "BOOLEAN NOT NULL DEFAULT FALSE"),
+        # Token collegamento Google via email
+        ("users", "google_link_token",          "VARCHAR(100)"),
+        ("users", "google_link_token_expires",  "TIMESTAMP WITH TIME ZONE"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -408,14 +415,24 @@ async def get_current_user(
 import re as _re
 
 class RegisterRequest(BaseModel):
-    email:      EmailStr
-    username:   Annotated[str, Field(min_length=3, max_length=30)]
-    password:   Annotated[str, Field(min_length=8, max_length=128)]
-    phone:      Annotated[Optional[str], Field(default=None, max_length=20)]
-    first_name: Annotated[Optional[str], Field(default=None, max_length=100)]
-    last_name:  Annotated[Optional[str], Field(default=None, max_length=100)]
-    gender:     Annotated[Optional[str], Field(default=None, max_length=30)]
-    birth_year: Optional[int] = None
+    email:           EmailStr
+    username:        Annotated[str, Field(min_length=3, max_length=30)]
+    password:        Annotated[str, Field(min_length=8, max_length=128)]
+    phone:           Annotated[Optional[str], Field(default=None, max_length=20)]
+    first_name:      Annotated[Optional[str], Field(default=None, max_length=100)]
+    last_name:       Annotated[Optional[str], Field(default=None, max_length=100)]
+    gender:          Annotated[Optional[str], Field(default=None, max_length=30)]
+    birth_year:      Optional[int] = None
+    terms_accepted:  bool = False     # deve essere True
+    marketing_email: bool = False
+    marketing_phone: bool = False
+
+    @field_validator("terms_accepted")
+    @classmethod
+    def must_accept_terms(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("È necessario accettare i Termini e Condizioni per registrarsi")
+        return v
 
     @field_validator("username")
     @classmethod
@@ -470,6 +487,9 @@ def user_to_dict(u: User) -> dict:
         "phone": u.phone, "is_verified": u.is_verified,
         "plan": u.plan or "free",
         "google_linked": bool(u.google_linked),
+        "marketing_email": bool(u.marketing_email) if u.marketing_email is not None else False,
+        "marketing_phone": bool(u.marketing_phone) if u.marketing_phone is not None else False,
+        "terms_accepted_at": u.terms_accepted_at.isoformat() if u.terms_accepted_at else None,
     }
 
 
@@ -503,6 +523,9 @@ async def register(request: Request, data: RegisterRequest, db: AsyncSession = D
         is_verified=False,
         verify_token=verify_token,
         verify_token_expires=token_expiry(VERIFY_TOKEN_TTL),
+        terms_accepted_at=datetime.now(timezone.utc),
+        marketing_email=data.marketing_email,
+        marketing_phone=data.marketing_phone,
     )
     db.add(user)
     await db.flush()  # ottieni l'id senza commit
@@ -694,6 +717,87 @@ async def google_link(request: Request, data: GoogleLinkRequest, db: AsyncSessio
         "token_type":    "bearer",
         "user":          user_to_dict(user),
     }
+
+
+class GoogleLinkInitRequest(BaseModel):
+    credential: str   # Google ID token
+
+
+@app.post("/auth/google/link/init")
+@limiter.limit("5/minute")
+async def google_link_init(request: Request, data: GoogleLinkInitRequest, db: AsyncSession = Depends(get_db)):
+    """Avvia il collegamento account Google con verifica via email.
+    Verifica il token Google, trova l'account Endyo e invia una email di conferma.
+    """
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(503, "Google OAuth non configurato")
+
+    # Verifica token Google
+    try:
+        from google.oauth2 import id_token as g_id_token
+        from google.auth.transport import requests as g_requests
+        idinfo = g_id_token.verify_oauth2_token(
+            data.credential, g_requests.Request(), GOOGLE_CLIENT_ID, clock_skew_in_seconds=10,
+        )
+    except Exception as e:
+        raise HTTPException(401, f"Token Google non valido: {e}")
+
+    google_email = idinfo.get("email", "").lower().strip()
+    if not google_email or not idinfo.get("email_verified", False):
+        raise HTTPException(400, "Email Google non verificata")
+
+    # Trova account Endyo
+    result = await db.execute(select(User).where(User.email == google_email))
+    user   = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "Nessun account trovato con questa email")
+    if user.google_linked:
+        raise HTTPException(400, "Account già collegato a Google")
+
+    # Genera token di collegamento
+    link_token = generate_secure_token()
+    user.google_link_token         = link_token
+    user.google_link_token_expires = token_expiry(VERIFY_TOKEN_TTL)
+    await db.commit()
+
+    # Invia email con link di verifica
+    await send_google_link_email(user.email, link_token)
+
+    return {"email": user.email, "message": "Email di conferma inviata. Controlla la tua casella."}
+
+
+@app.get("/auth/google/link/verify/{token}", response_class=HTMLResponse)
+async def google_link_verify(token: str, db: AsyncSession = Depends(get_db)):
+    """Verifica il token email e collega l'account Google. Redirige al frontend."""
+    result = await db.execute(select(User).where(User.google_link_token == token))
+    user   = result.scalar_one_or_none()
+    if not user:
+        return _html_page("Collegamento non valido", "❌", "Link non valido",
+                          "Questo link non è valido. Riprova dal menu impostazioni.", color="#ef4444")
+
+    if user.google_link_token_expires and user.google_link_token_expires < datetime.now(timezone.utc):
+        return _html_page("Link scaduto", "⏰", "Link scaduto",
+                          "Questo link è scaduto. Riprova dal menu impostazioni.", color="#f59e0b")
+
+    # Collega account
+    user.google_linked             = True
+    user.is_verified               = True
+    user.google_link_token         = None
+    user.google_link_token_expires = None
+    await db.commit()
+    await db.refresh(user)
+
+    # Genera tokens per auto-login
+    access_token_val  = create_access_token(user.id)
+    refresh_token_val = create_refresh_token(user.id)
+
+    # Redirige al frontend con i token
+    redirect_url = f"/portal/index.html#/google-link-success?access_token={access_token_val}&refresh_token={refresh_token_val}"
+    return _html_page(
+        "Account collegato", "🔗", "Account Google collegato!",
+        f"Il tuo account è stato collegato con successo. <br><br>"
+        f"<a href='{redirect_url}' style='color:#f59e0b;font-weight:700;'>Torna all'app →</a>"
+    )
 
 
 @app.post("/auth/refresh")
@@ -2142,6 +2246,30 @@ async def update_phone(
     await db.commit()
     await db.refresh(current_user)
     return {"phone": current_user.phone}
+
+
+class MarketingConsentRequest(BaseModel):
+    marketing_email: Optional[bool] = None
+    marketing_phone: Optional[bool] = None
+
+
+@app.patch("/user/marketing-consent")
+async def update_marketing_consent(
+    data: MarketingConsentRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Aggiorna i consensi marketing dell'utente."""
+    if data.marketing_email is not None:
+        current_user.marketing_email = data.marketing_email
+    if data.marketing_phone is not None:
+        current_user.marketing_phone = data.marketing_phone
+    await db.commit()
+    await db.refresh(current_user)
+    return {
+        "marketing_email": bool(current_user.marketing_email),
+        "marketing_phone": bool(current_user.marketing_phone),
+    }
 
 
 @app.get("/user/chat-quota")

@@ -51,6 +51,13 @@ class User(Base):
 
     # ── Google OAuth ───────────────────────────────────────────────────────────
     google_linked        = Column(Boolean, default=False, nullable=False, server_default='false')  # account collegato a Google
+    google_link_token         = Column(String(100), nullable=True, index=True)
+    google_link_token_expires = Column(DateTime(timezone=True), nullable=True)
+
+    # ── Consensi GDPR ─────────────────────────────────────────────────────────
+    terms_accepted_at    = Column(DateTime(timezone=True), nullable=True)  # quando ha accettato T&C
+    marketing_email      = Column(Boolean, default=False, nullable=False, server_default='false')
+    marketing_phone      = Column(Boolean, default=False, nullable=False, server_default='false')
 
     created_at          = Column(DateTime(timezone=True), server_default=func.now())
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())

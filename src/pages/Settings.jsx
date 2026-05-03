@@ -9,7 +9,7 @@ import {
   SHOE_SIZE_SYSTEMS, CLOTHING_SIZE_SYSTEMS, STYLIST_TONES,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone } from '../api/client'
+import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone, updateMarketingConsent } from '../api/client'
 import {
   IconAlertTriangle, IconStar, IconCalendar, IconRefreshCw, IconCheck,
   IconLightbulb, IconPalette, IconGlobe,
@@ -600,9 +600,9 @@ function StylistUsage({ language }) {
       blocked:      'Bloccato (solo Premium)',
       extraCredits: 'Crediti extra',
       buyPack:      'Acquista pacchetto',
-      packS:        '40 upload — 2€',
-      packM:        '100 upload — 5€',
-      packL:        '300 upload — 10€',
+      packS:        '40 upload — 2,49€',
+      packM:        '100 upload — 4,99€',
+      packL:        '300 upload — 9,99€',
       buying:       'Apertura pagamento…',
     },
     en: {
@@ -625,9 +625,9 @@ function StylistUsage({ language }) {
       blocked:      'Locked (Premium only)',
       extraCredits: 'Extra credits',
       buyPack:      'Buy a pack',
-      packS:        '40 uploads — €2',
-      packM:        '100 uploads — €5',
-      packL:        '300 uploads — €10',
+      packS:        '40 uploads — €2.49',
+      packM:        '100 uploads — €4.99',
+      packL:        '300 uploads — €9.99',
       buying:       'Opening payment…',
     },
   }
@@ -876,7 +876,14 @@ export default function Settings() {
 
   const handleFirstConfirm = (type) => {
     setResetConfirm(null)
-    setPendingAction(type)
+    // Il logout non è irreversibile: eseguiamo direttamente senza il modale "azione irreversibile"
+    if (type === 'logout') {
+      logout()
+      clearData()
+      navigate('/auth', { replace: true })
+    } else {
+      setPendingAction(type)
+    }
   }
 
   const handleIrreversibleConfirm = async () => {
@@ -1280,6 +1287,98 @@ export default function Settings() {
             {t('deleteAccountBtn')}
           </button>
         </Row>
+      </Section>
+
+      {/* ── PRIVACY E CONSENSI ──────────────────────────────────── */}
+      <Section id="privacy" icon={<IconDatabase size={18} />} title={language === 'en' ? 'Privacy & Consent' : 'Privacy e consensi'} openId={openSection} onToggle={toggleSection}>
+        {/* Marketing email */}
+        <Row
+          label={language === 'en' ? 'Promotional emails' : 'Email promozionali'}
+          desc={language === 'en' ? 'Receive personalized offers and news via email' : 'Ricevi offerte personalizzate e novità via email'}
+        >
+          <div
+            onClick={async () => {
+              const newVal = !(user?.marketing_email)
+              try {
+                await updateMarketingConsent({ marketing_email: newVal })
+                updateUser({ ...user, marketing_email: newVal })
+              } catch {}
+            }}
+            style={{
+              width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+              background: user?.marketing_email ? 'var(--primary)' : 'var(--border)',
+              position: 'relative', transition: 'background 0.3s',
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 2,
+              left: user?.marketing_email ? 22 : 2,
+              width: 20, height: 20, borderRadius: '50%', background: '#fff',
+              transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+            }} />
+          </div>
+        </Row>
+
+        {/* Marketing phone */}
+        <Row
+          label={language === 'en' ? 'SMS / Phone promotions' : 'Promozioni via SMS/telefono'}
+          desc={language === 'en' ? 'Receive offers via SMS or phone call' : 'Ricevi offerte tramite SMS o chiamata'}
+        >
+          <div
+            onClick={async () => {
+              const newVal = !(user?.marketing_phone)
+              try {
+                await updateMarketingConsent({ marketing_phone: newVal })
+                updateUser({ ...user, marketing_phone: newVal })
+              } catch {}
+            }}
+            style={{
+              width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+              background: user?.marketing_phone ? 'var(--primary)' : 'var(--border)',
+              position: 'relative', transition: 'background 0.3s',
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 2,
+              left: user?.marketing_phone ? 22 : 2,
+              width: 20, height: 20, borderRadius: '50%', background: '#fff',
+              transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+            }} />
+          </div>
+        </Row>
+
+        {/* Link documenti */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { label: language === 'en' ? 'Terms & Conditions' : 'Termini e Condizioni', url: 'https://endyo.it/terms' },
+            { label: language === 'en' ? 'Privacy Policy' : 'Privacy Policy', url: 'https://endyo.it/privacy' },
+            { label: language === 'en' ? 'Cookie Policy' : 'Cookie Policy', url: 'https://endyo.it/cookie' },
+          ].map(({ label, url }) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', background: 'var(--card)',
+                border: '1px solid var(--border)', borderRadius: 10,
+                textDecoration: 'none', color: 'var(--text)',
+                fontSize: 13, fontWeight: 500,
+              }}
+            >
+              <span>{label}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>↗</span>
+            </a>
+          ))}
+        </div>
+
+        {user?.terms_accepted_at && (
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'center' }}>
+            {language === 'en' ? 'Terms accepted on' : 'T&C accettati il'}{' '}
+            {new Date(user.terms_accepted_at).toLocaleDateString(language === 'en' ? 'en-GB' : 'it-IT')}
+          </div>
+        )}
       </Section>
 
       {/* ── INFO ─────────────────────────────────────────────────── */}

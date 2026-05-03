@@ -161,8 +161,14 @@ export default function MobileAdBanner({ position = 'bottom' }) {
     ? { borderBottom: '1px solid var(--border)' }
     : { borderTop:    '1px solid var(--border)' }
 
+  // Quando position="top", il banner deve estendersi dentro la safe-area per
+  // coprire il "buco" tra la notch/dynamic-island e il contenuto dell'app.
+  const topSafeArea = position === 'top'
+    ? { paddingTop: 'env(safe-area-inset-top, 0px)' }
+    : {}
+
   return (
-    <div style={{ width: '100%', flexShrink: 0, background: 'var(--card)', ...borderStyle, ...positionStyle }}>
+    <div style={{ width: '100%', flexShrink: 0, background: 'var(--card)', ...borderStyle, ...positionStyle, ...topSafeArea }}>
       {/* Se ci sono brand interni li mostriamo a rotazione, altrimenti AdSense */}
       {currentAd ? (
         <BrandBanner ad={currentAd} />

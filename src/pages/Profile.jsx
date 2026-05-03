@@ -135,6 +135,7 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
   const [startPos,  setStartPos]  = useState({ x: 0, y: 0 })
   const [imgLoaded, setImgLoaded] = useState(false)
   const [objectUrl, setObjectUrl] = useState(null)
+  const [flipped,   setFlipped]   = useState(false)
 
   const SIZE = 280   // diameter of crop circle
 
@@ -229,6 +230,12 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
     ctx.arc(160, 160, 160, 0, Math.PI * 2)
     ctx.clip()
 
+    // Applica flip orizzontale se attivato
+    if (flipped) {
+      ctx.translate(320, 0)
+      ctx.scale(-1, 1)
+    }
+
     const img = imgRef.current
     if (!img) return
     const naturalW = img.naturalWidth
@@ -308,7 +315,7 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
                   height: 'auto',
                   left: `calc(50% + ${offset.x}px)`,
                   top: `calc(50% + ${offset.y}px)`,
-                  transform: 'translate(-50%, -50%)',
+                  transform: `translate(-50%, -50%) scaleX(${flipped ? -1 : 1})`,
                   pointerEvents: 'none',
                   opacity: imgLoaded ? 1 : 0,
                   transition: 'opacity 0.2s',
@@ -319,7 +326,7 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
         </div>
 
         {/* Zoom slider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 11, color: 'var(--text-dim)', flexShrink: 0 }}>Zoom</span>
           <input
             type="range"
@@ -333,6 +340,27 @@ function AvatarCropModal({ file, onConfirm, onCancel }) {
           <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 34, textAlign: 'right', flexShrink: 0 }}>
             {Math.round(scale * 100)}%
           </span>
+        </div>
+
+        {/* Pulsante specchia */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <button
+            onClick={() => setFlipped(f => !f)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 18px', borderRadius: 20,
+              background: flipped ? 'var(--primary-dim)' : 'var(--card)',
+              border: `1px solid ${flipped ? 'var(--primary-border)' : 'var(--border)'}`,
+              color: flipped ? 'var(--primary-light)' : 'var(--text-muted)',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h3M16 3h3a2 2 0 012 2v14a2 2 0 01-2 2h-3M12 3v18"/>
+            </svg>
+            Specchia
+          </button>
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>

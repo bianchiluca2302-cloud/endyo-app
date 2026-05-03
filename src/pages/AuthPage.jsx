@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
-import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, authGoogleLink, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
+import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, authGoogleLink, authGoogleLinkInit, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
 import logoUrl from '../assets/logo.png'
 import { useT } from '../i18n'
 
@@ -480,6 +480,9 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
   const [lastName,  setLastName]  = useState('')
   const [gender,    setGender]    = useState('')
   const [birthYear, setBirthYear] = useState('')
+  const [termsAccepted,    setTermsAccepted]    = useState(false)
+  const [marketingEmail,   setMarketingEmail]   = useState(false)
+  const [marketingPhone,   setMarketingPhone]   = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -500,19 +503,24 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
     else if (usernameStatus === 'taken') fe.username = 'Username non disponibile'
     if (password.length < 8) fe.password = t('authErrPasswordLength')
     if (password !== confirm) fe.confirm = t('authErrPasswordMatch')
+    if (phone.trim() && phone.trim().length < 5) fe.phone = 'Inserisci un numero di telefono valido'
+    if (!termsAccepted) fe.terms = 'Devi accettare i Termini e Condizioni per continuare'
     if (Object.keys(fe).length > 0) { setFieldErrors(fe); return }
     setFieldErrors({})
     setLoading(true)
     try {
       await authRegister({
         email,
-        username: username.toLowerCase(),
+        username:        username.toLowerCase(),
         password,
-        phone:      phone      || undefined,
-        first_name: firstName  || undefined,
-        last_name:  lastName   || undefined,
-        gender:     gender     || undefined,
-        birth_year: birthYear  ? parseInt(birthYear, 10) : undefined,
+        phone:           phone.trim() || undefined,
+        first_name:      firstName  || undefined,
+        last_name:       lastName   || undefined,
+        gender:          gender     || undefined,
+        birth_year:      birthYear  ? parseInt(birthYear, 10) : undefined,
+        terms_accepted:  true,
+        marketing_email: marketingEmail,
+        marketing_phone: marketingPhone,
       })
       setRegistered(true)
     } catch (err) {
@@ -621,21 +629,96 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
         </div>
       </div>
 
-      {/* Telefono opzionale */}
+      {/* Telefono obbligatorio */}
       <div style={{ marginBottom: 14 }}>
         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
-          {t('authPhoneLabel')} <span style={{ fontWeight: 400, opacity: 0.6 }}>{t('authPhoneOptional')}</span>
+          {t('authPhoneLabel')} <span style={{ fontWeight: 400, color: 'var(--text-dim)', fontSize: 10 }}>facoltativo</span>
         </label>
         <input
           type="tel"
           value={phone}
-          onChange={e => setPhone(e.target.value)}
+          onChange={e => { setPhone(e.target.value); clearFieldError('phone') }}
           placeholder={t('authPhonePlaceholder')}
           autoComplete="tel"
           className="input"
-          style={{ width: '100%' }}
+          style={{ width: '100%', borderColor: fieldErrors.phone ? 'var(--danger)' : undefined }}
         />
+        {fieldErrors.phone && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{fieldErrors.phone}</div>}
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+          Usato solo per recupero account e comunicazioni urgenti.
+        </div>
       </div>
+
+      {/* ── Consensi ────────────────────────────────────────────────────── */}
+      <div style={{ margin: '4px 0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <span style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 500, letterSpacing: '0.05em', flexShrink: 0 }}>CONSENSI</span>
+        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      </div>
+
+      {/* T&C obbligatorio */}
+      {[
+        {
+          key: 'terms',
+          checked: termsAccepted,
+          onChange: () => { setTermsAccepted(v => !v); clearFieldError('terms') },
+          required: true,
+          label: (
+            <>
+              Ho letto e accetto i{' '}
+              <a href="https://endyo.it/terms" target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--primary-light)', textDecoration: 'none', fontWeight: 700 }}>
+                Termini e Condizioni
+              </a>{' '}
+              e la{' '}
+              <a href="https://endyo.it/privacy" target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--primary-light)', textDecoration: 'none', fontWeight: 700 }}>
+                Privacy Policy
+              </a>
+            </>
+          ),
+          error: fieldErrors.terms,
+        },
+        {
+          key: 'marketingEmail',
+          checked: marketingEmail,
+          onChange: () => setMarketingEmail(v => !v),
+          required: false,
+          label: 'Acconsento a ricevere comunicazioni promozionali via email',
+        },
+        {
+          key: 'marketingPhone',
+          checked: marketingPhone,
+          onChange: () => setMarketingPhone(v => !v),
+          required: false,
+          label: 'Acconsento a ricevere comunicazioni promozionali via SMS/telefono',
+        },
+      ].map(({ key, checked, onChange, required, label, error: fieldErr }) => (
+        <div key={key} style={{ marginBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div
+              onClick={onChange}
+              style={{
+                width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                border: `2px solid ${checked ? 'var(--primary)' : fieldErr ? 'var(--danger)' : 'var(--border)'}`,
+                background: checked ? 'var(--primary)' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'var(--transition)',
+              }}
+            >
+              {checked && <span style={{ color: 'white', fontSize: 11, lineHeight: 1 }}>✓</span>}
+            </div>
+            <span
+              style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer', flex: 1 }}
+              onClick={onChange}
+            >
+              {label}
+              {required && <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span>}
+            </span>
+          </div>
+          {fieldErr && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 3, paddingLeft: 28 }}>{fieldErr}</div>}
+        </div>
+      ))}
 
       {error && (
         <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 12, marginBottom: 14 }}>
@@ -716,26 +799,20 @@ function ForgotForm({ onBack }) {
   )
 }
 
-// ── Schermata collegamento account Google ─────────────────────────────────────
-function LinkAccountScreen({ email, googleName, credential, onDone, onCancel }) {
-  const [password, setPassword] = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState(null)
-  const setAuth = useAuthStore(s => s.setAuth)
+// ── Schermata collegamento account Google (verifica via email) ────────────────
+function LinkAccountScreen({ email, googleName, credential, onCancel }) {
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState(null)
+  const [emailSent,  setEmailSent]  = useState(false)
 
-  const handleLink = async (e) => {
-    e.preventDefault()
-    if (!password) return
+  const handleSendEmail = async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await authGoogleLink(credential, password)
-      setAuth(data.access_token, data.refresh_token, data.user, true)
-      onDone()
+      await authGoogleLinkInit(credential)
+      setEmailSent(true)
     } catch (err) {
-      const detail = err.response?.data?.detail || 'Errore, riprova'
-      if (err.response?.status === 403) setError('Password non corretta')
-      else setError(detail)
+      setError(err.response?.data?.detail || 'Errore, riprova')
     } finally {
       setLoading(false)
     }
@@ -748,60 +825,63 @@ function LinkAccountScreen({ email, googleName, credential, onDone, onCancel }) 
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🔗</div>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>{emailSent ? '📬' : '🔗'}</div>
           <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
-            Collega account Google
+            {emailSent ? 'Controlla la tua email' : 'Collega account Google'}
           </h2>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            Esiste già un account Endyo con <strong style={{ color: 'var(--text)' }}>{email}</strong>.<br />
-            Inserisci la password per collegarlo a Google.
+            {emailSent ? (
+              <>
+                Abbiamo inviato un link di conferma a{' '}
+                <strong style={{ color: 'var(--text)' }}>{email}</strong>.<br />
+                Clicca il link per collegare il tuo account Google.
+              </>
+            ) : (
+              <>
+                Esiste già un account Endyo con{' '}
+                <strong style={{ color: 'var(--text)' }}>{email}</strong>.<br />
+                Ti invieremo una email di conferma per collegarlo a Google.
+              </>
+            )}
           </p>
         </div>
 
-        <form onSubmit={handleLink}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
-              Password dell'account Endyo
-            </label>
-            <input
-              type="password"
-              className="input"
-              style={{ width: '100%' }}
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(null) }}
-              placeholder="••••••••"
-              autoFocus
-              autoComplete="current-password"
-            />
+        {emailSent ? (
+          <div style={{
+            padding: '12px 16px', background: 'rgba(139,92,246,0.08)',
+            border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10,
+            fontSize: 12, color: 'var(--primary-light)', lineHeight: 1.6, marginBottom: 20,
+          }}>
+            Controlla anche la cartella spam. Il link scade dopo 24 ore.
           </div>
-
-          {error && (
-            <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, color: '#f87171', fontSize: 12, marginBottom: 14 }}>
-              {error}
+        ) : (
+          <>
+            {error && (
+              <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, color: '#f87171', fontSize: 12, marginBottom: 14 }}>
+                {error}
+              </div>
+            )}
+            <div style={{ padding: '10px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 18, lineHeight: 1.5 }}>
+              Collegando l'account potrai accedere con Google o con email+password in futuro.
             </div>
-          )}
+            <button
+              onClick={handleSendEmail}
+              disabled={loading}
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '13px', fontSize: 15, fontWeight: 700 }}
+            >
+              {loading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : 'Invia email di conferma'}
+            </button>
+          </>
+        )}
 
-          <div style={{ padding: '10px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 18, lineHeight: 1.5 }}>
-            Collegando l'account potrai accedere con Google o con email+password in futuro.
-          </div>
-
-          <button
-            type="submit"
-            disabled={!password || loading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '13px', fontSize: 15, fontWeight: 700 }}
-          >
-            {loading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : 'Collega e accedi'}
-          </button>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', padding: '8px 0' }}
-          >
-            Annulla
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', padding: '8px 0' }}
+        >
+          Annulla
+        </button>
       </div>
     </div>
   )

@@ -86,6 +86,12 @@ export const updatePhone = (phone) =>
 export const authGoogleLink = (credential, password) =>
   api.post('/auth/google/link', { credential, password }).then(r => r.data)
 
+export const authGoogleLinkInit = (credential) =>
+  api.post('/auth/google/link/init', { credential }).then(r => r.data)
+
+export const updateMarketingConsent = (data) =>
+  api.patch('/user/marketing-consent', data).then(r => r.data)
+
 export const authForgotPassword = (email) =>
   api.post('/auth/forgot-password', { email }).then(r => r.data)
 

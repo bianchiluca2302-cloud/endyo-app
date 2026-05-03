@@ -207,6 +207,37 @@ async def send_reset_email(to: str, token: str, brand_portal: bool = False) -> N
     await _send(to, "Reimposta la password Endyo", html)
 
 
+# ── Email collegamento account Google ─────────────────────────────────────────
+async def send_google_link_email(to: str, token: str) -> None:
+    link = f"{BACKEND_URL}/auth/google/link/verify/{token}"
+    if DEV_MODE:
+        logger.warning(
+            "\n╔══════════════════════════════════════════════════╗\n"
+            "║  [DEV] COLLEGA GOOGLE — copia il link qui sotto  ║\n"
+            "╚══════════════════════════════════════════════════╝\n"
+            "  → %s\n",
+            link
+        )
+        return
+    html = _base_template(
+        preview="Conferma il collegamento del tuo account Google a Endyo.",
+        content=f"""
+      <p style="margin:0 0 6px;font-size:13px;color:#d97706;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Sicurezza account</p>
+      <h2 style="margin:0 0 16px;color:#1a1208;font-size:22px;font-weight:800;line-height:1.3">Collega il tuo<br>account Google</h2>
+      <p style="color:#6b5b3e;line-height:1.7;margin:0 0 8px;font-size:15px">
+        Hai richiesto di collegare il tuo account Google al tuo profilo Endyo.
+        Dopo il collegamento, potrai accedere con Google o con email+password.
+      </p>
+      {_btn(link, 'Collega account Google')}
+      {_divider()}
+      <p style="color:#a08060;font-size:12px;margin:0;line-height:1.6">
+        Il link è valido per <strong style="color:#92400e">24 ore</strong>.<br>
+        Se non hai richiesto questo collegamento, puoi ignorare questa email in tutta sicurezza.
+      </p>
+    """)
+    await _send(to, "Collega il tuo account Google a Endyo", html)
+
+
 # ── Email conferma abbonamento Premium ────────────────────────────────────────
 async def send_premium_confirmation_email(to: str, plan: str) -> None:
     plan_label = "Premium Annuale" if "annual" in plan else "Premium Mensile"
