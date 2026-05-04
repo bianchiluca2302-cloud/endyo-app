@@ -1494,7 +1494,7 @@ export default function AuthPage() {
       }}>
         {/* Logo + titolo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src={logoUrl} alt="Endyo" style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'contain', marginBottom: 14 }} />
+          <img src={logoUrl} alt="Endyo" style={{ width: 160, height: 160, borderRadius: 30, objectFit: 'contain', marginBottom: 14 }} />
           <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
             {titles[view]}
           </h1>
