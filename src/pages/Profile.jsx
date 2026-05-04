@@ -1015,6 +1015,7 @@ export default function Profile() {
       paddingBottom: isMobile
         ? 'calc(env(safe-area-inset-bottom, 0px) + 130px)'
         : '60px',
+      ...(isMobile ? { animation: 'slideUp 0.38s ease backwards' } : {}),
     }}>
       {/* ── Back button mobile (identico a Settings) ── */}
       {isMobile && (

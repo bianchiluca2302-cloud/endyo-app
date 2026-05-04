@@ -1,7 +1,7 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
-import { imgUrl, analyzeGarment, confirmGarment } from '../api/client'
+import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus } from '../api/client'
 import { useCategoryLabels, useT, useTagTranslator } from '../i18n'
 import MobileGarmentSheet from './MobileGarmentSheet'
 
@@ -34,9 +34,38 @@ const CameraIcon = () => (
 
 /* ── Garment card ────────────────────────────────────────────────────────────── */
 function GarmentCard({ g, onClick }) {
-  const hasImg       = !!g.photo_front
-  const translateTag = useTagTranslator()
-  const language     = useSettingsStore(s => s.language) || 'it'
+  const translateTag    = useTagTranslator()
+  const language        = useSettingsStore(s => s.language) || 'it'
+  const updateGarmentBg = useWardrobeStore(s => s.updateGarmentBg)
+  const liveGarment     = useWardrobeStore(s => s.garments.find(gm => gm.id === g.id)) || g
+  const bgProcessing    = liveGarment.bg_status === 'processing'
+  const pollRef         = useRef(null)
+  const pollAttempts    = useRef(0)
+  const pollErrors      = useRef(0)
+
+  useEffect(() => {
+    if (!bgProcessing) { clearInterval(pollRef.current); return }
+    pollAttempts.current = 0
+    pollErrors.current   = 0
+    pollRef.current = setInterval(async () => {
+      pollAttempts.current += 1
+      if (pollAttempts.current > 35) { clearInterval(pollRef.current); updateGarmentBg(g.id, 'none'); return }
+      try {
+        const data = await fetchBgStatus(g.id)
+        pollErrors.current = 0
+        if (data.bg_status !== 'processing') {
+          clearInterval(pollRef.current)
+          updateGarmentBg(g.id, data.bg_status, { photo_front: data.photo_front, photo_back: data.photo_back })
+        }
+      } catch {
+        pollErrors.current += 1
+        if (pollErrors.current >= 5) { clearInterval(pollRef.current); updateGarmentBg(g.id, 'none') }
+      }
+    }, 4000)
+    return () => clearInterval(pollRef.current)
+  }, [bgProcessing, g.id]) // eslint-disable-line
+
+  const hasImg = !!liveGarment.photo_front
 
   return (
     /*
@@ -69,16 +98,30 @@ function GarmentCard({ g, onClick }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          position: 'relative',
         }}>
           {hasImg ? (
             <img
-              src={imgUrl(g.photo_front)}
-              alt={g.name}
+              src={imgUrl(liveGarment.photo_front)}
+              alt={liveGarment.name}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
             <ShirtPlaceholder />
+          )}
+          {bgProcessing && (
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+              padding: '20px 8px 7px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}>
+              <div className="spinner" style={{ width: 11, height: 11, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#fbbf24', flexShrink: 0 }} />
+              <span style={{ fontSize: 9.5, color: '#fcd34d', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {language === 'en' ? 'Removing bg…' : 'Rimozione sfondo…'}
+              </span>
+            </div>
           )}
         </div>
 
@@ -89,39 +132,39 @@ function GarmentCard({ g, onClick }) {
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             lineHeight: 1.3, marginBottom: 4,
           }}>
-            {g.name || (language === 'en' ? 'Item' : 'Capo')}
+            {liveGarment.name || (language === 'en' ? 'Item' : 'Capo')}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-            {g.color_hex && (
+            {liveGarment.color_hex && (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                 background: g.color_hex, border: '1px solid rgba(0,0,0,0.12)',
                 display: 'inline-block',
               }} />
             )}
-            {g.brand && (
+            {liveGarment.brand && (
               <span style={{
                 fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
-                {g.brand}
+                {liveGarment.brand}
               </span>
             )}
-            {g.size && (
+            {liveGarment.size && (
               <span style={{
                 fontSize: 9.5, fontWeight: 700, color: 'var(--primary-light)',
                 background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
                 borderRadius: 5, padding: '1px 5px', flexShrink: 0,
               }}>
-                {g.size}
+                {liveGarment.size}
               </span>
             )}
           </div>
 
-          {(g.style_tags || []).length > 0 && (
+          {(liveGarment.style_tags || []).length > 0 && (
             <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
-              {g.style_tags.slice(0, 2).map(tag => (
+              {liveGarment.style_tags.slice(0, 2).map(tag => (
                 <span key={tag} style={{
                   fontSize: 9.5, fontWeight: 600,
                   background: 'rgba(139,92,246,0.1)',
@@ -200,7 +243,7 @@ function ScoreRing({ score }) {
 }
 
 /* ── Shopping tab ────────────────────────────────────────────────────────────── */
-function ShoppingTab() {
+function ShoppingTab({ busyRef }) {
   const garments   = useWardrobeStore(s => s.garments)
   const outfits    = useWardrobeStore(s => s.outfits)
   const addGarment = useWardrobeStore(s => s.addGarment)
@@ -235,6 +278,7 @@ function ShoppingTab() {
   const handleAnalyze = useCallback(async () => {
     if (!photo) return
     setState('analyzing')
+    if (busyRef) busyRef.current = true
     setError(null)
     try {
       const fd = new FormData()
@@ -288,8 +332,9 @@ function ShoppingTab() {
     } catch {
       setError(language === 'en' ? 'Analysis error. Try again.' : 'Errore nell\'analisi. Riprova.')
       setState('idle')
+      if (busyRef) busyRef.current = false
     }
-  }, [photo, language, garments])
+  }, [photo, language, garments, busyRef])
 
   const handleAdd = useCallback(async () => {
     if (!analysis || !tmpPaths || adding || added) return
@@ -299,9 +344,10 @@ function ShoppingTab() {
       const result = await confirmGarment(payload)
       addGarment(result)
       setAdded(true)
+      if (busyRef) busyRef.current = false
     } catch {}
     finally { setAdding(false) }
-  }, [analysis, tmpPaths, adding, added, language, addGarment])
+  }, [analysis, tmpPaths, adding, added, language, addGarment, busyRef])
 
   const verdict = compat ? (
     compat.score >= 8
@@ -373,7 +419,7 @@ function ShoppingTab() {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => { setState('idle'); setAnalysis(null); setCompat(null); setPreview(null); setPhoto(null); setAdded(false) }}
+            onClick={() => { setState('idle'); setAnalysis(null); setCompat(null); setPreview(null); setPhoto(null); setAdded(false); if (busyRef) busyRef.current = false }}
             style={{
               flex: 1, padding: '13px', borderRadius: 12,
               background: 'var(--card)', border: '1px solid var(--border)',
@@ -406,7 +452,7 @@ function ShoppingTab() {
       {/* Intro card */}
       <div style={{ padding: '16px', borderRadius: 14, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary-light)', marginBottom: 4 }}>
-          🛍️ {language === 'en' ? 'Shopping Advisor' : 'Shopping Advisor'}
+          {language === 'en' ? 'Shopping Advisor' : 'Shopping Advisor'}
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
           {language === 'en'
@@ -492,7 +538,7 @@ function ShoppingTab() {
             {language === 'en' ? 'Analyzing…' : 'Analisi in corso…'}
           </>
         ) : (
-          language === 'en' ? '✨ Analyze item' : '✨ Analizza capo'
+          language === 'en' ? 'Analyze item' : 'Analizza capo'
         )}
       </button>
 
@@ -585,7 +631,9 @@ function AnalisiTab() {
   if (!garments.length) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 28px', gap: 14 }}>
-        <div style={{ fontSize: 48, opacity: 0.3 }}>📊</div>
+        <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={1.3} strokeLinecap="round" style={{ opacity: 0.3 }}>
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', textAlign: 'center' }}>
           {language === 'en' ? 'No data yet' : 'Nessun dato ancora'}
         </div>
@@ -765,6 +813,12 @@ export default function MobileWardrobe() {
   const [showSearch, setShowSearch] = useState(false)
   const [selected,   setSelected]   = useState(null)
   const [activeTab,  setActiveTab]  = useState('armadio') // 'armadio' | 'shopping' | 'analisi'
+  const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
+
+  const handleTabSwitch = (tab) => {
+    if (shoppingBusyRef.current && activeTab === 'shopping' && tab !== 'shopping') return
+    setActiveTab(tab)
+  }
 
   /* Categories derived from actual garments */
   const categories = useMemo(
@@ -874,14 +928,14 @@ export default function MobileWardrobe() {
 
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: 0 }}>
-          <button style={tabStyle(activeTab === 'armadio')} onClick={() => setActiveTab('armadio')}>
-            👗 {language === 'en' ? 'Wardrobe' : 'Armadio'}
+          <button style={tabStyle(activeTab === 'armadio')} onClick={() => handleTabSwitch('armadio')}>
+            {language === 'en' ? 'Wardrobe' : 'Armadio'}
           </button>
-          <button style={tabStyle(activeTab === 'shopping')} onClick={() => setActiveTab('shopping')}>
-            🛍️ Shopping
+          <button style={tabStyle(activeTab === 'shopping')} onClick={() => handleTabSwitch('shopping')}>
+            Shopping
           </button>
-          <button style={tabStyle(activeTab === 'analisi')} onClick={() => setActiveTab('analisi')}>
-            📊 {language === 'en' ? 'Analysis' : 'Analisi'}
+          <button style={tabStyle(activeTab === 'analisi')} onClick={() => handleTabSwitch('analisi')}>
+            {language === 'en' ? 'Analysis' : 'Analisi'}
           </button>
         </div>
       </div>
@@ -927,7 +981,7 @@ export default function MobileWardrobe() {
       {/* ── Shopping tab ───────────────────────────────────────────────────────── */}
       {activeTab === 'shopping' && (
         <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
-          <ShoppingTab />
+          <ShoppingTab busyRef={shoppingBusyRef} />
         </div>
       )}
 

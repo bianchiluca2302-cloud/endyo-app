@@ -1021,10 +1021,10 @@ async def _run_bg_removal_background(garment_id: int):
             if not g:
                 return
 
-            # Processa fronte e retro separatamente (un sottoprocesso per immagine).
-            # L'etichetta NON viene processata (rimane originale per scopi diagnostici).
-            field_map: dict[str, str] = {}  # input_path → field name
-            for field in ("photo_front", "photo_back"):
+            # Processa solo il fronte (un subprocess per immagine).
+            # Il retro e l'etichetta NON vengono processati.
+            # Non si salta il file anche se ha già "_nobg": bg_service lo gestisce come no-op.
+            for field in ("photo_front",):
                 filename = getattr(g, field)
                 if not filename:
                     continue
@@ -1032,22 +1032,16 @@ async def _run_bg_removal_background(garment_id: int):
                 if not p.exists():
                     logger.warning("BG: file non trovato per %s (garment %d): %s", field, garment_id, p)
                     continue
-                if p.stem.endswith("_nobg"):
-                    continue  # già processato
-                field_map[str(p)] = field
-
-            for inp, field in field_map.items():
                 try:
-                    out = await remove_background(inp)
+                    out = await remove_background(str(p))
                     new_filename = Path(out).name
-                    old_filename = getattr(g, field)
-                    if new_filename != old_filename:
+                    if new_filename != filename:
                         setattr(g, field, new_filename)
                         logger.info("BG rimosso %s: %s → %s (garment %d)",
-                                    field, old_filename, new_filename, garment_id)
+                                    field, filename, new_filename, garment_id)
                     else:
-                        logger.warning("BG invariato per %s (garment %d) — rimozione fallita o non necessaria",
-                                       field, garment_id)
+                        logger.info("BG già elaborato o non modificato per %s (garment %d)",
+                                    field, garment_id)
                 except Exception as e_field:
                     logger.error("BG removal fallito per %s (garment %d): %s", field, garment_id, e_field)
 

@@ -1483,14 +1483,19 @@ export default function MobileFriends() {
         background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 0',
+        paddingLeft: 20, paddingRight: 20, paddingBottom: 0,
         borderBottom: '1px solid var(--border)',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0 }}>
-            {language === 'en' ? 'Friends' : 'Amici'}
-          </h1>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0 }}>
+              {language === 'en' ? 'Friends' : 'Amici'}
+            </h1>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 3 }}>
+              {language === 'en' ? 'Feed & community' : 'Feed e community'}
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setShowSearch(true)} style={{
               width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--border)',
@@ -1525,15 +1530,15 @@ export default function MobileFriends() {
             { id: 'notifiche',  label: null,     onClick: handleTabNotifiche, pushRight: true },
           ].map(t => (
             <button key={t.id} onClick={t.onClick} style={{
-              ...(t.pushRight ? { marginLeft: 'auto' } : {}),
-              padding: '8px 14px', borderRadius: '10px 10px 0 0',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              ...(t.pushRight ? { marginLeft: 'auto' } : { flex: 1 }),
+              padding: '8px 4px',
+              fontSize: 13, fontWeight: tab === t.id ? 700 : 500, cursor: 'pointer',
               border: 'none',
-              background: tab === t.id ? 'var(--card)' : 'transparent',
+              background: 'none',
               color: tab === t.id ? 'var(--primary-light)' : 'var(--text-dim)',
               borderBottom: tab === t.id ? '2px solid var(--primary)' : '2px solid transparent',
               WebkitTapHighlightColor: 'transparent',
-              transition: 'all 0.15s',
+              transition: 'color 0.15s, border-color 0.15s',
               position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>

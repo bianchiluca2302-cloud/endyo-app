@@ -1539,6 +1539,22 @@ export default function OutfitBuilder() {
   const [completeNotes, setCompleteNotes] = useState(null)
   // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
   const { weather } = useWeather(language)
+
+  // Keyboard height tracking per mobile Stylist tab (evita che la tastiera sollevi il menu)
+  const [kbH, setKbH] = useState(0)
+  useEffect(() => {
+    if (!isMobile || !window.visualViewport) return
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)
+      setKbH(kb)
+    }
+    window.visualViewport.addEventListener('resize', update)
+    window.visualViewport.addEventListener('scroll', update)
+    return () => {
+      window.visualViewport.removeEventListener('resize', update)
+      window.visualViewport.removeEventListener('scroll', update)
+    }
+  }, [isMobile])
   const prevSelCountRef = useRef(0)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [detailOutfit, setDetailOutfit] = useState(null)
@@ -1647,7 +1663,7 @@ export default function OutfitBuilder() {
             className={isMobile ? undefined : 'page-title'}>
             {t('outfitMixerTitle')}
           </h1>
-          <p className="page-subtitle" style={{ margin: isMobile ? '4px 0 12px' : '3px 0 10px' }}>
+          <p className="page-subtitle" style={{ margin: isMobile ? '4px 0 12px' : '3px 0 10px', ...(isMobile ? { fontSize: 12, color: 'var(--text-dim)' } : {}) }}>
             {outfits.length === 0
               ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
               : `${outfits.length} ${outfits.length === 1
@@ -1920,7 +1936,7 @@ export default function OutfitBuilder() {
 
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
         {isMobile && tab === 'stylist' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingBottom: kbH }}>
             {/* Header meteo */}
             {weather && (
               <div style={{ padding: '8px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
@@ -2177,7 +2193,7 @@ export default function OutfitBuilder() {
       {/* ── Mobile: compact save bar at bottom ───────────────────────────── */}
       {isMobile && (
         <div style={{
-          position: 'fixed', bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
+          position: 'fixed', bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
           borderTop: '1px solid var(--border)',
           background: 'var(--surface)',
           padding: '10px 14px',

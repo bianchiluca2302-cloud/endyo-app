@@ -508,11 +508,32 @@ export default function MobileUpload() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
-        borderRadius: 10, padding: '9px 12px', marginBottom: 12,
+        borderRadius: 10, padding: '9px 12px', marginBottom: 8,
       }}>
-        <span style={{ fontSize: 16, flexShrink: 0 }}>☀️</span>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
         <span style={{ fontSize: 12, color: 'var(--primary-light)', lineHeight: 1.4 }}>
           Per risultati migliori usa <strong>luce naturale</strong> e uno <strong>sfondo neutro</strong> (bianco o grigio)
+        </span>
+      </div>
+      {/* Regola rimozione sfondo */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)',
+        borderRadius: 10, padding: '8px 12px', marginBottom: 12,
+      }}>
+        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}>
+          <path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+        <span style={{ fontSize: 11, color: '#fbbf24', lineHeight: 1.4 }}>
+          {language === 'en'
+            ? 'Background removal applies to the front photo only'
+            : 'La rimozione dello sfondo viene applicata solo alla foto frontale'}
         </span>
       </div>
 
