@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import logoUrl from './assets/logo.png'
+const logoUrl = '/Endyoapp.png'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import TutorialOverlay, { shouldShowTutorial } from './components/TutorialOverlay'

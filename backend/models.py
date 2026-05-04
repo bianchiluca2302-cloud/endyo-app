@@ -112,6 +112,8 @@ class Garment(Base):
     photo_back       = Column(String(500), nullable=True)
     photo_label      = Column(String(500), nullable=True)
     photo_front_data = Column(Text, nullable=True)   # base64 data URL per persistenza cross-restart
+    photo_back_data  = Column(Text, nullable=True)   # base64 data URL per persistenza cross-restart
+    photo_label_data = Column(Text, nullable=True)   # base64 data URL per persistenza cross-restart
     ai_analysis   = Column(JSON,        nullable=True)
     tryon_image   = Column(String(500), nullable=True)
     tryon_status  = Column(String(20),  default='none')

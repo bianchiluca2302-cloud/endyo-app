@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, authGoogleLink, authGoogleLinkInit, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
-import logoUrl from '../assets/logo.png'
+const logoUrl = '/Endyoapp.png'
 import { useT } from '../i18n'
 
 // ── Schermata scelta username dopo Google OAuth ───────────────────────────────

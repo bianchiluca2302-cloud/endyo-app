@@ -110,8 +110,10 @@ async def _migrate_db():
         ("users", "notifications_seen_at",      "TIMESTAMP WITH TIME ZONE"),
         # Foto profilo persistente in DB (non dipende dal filesystem)
         ("user_profile", "profile_picture_data", "TEXT"),
-        # Foto frontale capo persistente in DB
+        # Foto frontale/retro/etichetta capo persistenti in DB
         ("garments", "photo_front_data", "TEXT"),
+        ("garments", "photo_back_data",  "TEXT"),
+        ("garments", "photo_label_data", "TEXT"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -351,8 +353,8 @@ def garment_to_dict(g: Garment) -> dict:
         "season_tags": g.season_tags or [],
         "occasion_tags": g.occasion_tags or [],
         "photo_front": g.photo_front_data or (f"/uploads/{g.photo_front}" if g.photo_front else None),
-        "photo_back": f"/uploads/{g.photo_back}" if g.photo_back else None,
-        "photo_label": f"/uploads/{g.photo_label}" if g.photo_label else None,
+        "photo_back": g.photo_back_data or (f"/uploads/{g.photo_back}" if g.photo_back else None),
+        "photo_label": g.photo_label_data or (f"/uploads/{g.photo_label}" if g.photo_label else None),
         "tryon_image": g.tryon_image or None,
         "tryon_status": g.tryon_status or "none",
         "bg_status": g.bg_status or "none",
@@ -1074,20 +1076,32 @@ async def _run_bg_removal_background(garment_id: int):
 
             g.bg_status = "done"
             # Salva base64 in DB per persistenza cross-restart
-            if g.photo_front:
-                b64 = _file_to_b64(UPLOAD_DIR / g.photo_front)
-                if b64:
-                    g.photo_front_data = b64
+            for field, data_field in [
+                ("photo_front", "photo_front_data"),
+                ("photo_back",  "photo_back_data"),
+                ("photo_label", "photo_label_data"),
+            ]:
+                filename = getattr(g, field)
+                if filename:
+                    b64 = _file_to_b64(UPLOAD_DIR / filename)
+                    if b64:
+                        setattr(g, data_field, b64)
             await db.commit()
         except Exception as e:
             logger.error("BG removal fallito per garment %d: %s", garment_id, e)
             try:
                 g.bg_status = "none"
-                # Anche in caso di errore, salva l'originale in DB
-                if g.photo_front and not g.photo_front_data:
-                    b64 = _file_to_b64(UPLOAD_DIR / g.photo_front)
-                    if b64:
-                        g.photo_front_data = b64
+                # Anche in caso di errore, salva gli originali in DB
+                for field, data_field in [
+                    ("photo_front", "photo_front_data"),
+                    ("photo_back",  "photo_back_data"),
+                    ("photo_label", "photo_label_data"),
+                ]:
+                    filename = getattr(g, field)
+                    if filename and not getattr(g, data_field):
+                        b64 = _file_to_b64(UPLOAD_DIR / filename)
+                        if b64:
+                            setattr(g, data_field, b64)
                 await db.commit()
             except Exception:
                 pass

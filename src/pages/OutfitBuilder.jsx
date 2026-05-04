@@ -2191,7 +2191,7 @@ export default function OutfitBuilder() {
       </div>}
 
       {/* ── Mobile: compact save bar at bottom ───────────────────────────── */}
-      {isMobile && (
+      {isMobile && tab !== 'stylist' && (
         <div style={{
           position: 'fixed', bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
           borderTop: '1px solid var(--border)',

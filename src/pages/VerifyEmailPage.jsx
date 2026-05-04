@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { authVerifyEmail } from '../api/client'
 import { useT } from '../i18n'
-import logoUrl from '../assets/logo.png'
+const logoUrl = '/Endyoapp.png'
 import { IconCheckCircle, IconAlertTriangle } from '../components/Icons'
 
 export default function VerifyEmailPage() {
