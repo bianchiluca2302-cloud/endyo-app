@@ -226,7 +226,7 @@ export default function MobileUpload() {
   }
 
   const handleAnalyze = async () => {
-    if (!photos.front) { setError('Aggiungi almeno la foto frontale'); return }
+    if (!photos.front) { setError(t('uploadNeedFront')); return }
     setError(null); setLoading(true); setStep('analyzing')
     try {
       const fd = new FormData()
@@ -307,12 +307,12 @@ export default function MobileUpload() {
 
   /* ── STEP: analyzing ─────────────────────────────────────────────────────── */
   if (step === 'analyzing') return (
-    <LoadingScreen title="Analisi in corso…" subtitle="L'AI sta riconoscendo brand, colore, categoria e stagione" />
+    <LoadingScreen title={t('uploadMobileAnalyzingTitle')} subtitle={t('uploadMobileAnalyzingDesc')} />
   )
 
   /* ── STEP: confirming ────────────────────────────────────────────────────── */
   if (step === 'confirming') return (
-    <LoadingScreen title="Salvataggio…" subtitle="Stiamo aggiungendo il capo al tuo armadio" />
+    <LoadingScreen title={t('uploadMobileSavingTitle')} subtitle={t('uploadMobileSavingDesc')} />
   )
 
   /* ── STEP: done ──────────────────────────────────────────────────────────── */
@@ -330,7 +330,7 @@ export default function MobileUpload() {
         <CheckIcon />
       </div>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>Capo aggiunto!</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>{t('uploadAddedTitle')}</div>
         <div style={{ fontSize: 15, color: 'var(--text-muted)', marginTop: 6 }}>{result.name}</div>
       </div>
 
@@ -341,10 +341,10 @@ export default function MobileUpload() {
         borderRadius: 18, padding: '16px 20px',
       }}>
         {[
-          [CATEGORY_LABELS[result.category] || result.category, 'Categoria'],
+          [CATEGORY_LABELS[result.category] || result.category, t('uploadFieldCat')],
           [result.brand || '—', 'Brand'],
-          [result.color_primary || '—', 'Colore'],
-          [result.size || '—', 'Taglia'],
+          [result.color_primary || '—', t('uploadFieldColor')],
+          [result.size || '—', t('uploadFieldSize')],
         ].map(([v, k]) => (
           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{k}</span>
@@ -358,13 +358,13 @@ export default function MobileUpload() {
           flex: 1, padding: '14px 0', borderRadius: 14, border: '1px solid var(--border)',
           background: 'transparent', color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>
-          Aggiungi altro
+          {t('uploadMobileAddMore')}
         </button>
         <button onClick={() => navigate('/wardrobe')} style={{
           flex: 1, padding: '14px 0', borderRadius: 14, border: 'none',
           background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>
-          Armadio
+          {t('uploadMobileWardrobeBtn')}
         </button>
       </div>
     </div>
@@ -374,10 +374,10 @@ export default function MobileUpload() {
   if (step === 'review' && analysis) return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 100px', background: 'var(--bg)' }}>
       <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4, color: 'var(--text)' }}>
-        Controlla i dati
+        {t('uploadMobileCheckTitle')}
       </h1>
       <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
-        L'AI ha analizzato il tuo capo. Verifica e salva.
+        {t('uploadMobileCheckDesc')}
       </p>
 
       {/* Foto + dati AI */}
@@ -390,10 +390,10 @@ export default function MobileUpload() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>{analysis.name}</div>
           {[
-            [CATEGORY_LABELS[analysis.category] || analysis.category, 'Categoria'],
+            [CATEGORY_LABELS[analysis.category] || analysis.category, t('uploadFieldCat')],
             [analysis.brand || '—', 'Brand'],
-            [analysis.color_primary || '—', 'Colore'],
-            [analysis.size || '—', 'Taglia'],
+            [analysis.color_primary || '—', t('uploadFieldColor')],
+            [analysis.size || '—', t('uploadFieldSize')],
           ].map(([v, k]) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
               <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{k}</span>
@@ -423,7 +423,7 @@ export default function MobileUpload() {
           borderRadius: 14, padding: '12px 16px', marginBottom: 20,
           fontSize: 13, color: '#fbbf24', lineHeight: 1.5,
         }}>
-          ⚠️ Hai già un capo simile nell'armadio: <strong>{duplicates[0].name}</strong>
+          ⚠️ {t('uploadDuplicateWarning')}: <strong>{duplicates[0].name}</strong>
         </div>
       )}
 
@@ -439,13 +439,13 @@ export default function MobileUpload() {
           flex: 1, padding: '14px 0', borderRadius: 14, border: '1px solid var(--border)',
           background: 'transparent', color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>
-          Annulla
+          {t('cancel')}
         </button>
         <button onClick={handleConfirm} disabled={loading} style={{
           flex: 2, padding: '14px 0', borderRadius: 14, border: 'none',
           background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer',
         }}>
-          Salva nell'armadio
+          {t('uploadMobileSaveBtn')}
         </button>
       </div>
     </div>

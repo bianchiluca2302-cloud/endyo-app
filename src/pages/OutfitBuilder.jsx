@@ -373,7 +373,7 @@ function OutfitMixer({ garments, activeId, onSetActiveId, transformsRef, default
             background: 'rgba(0,0,0,0.45)', borderRadius: 20,
             padding: '2px 10px', fontSize: 9, color: 'rgba(255,255,255,0.3)',
           }}>
-            {isMobileMixer ? 'Tocca per selezionare · Pinch per ridimensionare/ruotare' : t('outfitsCanvasTip')}
+            {isMobileMixer ? t('outfitsMixerMobileTip') : t('outfitsCanvasTip')}
           </div>
         </div>
 
@@ -1362,6 +1362,8 @@ function MobileSelectionStrip({ garments: selectedList, onRemove }) {
   const [expanded,  setExpanded]  = useState(false)
   const [animKey,   setAnimKey]   = useState(0)
   const prevCount = useRef(selectedList.length)
+  const t = useT()
+  const language = useSettingsStore(s => s.language) || 'it'
 
   useEffect(() => {
     if (selectedList.length !== prevCount.current) {
@@ -1434,10 +1436,12 @@ function MobileSelectionStrip({ garments: selectedList, onRemove }) {
             >
               {selectedList.length}
             </span>
-            {' '}{selectedList.length === 1 ? 'capo selezionato' : 'capi selezionati'}
+            {' '}{language === 'en'
+              ? (selectedList.length === 1 ? 'item selected' : 'items selected')
+              : (selectedList.length === 1 ? 'capo selezionato' : 'capi selezionati')}
           </div>
           <div style={{ fontSize: 11, color: 'var(--primary-light)', opacity: 0.7, marginTop: 1 }}>
-            {expanded ? 'Tocca per chiudere' : 'Tocca per vedere'}
+            {expanded ? t('outfitsTapToClose') : t('outfitsTapToView')}
           </div>
         </div>
 
@@ -1634,13 +1638,16 @@ export default function OutfitBuilder() {
 
         {/* Titolo pagina — sopra i tab */}
         <div style={{
-          padding: '14px 16px 0',
+          padding: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 0' : '14px 16px 0',
           background: 'var(--surface)', flexShrink: 0,
         }}>
-          <h1 className="page-title" style={{ margin: 0 }}>
+          <h1 style={isMobile
+            ? { fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0 }
+            : { margin: 0 }}
+            className={isMobile ? undefined : 'page-title'}>
             {t('outfitMixerTitle')}
           </h1>
-          <p className="page-subtitle" style={{ margin: '3px 0 10px' }}>
+          <p className="page-subtitle" style={{ margin: isMobile ? '4px 0 12px' : '3px 0 10px' }}>
             {outfits.length === 0
               ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
               : `${outfits.length} ${outfits.length === 1
@@ -1650,11 +1657,13 @@ export default function OutfitBuilder() {
           </p>
         </div>
 
-        {/* Tabs — pill style coerente con Friends */}
+        {/* Tabs */}
         <div style={{
           display: 'flex', alignItems: 'center',
           borderBottom: '1px solid var(--border)',
-          background: 'var(--surface)', padding: '0 16px 10px', gap: 6, flexShrink: 0,
+          background: 'var(--surface)',
+          padding: isMobile ? '0 0 0' : '0 16px 10px',
+          gap: isMobile ? 0 : 6, flexShrink: 0,
         }}>
           {[
           ['builder', t('wardrobeStep2Cta')],
@@ -1664,6 +1673,29 @@ export default function OutfitBuilder() {
         ].filter(([id]) => isMobile || !['mixer', 'stylist'].includes(id)).map(([id, label]) => {
             const isStylist = id === 'stylist'
             const isActive  = tab === id
+            // Mobile: underline style come MobileWardrobe
+            if (isMobile) {
+              return (
+                <button
+                  key={id}
+                  onClick={() => { setTab(id) }}
+                  style={{
+                    flex: 1, padding: '8px 4px', cursor: 'pointer',
+                    fontSize: 13, fontWeight: isActive ? 700 : 500,
+                    color: isActive ? 'var(--primary-light)' : (isStylist && stylistPulse) ? 'var(--primary-light)' : 'var(--text-dim)',
+                    background: 'none', border: 'none',
+                    borderBottom: `2px solid ${isActive ? 'var(--primary)' : (isStylist && stylistPulse) ? 'rgba(139,92,246,0.4)' : 'transparent'}`,
+                    transition: 'color 0.15s, border-color 0.15s',
+                    WebkitTapHighlightColor: 'transparent',
+                    animation: (!isActive && isStylist && stylistPulse) ? 'stylistTabPulse 0.55s ease-in-out infinite alternate' : 'none',
+                    position: 'relative',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            }
+            // Desktop: pill style
             return (
             <button
               key={id}

@@ -152,7 +152,9 @@ export default function MobileProfile() {
         borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Avatar src={profile?.profile_picture} username={user?.username} size={68} />
+          <div onClick={() => navigate('/edit-profile')} style={{ cursor: 'pointer' }}>
+            <Avatar src={profile?.profile_picture} username={user?.username} size={68} />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em',
