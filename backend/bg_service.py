@@ -79,6 +79,18 @@ _BG_WORKER_SCRIPT = textwrap.dedent("""\
             with open(p, "rb") as f:
                 data = f.read()
 
+            # Resize to max 600px to avoid OOM on high-res phone photos
+            import io as _io
+            _img = Image.open(_io.BytesIO(data))
+            _max_dim = 600
+            if max(_img.size) > _max_dim:
+                _ratio = _max_dim / max(_img.size)
+                _new_size = (int(_img.size[0] * _ratio), int(_img.size[1] * _ratio))
+                _img = _img.resize(_new_size, Image.LANCZOS)
+                _buf = _io.BytesIO()
+                _img.save(_buf, format="PNG")
+                data = _buf.getvalue()
+
             output = remove(data, session=session)
 
             img = Image.open(io.BytesIO(output))

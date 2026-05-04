@@ -942,8 +942,8 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
         <div ref={endRef} />
       </div>
 
-      {/* Suggerimenti rapidi (solo prima risposta) */}
-      {messages.length <= 1 && (
+      {/* Suggerimenti rapidi (solo prima risposta, nascosti quando si digita) */}
+      {messages.length <= 1 && !input && (
         <div style={{ padding: '0 12px 6px', display: 'flex', gap: 5, flexWrap: 'wrap', flexShrink: 0 }}>
           {(SUGGESTIONS[language] || SUGGESTIONS.it).map(s => (
             <button
@@ -1939,7 +1939,7 @@ export default function OutfitBuilder() {
 
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
         {isMobile && tab === 'stylist' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingBottom: kbH }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingBottom: Math.max(0, kbH - 108) }}>
             {/* wrapper flex:1 garantisce che StylistChat riempia lo spazio rimanente
                 dopo il paddingBottom (keyboard height) senza overflow indesiderati */}
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

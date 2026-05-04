@@ -1438,7 +1438,7 @@ export default function AuthPage() {
   )
 
   const [bypassInstall, setBypassInstall] = useState(false)
-  if (isMobileBrowser && !bypassInstall) return <InstallScreen onBack={() => setBypassInstall(true)} />
+  if (isMobileBrowser && !bypassInstall) return <InstallScreen onBack={() => { window.location.href = '/' }} />
 
   // Callback per Google login: naviga direttamente se ha già username, altrimenti
   // mostra il picker dello username (solo per nuovi account Google).
