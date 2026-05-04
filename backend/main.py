@@ -298,14 +298,15 @@ _RELEASE_DIR = Path(__file__).parent.parent / "release"
 @app.get("/download/{filename}")
 async def download_installer(filename: str):
     """Scarica l'installer dell'app desktop dalla cartella release/."""
-    # Sicurezza: solo file .exe, .dmg, .AppImage
-    if not any(filename.endswith(ext) for ext in (".exe", ".dmg", ".AppImage")):
+    # Sicurezza: solo estensioni installer consentite
+    _ALLOWED = (".exe", ".dmg", ".AppImage", ".bat", ".command", ".sh", ".msi", ".pkg")
+    if not any(filename.endswith(ext) for ext in _ALLOWED):
         raise HTTPException(status_code=400, detail="Tipo file non supportato")
     # Blocca path traversal
     safe_name = Path(filename).name
     file_path = _RELEASE_DIR / safe_name
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Installer non ancora disponibile. Esegui prima npm run dist:win")
+        raise HTTPException(status_code=404, detail="Installer non disponibile")
     return FileResponse(
         path=str(file_path),
         filename=safe_name,

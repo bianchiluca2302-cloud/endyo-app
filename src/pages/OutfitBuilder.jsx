@@ -1563,6 +1563,7 @@ export default function OutfitBuilder() {
   const [detailOutfit, setDetailOutfit] = useState(null)
   const [wearCounts,     setWearCounts]     = useState({})  // { outfitId: count }
   const [builderSearch,  setBuilderSearch]  = useState('')
+  const [savedSearch,    setSavedSearch]    = useState('')
 
   // Carica contatori wear al mount e quando cambia tab
   useEffect(() => {
@@ -1853,11 +1854,45 @@ export default function OutfitBuilder() {
         {/* Tab: saved outfits */}
         {tab === 'saved' && (
           <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-            {outfits.length === 0 ? (
+            {outfits.length > 0 && (
+              <div style={{ marginBottom: 14, position: 'relative' }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth={2} strokeLinecap="round" style={{
+                    position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--text-dim)', pointerEvents: 'none',
+                  }}>
+                  <circle cx={11} cy={11} r={8}/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  type="text"
+                  value={savedSearch}
+                  onChange={e => setSavedSearch(e.target.value)}
+                  placeholder={language === 'en' ? 'Search by outfit or garment name…' : 'Cerca per nome outfit o capo…'}
+                  style={{
+                    width: '100%', padding: '9px 12px 9px 33px',
+                    background: 'var(--card)', border: '1px solid var(--border)',
+                    borderRadius: 10, color: 'var(--text)', fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            )}
+            {(() => {
+              const q = savedSearch.trim().toLowerCase()
+              const filtered = q
+                ? outfits.filter(o => {
+                    if (o.name?.toLowerCase().includes(q)) return true
+                    return (o.garment_ids || []).some(id => {
+                      const g = getById(id)
+                      return g?.name?.toLowerCase().includes(q)
+                    })
+                  })
+                : outfits
+              return filtered.length === 0 ? (
               <div className="empty-state">
                 <div className="icon" style={{ display: 'flex', justifyContent: 'center' }}><IconSparkle size={40} /></div>
-                <h3>{t('outfitsEmpty')}</h3>
-                <p>{t('outfitsEmptyHint')}</p>
+                <h3>{q ? (language === 'en' ? 'No results' : 'Nessun risultato') : t('outfitsEmpty')}</h3>
+                <p>{q ? (language === 'en' ? 'Try a different search' : 'Prova con un\'altra ricerca') : t('outfitsEmptyHint')}</p>
               </div>
             ) : (
               <div style={{
@@ -1865,7 +1900,7 @@ export default function OutfitBuilder() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                 gap: 16,
               }}>
-                {outfits.map(outfit => (
+                {filtered.map(outfit => (
                   <SavedOutfitCard
                     key={outfit.id}
                     outfit={outfit}
@@ -1882,7 +1917,8 @@ export default function OutfitBuilder() {
                   />
                 ))}
               </div>
-            )}
+            )
+            })()}
           </div>
         )}
 
