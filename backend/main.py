@@ -227,6 +227,11 @@ app.add_middleware(MaxBodySizeMiddleware, max_bytes=10 * 1024 * 1024)
 # Serve uploaded images
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+# Serve brand assets (logos, icons) — committed to git, no build needed
+_ASSETS_DIR = Path(__file__).parent / "assets"
+if _ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
+
 # Serve brand portal (dist/ folder) — solo se già buildato
 if DIST_DIR.exists():
     app.mount("/portal", StaticFiles(directory=str(DIST_DIR)), name="portal")
