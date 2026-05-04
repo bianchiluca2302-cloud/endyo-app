@@ -108,9 +108,10 @@ class Garment(Base):
     style_tags    = Column(JSON, default=list)
     season_tags   = Column(JSON, default=list)
     occasion_tags = Column(JSON, default=list)
-    photo_front   = Column(String(500), nullable=True)
-    photo_back    = Column(String(500), nullable=True)
-    photo_label   = Column(String(500), nullable=True)
+    photo_front      = Column(String(500), nullable=True)
+    photo_back       = Column(String(500), nullable=True)
+    photo_label      = Column(String(500), nullable=True)
+    photo_front_data = Column(Text, nullable=True)   # base64 data URL per persistenza cross-restart
     ai_analysis   = Column(JSON,        nullable=True)
     tryon_image   = Column(String(500), nullable=True)
     tryon_status  = Column(String(20),  default='none')

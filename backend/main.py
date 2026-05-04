@@ -110,6 +110,8 @@ async def _migrate_db():
         ("users", "notifications_seen_at",      "TIMESTAMP WITH TIME ZONE"),
         # Foto profilo persistente in DB (non dipende dal filesystem)
         ("user_profile", "profile_picture_data", "TEXT"),
+        # Foto frontale capo persistente in DB
+        ("garments", "photo_front_data", "TEXT"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -310,6 +312,29 @@ async def download_installer(filename: str):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+def _file_to_b64(filepath: Path) -> Optional[str]:
+    """Legge un file immagine, ridimensiona a max 512px e restituisce data URL base64."""
+    from PIL import Image as _PIL
+    import io as _io, base64 as _b64
+    try:
+        if not filepath.exists():
+            return None
+        img = _PIL.open(str(filepath))
+        img.thumbnail((512, 512), _PIL.LANCZOS)
+        if img.mode == "RGBA":
+            bg = _PIL.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[3])
+            img = bg
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+        buf = _io.BytesIO()
+        img.save(buf, format="JPEG", quality=80)
+        return f"data:image/jpeg;base64,{_b64.b64encode(buf.getvalue()).decode()}"
+    except Exception as e:
+        logger.warning("_file_to_b64 fallito per %s: %s", filepath, e)
+        return None
+
+
 def garment_to_dict(g: Garment) -> dict:
     return {
         "id": g.id,
@@ -325,7 +350,7 @@ def garment_to_dict(g: Garment) -> dict:
         "style_tags": g.style_tags or [],
         "season_tags": g.season_tags or [],
         "occasion_tags": g.occasion_tags or [],
-        "photo_front": f"/uploads/{g.photo_front}" if g.photo_front else None,
+        "photo_front": g.photo_front_data or (f"/uploads/{g.photo_front}" if g.photo_front else None),
         "photo_back": f"/uploads/{g.photo_back}" if g.photo_back else None,
         "photo_label": f"/uploads/{g.photo_label}" if g.photo_label else None,
         "tryon_image": g.tryon_image or None,
@@ -1048,11 +1073,21 @@ async def _run_bg_removal_background(garment_id: int):
                     logger.error("BG removal fallito per %s (garment %d): %s", field, garment_id, e_field)
 
             g.bg_status = "done"
+            # Salva base64 in DB per persistenza cross-restart
+            if g.photo_front:
+                b64 = _file_to_b64(UPLOAD_DIR / g.photo_front)
+                if b64:
+                    g.photo_front_data = b64
             await db.commit()
         except Exception as e:
             logger.error("BG removal fallito per garment %d: %s", garment_id, e)
             try:
                 g.bg_status = "none"
+                # Anche in caso di errore, salva l'originale in DB
+                if g.photo_front and not g.photo_front_data:
+                    b64 = _file_to_b64(UPLOAD_DIR / g.photo_front)
+                    if b64:
+                        g.photo_front_data = b64
                 await db.commit()
             except Exception:
                 pass
@@ -2994,7 +3029,7 @@ async def get_bg_status(
     return {
         "id": g.id,
         "bg_status": g.bg_status or "none",
-        "photo_front": f"/uploads/{g.photo_front}" if g.photo_front else None,
+        "photo_front": g.photo_front_data or (f"/uploads/{g.photo_front}" if g.photo_front else None),
         "photo_back":  f"/uploads/{g.photo_back}"  if g.photo_back  else None,
         "photo_label": f"/uploads/{g.photo_label}" if g.photo_label else None,
     }
