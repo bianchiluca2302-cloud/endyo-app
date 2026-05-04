@@ -19,6 +19,10 @@ const useWardrobeStore = create((set, get) => ({
   selectedCategory: 'all',
   setSelectedCategory: (cat) => set({ selectedCategory: cat }),
 
+  // Navigation lock (prevents bottom TabBar navigation during analysis)
+  navLocked: false,
+  setNavLocked: (v) => set({ navLocked: v }),
+
   // ── Garments ──────────────────────────────────────────────────────────────
   loadGarments: async () => {
     set({ loading: true, error: null })

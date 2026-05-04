@@ -108,6 +108,8 @@ async def _migrate_db():
         ("users", "google_link_token_expires",  "TIMESTAMP WITH TIME ZONE"),
         # Notifiche — timestamp ultimo accesso
         ("users", "notifications_seen_at",      "TIMESTAMP WITH TIME ZONE"),
+        # Foto profilo persistente in DB (non dipende dal filesystem)
+        ("user_profile", "profile_picture_data", "TEXT"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -2664,7 +2666,7 @@ async def get_profile(
         "thigh_cm": profile.thigh_cm,
         "shoe_size": profile.shoe_size,
         # foto profilo pubblica
-        "profile_picture": profile.profile_picture or None,
+        "profile_picture": profile.profile_picture_data or profile.profile_picture or None,
         # armocromia (Premium)
         "face_photo_1": profile.face_photo_1 or None,
         "armocromia_season": profile.armocromia_season or None,
@@ -2688,7 +2690,10 @@ async def upsert_profile(
     if not profile:
         profile = UserProfile(user_id=current_user.id)
         db.add(profile)
+    _photo_fields = {"profile_picture", "profile_picture_data", "face_photo_1", "avatar_photo", "face_photo_2"}
     for key, value in data.items():
+        if key in _photo_fields:
+            continue  # foto gestite da endpoint dedicati
         if hasattr(profile, key):
             setattr(profile, key, value)
     await db.commit()
@@ -2835,19 +2840,34 @@ async def upload_profile_picture(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Carica la foto profilo pubblica dell'utente (visibile agli altri)."""
-    filename = await save_upload(photo, "profile_pic")
-    path = f"/uploads/{filename}"
+    """Carica la foto profilo pubblica. Salvata come base64 nel DB per persistenza cross-restart."""
+    from PIL import Image as _PIL
+    import io, base64
+
+    contents = await photo.read()
+    try:
+        img = _PIL.open(io.BytesIO(contents))
+        img.thumbnail((256, 256), _PIL.LANCZOS)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=82)
+        b64 = f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode()}"
+    except Exception:
+        # fallback: salva su disco se l'elaborazione immagine fallisce
+        await photo.seek(0)
+        filename = await save_upload(photo, "profile_pic")
+        b64 = f"/uploads/{filename}"
 
     result = await db.execute(select(UserProfile).where(UserProfile.user_id == current_user.id))
     profile = result.scalar_one_or_none()
     if not profile:
         profile = UserProfile(user_id=current_user.id)
         db.add(profile)
-    profile.profile_picture = path
+    profile.profile_picture_data = b64
     await db.commit()
 
-    return {"ok": True, "profile_picture": path}
+    return {"ok": True, "profile_picture": b64}
 
 
 @app.get("/users/{username}/profile-picture")
@@ -2863,7 +2883,8 @@ async def get_user_profile_picture(
         raise HTTPException(status_code=404, detail="Utente non trovato")
     profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user.id))
     profile = profile_result.scalar_one_or_none()
-    return {"profile_picture": profile.profile_picture if profile else None}
+    pic = (profile.profile_picture_data or profile.profile_picture) if profile else None
+    return {"profile_picture": pic}
 
 
 @app.post("/garments/{garment_id}/generate-tryon")

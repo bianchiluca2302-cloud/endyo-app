@@ -162,7 +162,8 @@ class UserProfile(Base):
     shoe_size           = Column(Float,   nullable=True)
 
     # ── Foto profilo (visibile ad altri) ─────────────────────────────────────
-    profile_picture     = Column(String(500), nullable=True)
+    profile_picture      = Column(String(500), nullable=True)   # legacy file path
+    profile_picture_data = Column(Text, nullable=True)          # base64 data URL (persists across restarts)
 
     # ── Foto viso (per analisi armocromia — solo utenti Premium) ────────────
     face_photo_1        = Column(String(500), nullable=True)   # foto frontale viso

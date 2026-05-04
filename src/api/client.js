@@ -351,8 +351,12 @@ export const trackBrandClick    = (productId) =>
 export const sendBrandFeedback  = (productId, vote, reason = null) =>
   api.post(`/brand/products/${productId}/feedback`, { vote, reason }).then(r => r.data)
 
-// Helper: full image URL
-export const imgUrl = (path) => path ? `${BASE_URL}${path}` : null
+// Helper: full image URL (handles data: URIs directly without prepending BASE_URL)
+export const imgUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('data:')) return path
+  return `${BASE_URL}${path}`
+}
 
 // ── Wear log ──────────────────────────────────────────────────────────────────
 export const wearOutfit     = (outfitId, note = null) =>

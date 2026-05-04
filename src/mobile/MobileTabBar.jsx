@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useAuthStore from '../store/authStore'
@@ -93,8 +94,17 @@ const tabLabel = { fontSize: 10, fontWeight: 500, lineHeight: 1 }
 
 /* ── Component ───────────────────────────────────────────────────────────────── */
 export default function MobileTabBar() {
-  const t    = useT()
-  const pb   = 'env(safe-area-inset-bottom, 0px)'
+  const t          = useT()
+  const pb         = 'env(safe-area-inset-bottom, 0px)'
+  const lang       = useSettingsStore(s => s.language) || 'it'
+  const navLocked  = useWardrobeStore(s => s.navLocked)
+  const [lockMsg, setLockMsg] = useState(false)
+
+  const handleLockedTap = () => {
+    if (lockMsg) return
+    setLockMsg(true)
+    setTimeout(() => setLockMsg(false), 2000)
+  }
 
   return (
     <nav style={{
@@ -108,6 +118,31 @@ export default function MobileTabBar() {
       overflow: 'visible',
       /* Nessun borderTop globale — ogni gruppo lo ha individualmente */
     }}>
+      {/* Lock overlay — prevents navigation during active analysis */}
+      {navLocked && (
+        <>
+          <div
+            onClick={handleLockedTap}
+            style={{
+              position: 'absolute', inset: 0, zIndex: 10,
+              cursor: 'not-allowed',
+            }}
+          />
+          {lockMsg && (
+            <div style={{
+              position: 'absolute', bottom: '100%', left: 0, right: 0,
+              background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)',
+              color: '#fff', fontSize: 12, fontWeight: 600,
+              textAlign: 'center', padding: '9px 16px',
+              borderRadius: '10px 10px 0 0',
+            }}>
+              {lang === 'en'
+                ? 'Complete or discard the analysis first'
+                : 'Completa o annulla l\'analisi prima di navigare'}
+            </div>
+          )}
+        </>
+      )}
 
       {/* ── LEFT GROUP: Armadio + Outfit ──────────────────────────────────────── */}
       <div style={{

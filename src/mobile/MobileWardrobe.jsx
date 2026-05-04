@@ -43,6 +43,16 @@ function GarmentCard({ g, onClick }) {
   const pollAttempts    = useRef(0)
   const pollErrors      = useRef(0)
 
+  // Track image load state to keep spinner visible while new image fetches
+  const [imgReady, setImgReady] = useState(true)
+  const prevPhotoRef = useRef(liveGarment.photo_front)
+  useEffect(() => {
+    if (liveGarment.photo_front && liveGarment.photo_front !== prevPhotoRef.current) {
+      setImgReady(false)
+      prevPhotoRef.current = liveGarment.photo_front
+    }
+  }, [liveGarment.photo_front])
+
   useEffect(() => {
     if (!bgProcessing) { clearInterval(pollRef.current); return }
     pollAttempts.current = 0
@@ -105,12 +115,14 @@ function GarmentCard({ g, onClick }) {
               src={imgUrl(liveGarment.photo_front)}
               alt={liveGarment.name}
               loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onLoad={() => setImgReady(true)}
+              onError={() => setImgReady(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: imgReady ? 1 : 0 }}
             />
           ) : (
             <ShirtPlaceholder />
           )}
-          {bgProcessing && (
+          {(bgProcessing || !imgReady) && (
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
@@ -244,11 +256,12 @@ function ScoreRing({ score }) {
 
 /* ── Shopping tab ────────────────────────────────────────────────────────────── */
 function ShoppingTab({ busyRef }) {
-  const garments   = useWardrobeStore(s => s.garments)
-  const outfits    = useWardrobeStore(s => s.outfits)
-  const addGarment = useWardrobeStore(s => s.addGarment)
-  const profile    = useWardrobeStore(s => s.profile)
-  const language   = useSettingsStore(s => s.language || 'it')
+  const garments      = useWardrobeStore(s => s.garments)
+  const outfits       = useWardrobeStore(s => s.outfits)
+  const addGarment    = useWardrobeStore(s => s.addGarment)
+  const profile       = useWardrobeStore(s => s.profile)
+  const setNavLocked  = useWardrobeStore(s => s.setNavLocked)
+  const language      = useSettingsStore(s => s.language || 'it')
   const CATEGORY_LABELS = useCategoryLabels()
   const gender = profile?.gender || 'maschio' // default maschile se non impostato
   const isFemale = gender === 'femmina'
@@ -279,6 +292,7 @@ function ShoppingTab({ busyRef }) {
     if (!photo) return
     setState('analyzing')
     if (busyRef) busyRef.current = true
+    setNavLocked(true)
     setError(null)
     try {
       const fd = new FormData()
@@ -333,8 +347,9 @@ function ShoppingTab({ busyRef }) {
       setError(language === 'en' ? 'Analysis error. Try again.' : 'Errore nell\'analisi. Riprova.')
       setState('idle')
       if (busyRef) busyRef.current = false
+      setNavLocked(false)
     }
-  }, [photo, language, garments, busyRef])
+  }, [photo, language, garments, busyRef, setNavLocked])
 
   const handleAdd = useCallback(async () => {
     if (!analysis || !tmpPaths || adding || added) return
@@ -345,9 +360,10 @@ function ShoppingTab({ busyRef }) {
       addGarment(result)
       setAdded(true)
       if (busyRef) busyRef.current = false
+      setNavLocked(false)
     } catch {}
     finally { setAdding(false) }
-  }, [analysis, tmpPaths, adding, added, language, addGarment, busyRef])
+  }, [analysis, tmpPaths, adding, added, language, addGarment, busyRef, setNavLocked])
 
   const verdict = compat ? (
     compat.score >= 8
@@ -419,7 +435,7 @@ function ShoppingTab({ busyRef }) {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => { setState('idle'); setAnalysis(null); setCompat(null); setPreview(null); setPhoto(null); setAdded(false); if (busyRef) busyRef.current = false }}
+            onClick={() => { setState('idle'); setAnalysis(null); setCompat(null); setPreview(null); setPhoto(null); setAdded(false); if (busyRef) busyRef.current = false; setNavLocked(false) }}
             style={{
               flex: 1, padding: '13px', borderRadius: 12,
               background: 'var(--card)', border: '1px solid var(--border)',
@@ -803,6 +819,7 @@ function AnalisiTab() {
 export default function MobileWardrobe() {
   const garments        = useWardrobeStore(s => s.garments)
   const loading         = useWardrobeStore(s => s.loading)
+  const setNavLocked    = useWardrobeStore(s => s.setNavLocked)
   const CATEGORY_LABELS = useCategoryLabels()
   const t               = useT()
 
@@ -814,6 +831,8 @@ export default function MobileWardrobe() {
   const [selected,   setSelected]   = useState(null)
   const [activeTab,  setActiveTab]  = useState('armadio') // 'armadio' | 'shopping' | 'analisi'
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
+
+  useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
 
   const handleTabSwitch = (tab) => {
     if (shoppingBusyRef.current && activeTab === 'shopping' && tab !== 'shopping') return
