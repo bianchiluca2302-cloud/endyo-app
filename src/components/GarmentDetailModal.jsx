@@ -503,11 +503,31 @@ export default function GarmentDetailModal({ garment, onClose }) {
           <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px' }}>
 
             {/* 3 box sempre visibili */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: (liveGarment.color_palette || []).length > 1 ? 10 : 20 }}>
               {topFields.map(f => (
                 <InfoBox key={f.fieldKey} {...f} {...boxProps} />
               ))}
             </div>
+
+            {/* Dettagli colore palette */}
+            {(liveGarment.color_palette || []).length > 1 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+                {(liveGarment.color_palette).map((c, i) => (
+                  <span key={i} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '3px 9px 3px 6px', borderRadius: 20,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    fontSize: 11, color: 'var(--text-muted)',
+                  }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.hex, flexShrink: 0, border: '1px solid rgba(0,0,0,0.12)' }} />
+                    <span style={{ color: 'var(--text-dim)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      {i === 0 ? (language === 'en' ? 'base' : 'base') : (language === 'en' ? 'detail' : 'det.')}
+                    </span>
+                    {c.name}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {liveGarment.material && (
               <div style={{ marginBottom: 16 }}>

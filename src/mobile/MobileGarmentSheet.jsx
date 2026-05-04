@@ -368,6 +368,13 @@ export default function MobileGarmentSheet({ garment, onClose }) {
                 {liveGarment.color_primary}
               </span>
             )}
+            {(liveGarment.color_palette || []).slice(1).map((c, i) => (
+              <span key={i} style={{ ...chipStyle('var(--card)', 'var(--border)', 'var(--text-dim)'), display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: c.hex, flexShrink: 0, display: 'inline-block', border: '1px solid rgba(0,0,0,0.1)' }} />
+                <span style={{ color: 'var(--text-dim)', fontSize: 10 }}>{language === 'en' ? 'det.' : 'det.'}</span>
+                {c.name}
+              </span>
+            ))}
             {liveGarment.price && (
               <span style={chipStyle('var(--card)', 'var(--border)', 'var(--text-muted)')}>
                 💰 €{liveGarment.price}
