@@ -201,9 +201,18 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             gap: 6,
             marginBottom: compact ? 0 : 7,
           }}>
-            {garment.color_hex && (
-              <div className="color-dot" style={{ background: garment.color_hex }} title={garment.color_primary} />
-            )}
+            {(() => {
+              const palette = garment.color_palette?.length > 0 ? garment.color_palette : (garment.color_hex ? [{ hex: garment.color_hex, name: garment.color_primary }] : [])
+              return palette.slice(0, 4).map((c, i) => (
+                <div key={i} className="color-dot" style={{
+                  background: c.hex,
+                  marginRight: i < palette.length - 1 ? -5 : 0,
+                  boxShadow: i > 0 ? '0 0 0 1.5px var(--card)' : undefined,
+                  zIndex: 4 - i,
+                  position: 'relative',
+                }} title={c.name} />
+              ))
+            })()}
             {garment.brand && (
               <span style={{
                 fontSize: 11,

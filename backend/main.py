@@ -114,6 +114,8 @@ async def _migrate_db():
         ("garments", "photo_front_data", "TEXT"),
         ("garments", "photo_back_data",  "TEXT"),
         ("garments", "photo_label_data", "TEXT"),
+        # Palette colori dettagliata (array JSON: [{"name":..,"hex":..}, ...])
+        ("garments", "color_palette", "JSON"),
     ]
 
     for table, col, definition in extra_migrations:
@@ -367,6 +369,7 @@ def garment_to_dict(g: Garment) -> dict:
         "brand": g.brand,
         "color_primary": g.color_primary,
         "color_hex": g.color_hex,
+        "color_palette": g.color_palette or [],
         "size": g.size,
         "price": g.price,
         "material": g.material,
@@ -1272,6 +1275,7 @@ async def confirm_garment(
         brand=analysis.get("brand"),
         color_primary=analysis.get("color_primary"),
         color_hex=analysis.get("color_hex"),
+        color_palette=analysis.get("color_palette") or [],
         size=analysis.get("size"),
         price=analysis.get("price"),
         material=analysis.get("material"),
@@ -1417,6 +1421,7 @@ async def create_garment(
         brand=analysis.get("brand"),
         color_primary=analysis.get("color_primary"),
         color_hex=analysis.get("color_hex"),
+        color_palette=analysis.get("color_palette") or [],
         size=analysis.get("size"),
         price=analysis.get("price"),
         material=analysis.get("material"),
@@ -2676,6 +2681,7 @@ async def import_wardrobe(
             brand=gd.get('brand'),
             color_primary=gd.get('color_primary'),
             color_hex=gd.get('color_hex'),
+            color_palette=gd.get('color_palette') or [],
             size=gd.get('size'),
             price=gd.get('price'),
             material=gd.get('material'),

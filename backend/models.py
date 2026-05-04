@@ -99,8 +99,9 @@ class Garment(Base):
     name          = Column(String(200), nullable=False)
     category      = Column(String(50),  nullable=False)
     brand         = Column(String(100), nullable=True)
-    color_primary = Column(String(50),  nullable=True)
-    color_hex     = Column(String(10),  nullable=True)
+    color_primary  = Column(String(50),  nullable=True)
+    color_hex      = Column(String(10),  nullable=True)
+    color_palette  = Column(JSON,        nullable=True)  # [{"name":"bianco","hex":"#FFF"}, ...]
     size          = Column(String(20),  nullable=True)
     price         = Column(Float,       nullable=True)
     material      = Column(String(200), nullable=True)

@@ -111,10 +111,16 @@ Return ONLY a JSON object with these fields:
   "brand": "brand name or null if not visible",
   "color_primary": "{color_lang_hint}",
   "color_hex": "hex code of the primary color (e.g. '#FFFFFF')",
+  "color_palette": [
+    {{"name": "main color name", "hex": "#XXXXXX"}},
+    {{"name": "secondary color or detail (e.g. stripes, logo, stitching)", "hex": "#XXXXXX"}}
+  ],
   "size": "size if visible. For shoes ALWAYS convert to EU size (e.g. US 10.5 → '44.5', UK 9 → '43'). For clothing use label value (e.g. 'M', 'L'). For belts use waist cm if visible. For watches/glasses/bags/altro put null.",
   "price": "price as number if visible (e.g. 89.99) or null",
   "material": "fabric if visible (e.g. '100% cotone') or null"
 }}
+
+color_palette rules: include 1 to 4 colors ordered by visual dominance (most visible first). Include detail colors like stripes, logos, stitching, buttons, soles. Use {('English' if language == 'en' else 'Italian')} color names.
 
 Return ONLY the JSON, no markdown, no explanation."""
         }
@@ -470,10 +476,17 @@ def _build_stylist_system_prompt(
     Passa i capi con ID, contesto completo dell'utente e prodotti brand partner.
     """
     # ── Armadio con ID e metadati completi (max 50 capi) ─────────────────────
+    def _fmt_colors(g: dict) -> str:
+        palette = g.get('color_palette') or []
+        if palette:
+            return ', '.join(c.get('name', '') for c in palette if c.get('name'))
+        return g.get('color_primary', '?')
+
     garment_lines = "\n".join(
-        f"  id={g['id']} | {g['name']} | {g['category']} | {g.get('color_primary', '?')}"
+        f"  id={g['id']} | {g['name']} | {g['category']} | colori: {_fmt_colors(g)}"
         + (f" | brand: {g['brand']}" if g.get('brand') else "")
         + (f" | taglia: {g['size']}" if g.get('size') else "")
+        + (f" | materiale: {g['material']}" if g.get('material') else "")
         + (f" | stile: {', '.join(g.get('style_tags', []))}" if g.get('style_tags') else "")
         + (f" | stagione: {', '.join(g.get('season_tags', []))}" if g.get('season_tags') else "")
         + (f" | occasione: {', '.join(g.get('occasion_tags', []))}" if g.get('occasion_tags') else "")
