@@ -4,6 +4,7 @@ import { analyzeGarment, confirmGarment, createGarmentManual, imgUrl, fetchChatQ
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '../i18n'
+import QuotaBanner from '../components/QuotaBanner'
 
 
 /* ── Duplicate check (same as Upload.jsx) ────────────────────────────────────── */
@@ -241,7 +242,12 @@ export default function MobileUpload() {
       setDuplicates(findDuplicates(data.analysis, garments))
       setStep('review')
     } catch (e) {
-      setError(e.response?.data?.detail || e.message)
+      if (e?.response?.status === 429) {
+        // Segna quota esaurita così la UI mostra il QuotaBanner
+        setUploadQuota({ remaining: 0, limit: 0, extra: 0 })
+      } else {
+        setError(e.response?.data?.detail || e.message)
+      }
       setStep('upload')
     } finally {
       setLoading(false)
@@ -582,7 +588,7 @@ export default function MobileUpload() {
         </div>
       )}
 
-      {/* CTA — Analizza AI oppure form manuale se crediti esauriti */}
+      {/* CTA — Analizza AI oppure banner crediti esauriti */}
       {(() => {
         const rem   = uploadQuota?.remaining ?? 1
         const extra = uploadQuota?.extra     ?? 0
@@ -601,92 +607,12 @@ export default function MobileUpload() {
                 transition: 'background 0.2s, color 0.2s',
               }}
             >
-              Analizza con AI
+              {t('uploadAnalyzeBtn')}
             </button>
           )
         }
 
-        // Crediti esauriti → form manuale
-        return (
-          <div style={{
-            border: '1px solid var(--border)', borderRadius: 16,
-            overflow: 'hidden',
-          }}>
-            {/* Banner crediti esauriti */}
-            <div style={{
-              background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.2)',
-              padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
-              fontSize: 12, color: '#f87171',
-            }}>
-              <span style={{ fontSize: 15 }}>⚠️</span>
-              <div>
-                <strong>Crediti AI esauriti per oggi</strong> — puoi comunque inserire il capo a mano.
-                {extra === 0 && <span style={{ color: 'var(--text-dim)' }}> Acquista crediti extra in Impostazioni.</span>}
-              </div>
-            </div>
-
-            {/* Campi form manuale */}
-            <div style={{ padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { key: 'name',     label: 'Nome capo *',      placeholder: 'es. Felpa oversize grigia' },
-                { key: 'brand',    label: 'Brand',             placeholder: 'es. Zara, H&M…' },
-                { key: 'color',    label: 'Colore principale', placeholder: 'es. Grigio melange' },
-                { key: 'size',     label: 'Taglia',            placeholder: 'es. M, 42, L…' },
-              ].map(({ key, label, placeholder }) => (
-                <div key={key}>
-                  <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'block', marginBottom: 3 }}>{label}</label>
-                  <input
-                    className="input"
-                    value={manualForm[key]}
-                    onChange={e => setManualForm(f => ({ ...f, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              ))}
-
-              {/* Categoria — bottone che apre lo sheet esistente */}
-              <div>
-                <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'block', marginBottom: 3 }}>Categoria *</label>
-                <button
-                  onClick={() => setShowCatSheet(true)}
-                  style={{
-                    width: '100%', padding: '10px 14px', borderRadius: 10,
-                    background: 'var(--surface)', border: `1px solid ${manualForm.category ? 'var(--primary)' : 'var(--border)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                    color: manualForm.category ? 'var(--text)' : 'var(--text-muted)', fontSize: 14,
-                  }}
-                >
-                  <span>{manualForm.category ? (CATEGORY_LABELS[manualForm.category] || manualForm.category) : 'Scegli categoria…'}</span>
-                  <ChevronIcon />
-                </button>
-              </div>
-
-              {manualError && (
-                <div style={{ fontSize: 12, color: '#f87171', padding: '6px 0' }}>{manualError}</div>
-              )}
-
-              <button
-                onClick={() => {
-                  setManualForm(f => ({ ...f, category: manualForm.category || category || '' }))
-                  handleManualSubmit()
-                }}
-                disabled={!manualForm.name.trim() || !manualForm.category || manualLoading}
-                style={{
-                  width: '100%', padding: '14px', borderRadius: 12, border: 'none',
-                  background: manualForm.name && manualForm.category ? 'var(--primary)' : 'var(--border)',
-                  color: manualForm.name && manualForm.category ? 'white' : 'var(--text-dim)',
-                  fontSize: 15, fontWeight: 700,
-                  cursor: manualForm.name && manualForm.category ? 'pointer' : 'not-allowed',
-                  margin: '4px 0 14px',
-                }}
-              >
-                {manualLoading ? 'Salvataggio…' : 'Salva capo manualmente'}
-              </button>
-            </div>
-          </div>
-        )
+        return <QuotaBanner />
       })()}
 
       {/* Category sheet overlay */}

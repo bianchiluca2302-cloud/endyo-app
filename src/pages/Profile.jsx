@@ -8,6 +8,7 @@ import useSettingsStore from '../store/settingsStore'
 import useIsMobile from '../hooks/useIsMobile'
 import { IconUser, IconSmile, IconCamera } from '../components/Icons'
 import PageTutorial from '../components/PageTutorial'
+import QuotaBanner from '../components/QuotaBanner'
 
 // ── Palette colori per stagione cromatica ─────────────────────────────────────
 const SEASON_DATA = {
@@ -405,8 +406,9 @@ export function ProfileContent() {
   const user = useAuthStore(s => s.user)
   const isPremium = user?.plan && user.plan !== 'free'
 
-  const [analyzingArmocromia, setAnalyzingArmocromia] = useState(false)
-  const [armocromiaErr,       setArmocromiaErr]       = useState(null)
+  const [analyzingArmocromia,      setAnalyzingArmocromia]      = useState(false)
+  const [armocromiaErr,            setArmocromiaErr]            = useState(null)
+  const [armocromiaQuotaExhausted, setArmocromiaQuotaExhausted] = useState(false)
   // Risultato locale per visualizzazione immediata post-analisi
   const [localArmocromia,    setLocalArmocromia]     = useState(null)
 
@@ -499,6 +501,7 @@ export function ProfileContent() {
   const handleAnalyze = async () => {
     setAnalyzingArmocromia(true)
     setArmocromiaErr(null)
+    setArmocromiaQuotaExhausted(false)
     try {
       const res = await analyzeArmocromia()
       // 1) Salva in stato locale — visualizzazione immediata garantita
@@ -512,10 +515,14 @@ export function ProfileContent() {
         armocromia_notes:  res.armocromia_notes,
       })
     } catch (e) {
-      setArmocromiaErr(
-        e?.response?.data?.detail ||
-        (lang === 'en' ? 'Analysis failed. Try again.' : 'Analisi fallita. Riprova.')
-      )
+      if (e?.response?.status === 429) {
+        setArmocromiaQuotaExhausted(true)
+      } else {
+        setArmocromiaErr(
+          e?.response?.data?.detail ||
+          (lang === 'en' ? 'Analysis failed. Try again.' : 'Analisi fallita. Riprova.')
+        )
+      }
     } finally {
       setAnalyzingArmocromia(false)
     }
@@ -864,20 +871,24 @@ export function ProfileContent() {
                       </div>
                     )}
 
-                    <button
-                      className="btn btn-primary"
-                      disabled={analyzingArmocromia || !profile.face_photo_1}
-                      onClick={handleAnalyze}
-                      style={{ fontSize: 12, padding: '8px 12px', width: '100%' }}
-                      title={!profile.face_photo_1 ? (lang === 'en' ? 'Upload a face photo first' : 'Carica prima una foto del viso') : undefined}
-                    >
-                      {analyzingArmocromia
-                        ? t('profileArmocromiaAnalyzing')
-                        : displaySeason
-                          ? t('profileArmocromiaReanalyze')
-                          : t('profileArmocromiaAnalyzeBtn')
-                      }
-                    </button>
+                    {armocromiaQuotaExhausted ? (
+                      <QuotaBanner />
+                    ) : (
+                      <button
+                        className="btn btn-primary"
+                        disabled={analyzingArmocromia || !profile.face_photo_1}
+                        onClick={handleAnalyze}
+                        style={{ fontSize: 12, padding: '8px 12px', width: '100%' }}
+                        title={!profile.face_photo_1 ? (lang === 'en' ? 'Upload a face photo first' : 'Carica prima una foto del viso') : undefined}
+                      >
+                        {analyzingArmocromia
+                          ? t('profileArmocromiaAnalyzing')
+                          : displaySeason
+                            ? t('profileArmocromiaReanalyze')
+                            : t('profileArmocromiaAnalyzeBtn')
+                        }
+                      </button>
+                    )}
                   </div>
                 </div>
             ) : (
@@ -910,20 +921,24 @@ export function ProfileContent() {
                           {armocromiaErr}
                         </div>
                       )}
-                      <button
-                        className="btn btn-primary"
-                        disabled={analyzingArmocromia || !profile.face_photo_1}
-                        onClick={handleAnalyze}
-                        style={{ alignSelf: 'flex-start', fontSize: 13 }}
-                        title={!profile.face_photo_1 ? (lang === 'en' ? 'Upload a face photo first' : 'Carica prima una foto del viso') : undefined}
-                      >
-                        {analyzingArmocromia
-                          ? t('profileArmocromiaAnalyzing')
-                          : displaySeason
-                            ? t('profileArmocromiaReanalyze')
-                            : t('profileArmocromiaAnalyzeBtn')
-                        }
-                      </button>
+                      {armocromiaQuotaExhausted ? (
+                        <QuotaBanner />
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          disabled={analyzingArmocromia || !profile.face_photo_1}
+                          onClick={handleAnalyze}
+                          style={{ alignSelf: 'flex-start', fontSize: 13 }}
+                          title={!profile.face_photo_1 ? (lang === 'en' ? 'Upload a face photo first' : 'Carica prima una foto del viso') : undefined}
+                        >
+                          {analyzingArmocromia
+                            ? t('profileArmocromiaAnalyzing')
+                            : displaySeason
+                              ? t('profileArmocromiaReanalyze')
+                              : t('profileArmocromiaAnalyzeBtn')
+                          }
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

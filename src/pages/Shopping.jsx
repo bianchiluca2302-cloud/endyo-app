@@ -6,6 +6,7 @@ import useSettingsStore from '../store/settingsStore'
 import useAuthStore from '../store/authStore'
 import { useT, useCategoryLabels } from '../i18n'
 import PageTutorial from '../components/PageTutorial'
+import QuotaBanner from '../components/QuotaBanner'
 
 // ── Tutorial steps ─────────────────────────────────────────────────────────────
 const getShoppingTour = (lang) => lang === 'en' ? [
@@ -236,10 +237,11 @@ export default function Shopping({ onClose } = {}) {
   const [analysis,  setAnalysis] = useState(null)
   const [tmpPaths,  setTmpPaths] = useState(null)     // { tmp_front, tmp_back, tmp_label }
   const [compat,    setCompat]   = useState(null)
-  const [error,     setError]    = useState(null)
-  const [added,     setAdded]    = useState(false)
-  const [adding,    setAdding]   = useState(false)
-  const [quota,     setQuota]    = useState(null)     // { remaining_day, remaining_week, ... }
+  const [error,          setError]          = useState(null)
+  const [added,          setAdded]          = useState(false)
+  const [adding,         setAdding]         = useState(false)
+  const [quota,          setQuota]          = useState(null)     // { remaining_day, remaining_week, ... }
+  const [quotaExhausted, setQuotaExhausted] = useState(false)
 
   // ── Carica quota shopping al mount ─────────────────────────────────────────
   useEffect(() => {
@@ -357,7 +359,11 @@ export default function Shopping({ onClose } = {}) {
     } catch (err) {
       stepTimers.current.forEach(clearTimeout)
       stepTimers.current = []
-      setError(t('shoppingError'))
+      if (err?.response?.status === 429) {
+        setQuotaExhausted(true)
+      } else {
+        setError(t('shoppingError'))
+      }
       setState('idle')
     }
   }, [photo, language, garments, t])
@@ -450,43 +456,27 @@ export default function Shopping({ onClose } = {}) {
         </div>
 
         {/* Banner quota shopping */}
-        {quota != null && (() => {
+        {quotaExhausted ? (
+          <QuotaBanner style={{ marginBottom: 16 }} />
+        ) : quota != null && (() => {
           const remDay  = quota.shopping_remaining_day  ?? quota.shopping_limit_day  ?? 0
           const limDay  = quota.shopping_limit_day  ?? 1
-          const isPremium = (quota.plan || 'free') !== 'free'
           const isExhausted = remDay <= 0
           const isLow = remDay === 1 && !isExhausted
-          if (isExhausted || isLow) {
+          if (isExhausted) {
+            return <QuotaBanner style={{ marginBottom: 16 }} />
+          }
+          if (isLow) {
             return (
               <div style={{
-                marginBottom: 16,
-                padding: '9px 14px',
-                borderRadius: 10,
-                background: isExhausted ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.08)',
-                border: `1px solid ${isExhausted ? 'rgba(239,68,68,0.22)' : 'rgba(245,158,11,0.25)'}`,
-                fontSize: 12,
-                color: isExhausted ? '#ef4444' : '#f59e0b',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                marginBottom: 16, padding: '9px 14px', borderRadius: 10,
+                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+                fontSize: 12, color: '#f59e0b',
               }}>
-                <span>
-                  {language === 'en'
-                    ? isExhausted
-                      ? `Daily shopping analyses exhausted. Resets tomorrow.`
-                      : `1 shopping analysis remaining today.`
-                    : isExhausted
-                      ? `Analisi Shopping esaurite per oggi. Si ripristinano domani.`
-                      : `1 analisi Shopping rimasta oggi.`
-                  }
-                </span>
-                {!isPremium && (
-                  <a href="/premium" style={{ fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap', textDecoration: 'none' }}>
-                    {language === 'en' ? 'Upgrade →' : 'Passa a Premium →'}
-                  </a>
-                )}
+                {language === 'en' ? '1 shopping analysis remaining today.' : '1 analisi Shopping rimasta oggi.'}
               </div>
             )
           }
-          // Mostra sempre quante rimangono se < 3
           if (remDay < limDay && remDay > 1) {
             return (
               <div style={{

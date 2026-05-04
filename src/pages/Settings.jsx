@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import useSettingsStore from '../store/settingsStore'
 import useIsMobile from '../hooks/useIsMobile'
 import useWardrobeStore from '../store/wardrobeStore'
@@ -855,13 +855,15 @@ export default function Settings() {
   const updateUser     = useAuthStore(s => s.updateUser)
   const logout         = useAuthStore(s => s.logout)
   const navigate       = useNavigate()
+  const location       = useLocation()
 
   const language = settings.language || 'it'
   const t = useT()
   const isMobile = useIsMobile()
 
   // Accordion: una sola sezione aperta alla volta (null = tutte chiuse)
-  const [openSection, setOpenSection] = useState(null)
+  // Supporta apertura diretta via navigate('/settings', { state: { openSection: 'usage' } })
+  const [openSection, setOpenSection] = useState(location.state?.openSection ?? null)
   const toggleSection = (id) => setOpenSection(prev => prev === id ? null : id)
 
   // Stato conferme a catena: null → 'outfits'/'garments'/'all'/'settings'/'logout'
