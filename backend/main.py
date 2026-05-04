@@ -315,7 +315,8 @@ async def download_installer(filename: str):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _file_to_b64(filepath: Path) -> Optional[str]:
-    """Legge un file immagine, ridimensiona a max 512px e restituisce data URL base64."""
+    """Legge un file immagine, ridimensiona a max 512px e restituisce data URL base64.
+    Preserva la trasparenza (PNG) per i file _nobg."""
     from PIL import Image as _PIL
     import io as _io, base64 as _b64
     try:
@@ -323,15 +324,18 @@ def _file_to_b64(filepath: Path) -> Optional[str]:
             return None
         img = _PIL.open(str(filepath))
         img.thumbnail((512, 512), _PIL.LANCZOS)
-        if img.mode == "RGBA":
-            bg = _PIL.new("RGB", img.size, (255, 255, 255))
-            bg.paste(img, mask=img.split()[3])
-            img = bg
-        elif img.mode != "RGB":
-            img = img.convert("RGB")
         buf = _io.BytesIO()
-        img.save(buf, format="JPEG", quality=80)
-        return f"data:image/jpeg;base64,{_b64.b64encode(buf.getvalue()).decode()}"
+        # Preserva trasparenza per immagini RGBA (es. _nobg.png dopo rimozione sfondo)
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            img.save(buf, format="PNG", optimize=True)
+            return f"data:image/png;base64,{_b64.b64encode(buf.getvalue()).decode()}"
+        else:
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(buf, format="JPEG", quality=80)
+            return f"data:image/jpeg;base64,{_b64.b64encode(buf.getvalue()).decode()}"
     except Exception as e:
         logger.warning("_file_to_b64 fallito per %s: %s", filepath, e)
         return None

@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/Endyoapp.png",
+      "src": "/Endyoappsmall.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"

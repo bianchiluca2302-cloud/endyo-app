@@ -815,7 +815,7 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
   const canSend = effectiveQuota == null || effectiveQuota !== 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
       {/* Intestazione (solo in modalità non-compact) */}
       {!compact && (
@@ -838,6 +838,9 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
                   : t('assistantOnline', garments.length)}
             </div>
           </div>
+          {weather && (
+            <WeatherBadge weather={weather} language={language} chatOpen={false} onOpenChat={() => {}} />
+          )}
           {messages.length > 1 && (
             <button
               onClick={() => setMessages([{ role: 'assistant', content: makeWelcome(selectedGarments, language) }])}
@@ -1937,30 +1940,28 @@ export default function OutfitBuilder() {
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
         {isMobile && tab === 'stylist' && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingBottom: kbH }}>
-            {/* Header meteo */}
-            {weather && (
-              <div style={{ padding: '8px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
-                <WeatherBadge weather={weather} language={language} chatOpen={false} onOpenChat={() => {}} />
-              </div>
-            )}
-            <StylistChat
-              selectedGarments={selectedGarments}
-              compact={false}
-              weather={weather}
-              onApplyOutfit={(ids, name, notes) => {
-                const newSel = {}
-                for (const id of (ids || [])) {
-                  const g = getById(id)
-                  if (g) newSel[g.category] = g.id
-                }
-                setSelected(newSel)
-                if (name) setOutfitName(name)
-                if (notes) setCompleteNotes(notes)
-                setTab('builder')
-              }}
-              remainingQuota={null}
-              onQuotaUpdate={() => {}}
-            />
+            {/* wrapper flex:1 garantisce che StylistChat riempia lo spazio rimanente
+                dopo il paddingBottom (keyboard height) senza overflow indesiderati */}
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <StylistChat
+                selectedGarments={selectedGarments}
+                compact={false}
+                weather={weather}
+                onApplyOutfit={(ids, name, notes) => {
+                  const newSel = {}
+                  for (const id of (ids || [])) {
+                    const g = getById(id)
+                    if (g) newSel[g.category] = g.id
+                  }
+                  setSelected(newSel)
+                  if (name) setOutfitName(name)
+                  if (notes) setCompleteNotes(notes)
+                  setTab('builder')
+                }}
+                remainingQuota={null}
+                onQuotaUpdate={() => {}}
+              />
+            </div>
           </div>
         )}
 
