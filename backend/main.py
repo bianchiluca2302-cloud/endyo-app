@@ -232,6 +232,18 @@ _ASSETS_DIR = Path(__file__).parent / "assets"
 if _ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
 
+# Root-level icon routes (manifest.json PWA icons, apple-touch-icon, favicon)
+@app.get("/Endyoapp.png")
+@app.get("/Endyoappsmall.png")
+@app.get("/Endyoappapple.png")
+@app.get("/Endyoappfavicon.png")
+async def serve_icon(request: Request):
+    name = request.url.path.lstrip("/")
+    f = _ASSETS_DIR / name
+    if not f.exists():
+        raise HTTPException(status_code=404)
+    return FileResponse(str(f), media_type="image/png")
+
 # Serve brand portal (dist/ folder) — solo se già buildato
 if DIST_DIR.exists():
     app.mount("/portal", StaticFiles(directory=str(DIST_DIR)), name="portal")

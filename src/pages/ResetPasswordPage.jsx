@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { authResetPassword } from '../api/client'
 import { useT } from '../i18n'
-const logoUrl = './Endyoapp.png'
+const logoUrl = './Endyoapp.png?v=3'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const IconEye = () => (
