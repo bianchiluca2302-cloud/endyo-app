@@ -1223,10 +1223,10 @@ export default function Friends() {
 
       {/* Header — titolo + tab */}
       <div style={{ padding: isMobile ? '12px 14px 0' : '14px 28px 0', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-        {/* Titolo pagina — sopra i tab, come in OutfitBuilder */}
+        {/* Titolo pagina — sopra i tab, come in Armadio */}
         <div style={{ marginBottom: 10 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>{t('friendsTitle')}</h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>
+          <h1 className="page-title" style={{ margin: 0 }}>{t('friendsTitle')}</h1>
+          <p className="page-subtitle" style={{ margin: '3px 0 0' }}>
             {lang === 'en' ? 'Discover and share your looks' : 'Scopri e condividi i tuoi look'}
           </p>
         </div>

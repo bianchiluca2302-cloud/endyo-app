@@ -986,8 +986,17 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
       {/* Input */}
       <div style={{
         padding: '6px 10px 8px', borderTop: '1px solid var(--border)',
-        display: 'flex', gap: 7, flexShrink: 0,
+        display: 'flex', gap: 7, flexShrink: 0, alignItems: 'flex-end',
       }}>
+        {/* Quota counter */}
+        {effectiveQuota != null && effectiveQuota !== -1 && effectiveQuota < 999 && (
+          <span style={{
+            fontSize: 10, fontWeight: 600, flexShrink: 0, paddingBottom: 9,
+            color: effectiveQuota === 0 ? '#f59e0b' : 'var(--text-dim)',
+          }}>
+            {language === 'en' ? `${effectiveQuota} left` : `${effectiveQuota} rimaste`}
+          </span>
+        )}
         <textarea
           ref={inputRef}
           value={input}
@@ -1047,8 +1056,15 @@ function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
   const forecastTitle = language === 'en' ? 'Today\'s forecast' : 'Previsioni di oggi'
 
   return (
+    <>
+    {isMobile && tapped && (
+      <div
+        onClick={() => setTapped(false)}
+        style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+      />
+    )}
     <div
-      style={{ position: 'relative', flexShrink: 0 }}
+      style={{ position: 'relative', flexShrink: 0, zIndex: tapped ? 999 : 'auto' }}
       onMouseEnter={() => !isMobile && setHovered(true)}
       onMouseLeave={() => !isMobile && setHovered(false)}
       onClick={e => {
@@ -1152,6 +1168,7 @@ function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 
@@ -1169,7 +1186,6 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
     }
   }, [currentTab])
   const [inputFocused,  setInputFocused]  = useState(false)
-  const [pulsing,       setPulsing]       = useState(false)
   const [remaining,     setRemaining]     = useState(null)
   const [remainingWeek, setRemainingWeek] = useState(null)
   const [limitDay,      setLimitDay]      = useState(10)
@@ -1197,16 +1213,17 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
     }).catch(() => {})
   }, [])
 
-  // Apre automaticamente e pulsa quando viene selezionato il primo capo
+  // Apre automaticamente quando viene selezionato il primo capo
   useEffect(() => {
     const count = selectedGarments.length
     if (prevCountRef.current === 0 && count > 0) {
       setIsOpen(true)
-      setPulsing(true)
-      setTimeout(() => setPulsing(false), 1800)
     }
     prevCountRef.current = count
   }, [selectedGarments.length]) // eslint-disable-line
+
+  // Pulsa finché ci sono capi selezionati e il pannello è chiuso
+  const pulsing = selectedGarments.length > 0 && !isOpen
 
   const quotaLabel = remaining === null ? null
     : remaining === -1 || remaining >= 999 ? null  // illimitato: non mostrare
@@ -1244,7 +1261,7 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
             ? 'linear-gradient(135deg, rgba(108,63,199,0.1), rgba(192,132,252,0.05))'
             : 'var(--surface)',
           transition: 'background 0.25s',
-          animation: pulsing ? 'stylistPulse 0.9s ease 2' : 'none',
+          animation: pulsing ? 'stylistPulse 1.2s ease-in-out infinite' : 'none',
         }}
       >
         {/* Avatar IA */}
@@ -1518,8 +1535,6 @@ export default function OutfitBuilder() {
   const [completeNotes, setCompleteNotes] = useState(null)
   // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
   const { weather } = useWeather(language)
-  // Lampeggio del tab Stylist quando si seleziona il primo capo
-  const [stylistPulse, setStylistPulse] = useState(false)
   const prevSelCountRef = useRef(0)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [detailOutfit, setDetailOutfit] = useState(null)
@@ -1543,17 +1558,8 @@ export default function OutfitBuilder() {
     .map(id => getById(id))
     .filter(Boolean)
 
-  // Lampeggio tab Stylist: si attiva ogni volta che la selezione cresce
-  // (e si è sul tab builder, non già sullo stylist)
-  useEffect(() => {
-    const count = selectedGarments.length
-    if (count > prevSelCountRef.current && tab !== 'stylist') {
-      setStylistPulse(true)
-      const t = setTimeout(() => setStylistPulse(false), 2000)
-      return () => clearTimeout(t)
-    }
-    prevSelCountRef.current = count
-  }, [selectedGarments.length]) // eslint-disable-line
+  // Lampeggio tab Stylist: attivo finché ci sono capi selezionati e non si è sul tab stylist
+  const stylistPulse = selectedGarments.length > 0 && tab !== 'stylist'
 
   const toggleGarment = (garment) => {
     const cat = garment.category
@@ -1631,10 +1637,10 @@ export default function OutfitBuilder() {
           padding: '14px 16px 0',
           background: 'var(--surface)', flexShrink: 0,
         }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 className="page-title" style={{ margin: 0 }}>
             {t('outfitMixerTitle')}
-          </h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 10px' }}>
+          </h1>
+          <p className="page-subtitle" style={{ margin: '3px 0 10px' }}>
             {outfits.length === 0
               ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
               : `${outfits.length} ${outfits.length === 1
@@ -1652,15 +1658,16 @@ export default function OutfitBuilder() {
         }}>
           {[
           ['builder', t('wardrobeStep2Cta')],
+          ['stylist', 'Stylist'],
+          ['mixer', 'Mixer'],
           ['saved', t('outfitsTitle')],
-          ...(isMobile ? [['mixer', 'Mixer'], ['stylist', 'Stylist']] : []),
-        ].map(([id, label]) => {
+        ].filter(([id]) => isMobile || !['mixer', 'stylist'].includes(id)).map(([id, label]) => {
             const isStylist = id === 'stylist'
             const isActive  = tab === id
             return (
             <button
               key={id}
-              onClick={() => { setTab(id); if (isStylist) setStylistPulse(false) }}
+              onClick={() => { setTab(id) }}
               style={{
                 padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 99,
                 cursor: 'pointer', transition: 'all 0.18s',
@@ -1785,7 +1792,7 @@ export default function OutfitBuilder() {
         )}
 
         {/* Mobile: capi selezionati — striscia sotto la lista capi */}
-        {isMobile && tab === 'builder' && (
+        {isMobile && tab === 'builder' && selectedGarments.length > 0 && (
           <MobileSelectionStrip
             garments={selectedGarments}
             onRemove={(g) => toggleGarment(g)}

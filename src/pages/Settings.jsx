@@ -871,6 +871,10 @@ export default function Settings() {
   // Modale eliminazione account
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
 
+  // Stato feedback toggle marketing: null | 'loading' | 'done'
+  const [emailToggleStatus, setEmailToggleStatus] = useState(null)
+  const [phoneToggleStatus, setPhoneToggleStatus] = useState(null)
+
   // ── Prima conferma → modale irreversibile ───────────────────────────────────
   const requestConfirm = (type) => setResetConfirm(type)
 
@@ -1206,8 +1210,8 @@ export default function Settings() {
         </Row>
       </Section>
 
-      {/* ── DATI E PRIVACY ───────────────────────────────────────── */}
-      <Section id="data" icon={<IconDatabase size={18} />} title={t('sectionData')} openId={openSection} onToggle={toggleSection}>
+      {/* ── DATI, PRIVACY E CONSENSI ─────────────────────────────── */}
+      <Section id="data" icon={<IconDatabase size={18} />} title={language === 'en' ? 'Data & Privacy' : 'Dati e privacy'} openId={openSection} onToggle={toggleSection}>
 
         {/* Cancella outfit */}
         <Row label={t('deleteOutfits')} desc={t('outfitsSaved', outfits.length)}>
@@ -1266,56 +1270,48 @@ export default function Settings() {
         </Row>
 
         {/* Separatore */}
-        <div style={{ height: 1, background: 'rgba(239,68,68,0.15)', margin: '4px 0' }} />
+        <div style={{ height: 1, background: 'rgba(139,92,246,0.12)', margin: '4px 0' }} />
 
-        {/* Elimina account */}
-        <Row label={t('deleteAccount')} desc={t('deleteAccountDesc')}>
-          <button
-            onClick={() => setShowDeleteAccount(true)}
-            style={{
-              padding: '7px 14px', fontSize: 12, fontWeight: 600,
-              borderRadius: 8, cursor: 'pointer',
-              background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.4)',
-              color: '#f87171',
-              transition: 'var(--transition)',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.22)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-          >
-            {t('deleteAccountBtn')}
-          </button>
-        </Row>
-      </Section>
-
-      {/* ── PRIVACY E CONSENSI ──────────────────────────────────── */}
-      <Section id="privacy" icon={<IconDatabase size={18} />} title={language === 'en' ? 'Privacy & Consent' : 'Privacy e consensi'} openId={openSection} onToggle={toggleSection}>
         {/* Marketing email */}
         <Row
           label={language === 'en' ? 'Promotional emails' : 'Email promozionali'}
           desc={language === 'en' ? 'Receive personalized offers and news via email' : 'Ricevi offerte personalizzate e novità via email'}
         >
-          <div
-            onClick={async () => {
-              const newVal = !(user?.marketing_email)
-              try {
-                await updateMarketingConsent({ marketing_email: newVal })
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+            <div
+              onClick={async () => {
+                if (emailToggleStatus === 'loading') return
+                const newVal = !(user?.marketing_email)
                 updateUser({ ...user, marketing_email: newVal })
-              } catch {}
-            }}
-            style={{
-              width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
-              background: user?.marketing_email ? 'var(--primary)' : 'var(--border)',
-              position: 'relative', transition: 'background 0.3s',
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: 2,
-              left: user?.marketing_email ? 22 : 2,
-              width: 20, height: 20, borderRadius: '50%', background: '#fff',
-              transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-            }} />
+                setEmailToggleStatus('loading')
+                try {
+                  await updateMarketingConsent({ marketing_email: newVal })
+                  setEmailToggleStatus('done')
+                  setTimeout(() => setEmailToggleStatus(null), 2000)
+                } catch {
+                  updateUser({ ...user, marketing_email: !newVal })
+                  setEmailToggleStatus(null)
+                }
+              }}
+              style={{
+                width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                background: user?.marketing_email ? 'var(--primary)' : 'var(--border)',
+                position: 'relative', transition: 'background 0.3s',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 2,
+                left: user?.marketing_email ? 22 : 2,
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              }} />
+            </div>
+            {emailToggleStatus === 'loading' && (
+              <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{language === 'en' ? 'saving…' : 'caricamento…'}</span>
+            )}
+            {emailToggleStatus === 'done' && (
+              <span style={{ fontSize: 10, color: '#22c55e' }}>{language === 'en' ? 'saved' : 'completato'}</span>
+            )}
           </div>
         </Row>
 
@@ -1324,30 +1320,45 @@ export default function Settings() {
           label={language === 'en' ? 'SMS / Phone promotions' : 'Promozioni via SMS/telefono'}
           desc={language === 'en' ? 'Receive offers via SMS or phone call' : 'Ricevi offerte tramite SMS o chiamata'}
         >
-          <div
-            onClick={async () => {
-              const newVal = !(user?.marketing_phone)
-              try {
-                await updateMarketingConsent({ marketing_phone: newVal })
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+            <div
+              onClick={async () => {
+                if (phoneToggleStatus === 'loading') return
+                const newVal = !(user?.marketing_phone)
                 updateUser({ ...user, marketing_phone: newVal })
-              } catch {}
-            }}
-            style={{
-              width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
-              background: user?.marketing_phone ? 'var(--primary)' : 'var(--border)',
-              position: 'relative', transition: 'background 0.3s',
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: 2,
-              left: user?.marketing_phone ? 22 : 2,
-              width: 20, height: 20, borderRadius: '50%', background: '#fff',
-              transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-            }} />
+                setPhoneToggleStatus('loading')
+                try {
+                  await updateMarketingConsent({ marketing_phone: newVal })
+                  setPhoneToggleStatus('done')
+                  setTimeout(() => setPhoneToggleStatus(null), 2000)
+                } catch {
+                  updateUser({ ...user, marketing_phone: !newVal })
+                  setPhoneToggleStatus(null)
+                }
+              }}
+              style={{
+                width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                background: user?.marketing_phone ? 'var(--primary)' : 'var(--border)',
+                position: 'relative', transition: 'background 0.3s',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 2,
+                left: user?.marketing_phone ? 22 : 2,
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                transition: 'left 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              }} />
+            </div>
+            {phoneToggleStatus === 'loading' && (
+              <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{language === 'en' ? 'saving…' : 'caricamento…'}</span>
+            )}
+            {phoneToggleStatus === 'done' && (
+              <span style={{ fontSize: 10, color: '#22c55e' }}>{language === 'en' ? 'saved' : 'completato'}</span>
+            )}
           </div>
         </Row>
 
-        {/* Link documenti */}
+        {/* Link documenti legali */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[
             { label: language === 'en' ? 'Terms & Conditions' : 'Termini e Condizioni', url: 'https://endyo.it/terms' },
@@ -1379,6 +1390,29 @@ export default function Settings() {
             {new Date(user.terms_accepted_at).toLocaleDateString(language === 'en' ? 'en-GB' : 'it-IT')}
           </div>
         )}
+
+        {/* Separatore */}
+        <div style={{ height: 1, background: 'rgba(239,68,68,0.15)', margin: '4px 0' }} />
+
+        {/* Elimina account */}
+        <Row label={t('deleteAccount')} desc={t('deleteAccountDesc')}>
+          <button
+            onClick={() => setShowDeleteAccount(true)}
+            style={{
+              padding: '7px 14px', fontSize: 12, fontWeight: 600,
+              borderRadius: 8, cursor: 'pointer',
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.4)',
+              color: '#f87171',
+              transition: 'var(--transition)',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.22)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+          >
+            {t('deleteAccountBtn')}
+          </button>
+        </Row>
       </Section>
 
       {/* ── INFO ─────────────────────────────────────────────────── */}

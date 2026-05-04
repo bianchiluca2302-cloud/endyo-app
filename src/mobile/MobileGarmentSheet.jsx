@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { imgUrl, removeGarmentBackground, reEnrichGarment, fetchBgStatus } from '../api/client'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
@@ -299,7 +300,6 @@ export default function MobileGarmentSheet({ garment, onClose }) {
           transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)',
           transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
           willChange: 'transform',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
         }}
       >
         {/* ── Sticky drag header — sempre visibile anche scrollando ───────────── */}
@@ -509,10 +509,13 @@ export default function MobileGarmentSheet({ garment, onClose }) {
           )}
         </div>
 
-        {/* ── Action buttons ──────────────────────────────────────────────────── */}
+        {/* ── Action buttons — sticky at bottom so they're always reachable ── */}
         <div style={{
-          display: 'flex', gap: 8, padding: '0 20px 4px',
-          borderTop: '1px solid var(--border)', paddingTop: 14, flexWrap: 'wrap',
+          display: 'flex', gap: 8, padding: '14px 20px',
+          borderTop: '1px solid var(--border)', flexWrap: 'wrap',
+          position: 'sticky', bottom: 0, zIndex: 5,
+          background: 'var(--surface)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
         }}>
           {/* Rimuovi sfondo */}
           {!bgDone && (
@@ -555,14 +558,15 @@ export default function MobileGarmentSheet({ garment, onClose }) {
         </div>
       </div>
 
-      {/* Conferma eliminazione */}
-      {confirmOpen && (
+      {/* Conferma eliminazione — portaled to body to escape transform stacking context */}
+      {confirmOpen && createPortal(
         <ConfirmActionSheet
           message={t('garmentDeleteConfirm', garment.name)}
           onConfirm={handleDelete}
           onCancel={() => setConfirmOpen(false)}
           language={language}
-        />
+        />,
+        document.body
       )}
     </div>
   )

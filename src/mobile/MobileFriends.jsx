@@ -1518,13 +1518,14 @@ export default function MobileFriends() {
         </div>
 
         {/* Tab bar */}
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
           {[
             { id: 'feed',       label: 'Feed',   onClick: () => setTab('feed') },
             { id: 'myposts',    label: language === 'en' ? 'My posts' : 'I miei post', onClick: () => setTab('myposts') },
-            { id: 'notifiche',  label: null,     onClick: handleTabNotifiche },
+            { id: 'notifiche',  label: null,     onClick: handleTabNotifiche, pushRight: true },
           ].map(t => (
             <button key={t.id} onClick={t.onClick} style={{
+              ...(t.pushRight ? { marginLeft: 'auto' } : {}),
               padding: '8px 14px', borderRadius: '10px 10px 0 0',
               fontSize: 13, fontWeight: 600, cursor: 'pointer',
               border: 'none',

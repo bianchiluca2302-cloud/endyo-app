@@ -1010,9 +1010,8 @@ async def _run_bg_removal_background(garment_id: int):
     Background task: rimuove lo sfondo da fronte e retro (NON etichetta) e aggiorna il DB.
     Aggiorna bg_status: processing → done (o torna a none in caso di errore).
 
-    IMPORTANTE: fronte e retro vengono processati in un SINGOLO sottoprocesso,
-    così il modello u2netp viene caricato una sola volta e la RAM del subprocess
-    viene liberata interamente alla fine, senza doppio picco.
+    Fronte e retro vengono processati in sottoprocessi separati così un fallimento
+    su un'immagine non blocca l'altra.
     """
     from database import AsyncSessionLocal
     async with AsyncSessionLocal() as db:
@@ -1022,9 +1021,8 @@ async def _run_bg_removal_background(garment_id: int):
             if not g:
                 return
 
-            # Costruisci le coppie (input, output) per fronte e retro
-            # L'etichetta NON viene processata (rimane originale per scopi diagnostici)
-            pairs: list[tuple[str, str]] = []
+            # Processa fronte e retro separatamente (un sottoprocesso per immagine).
+            # L'etichetta NON viene processata (rimane originale per scopi diagnostici).
             field_map: dict[str, str] = {}  # input_path → field name
             for field in ("photo_front", "photo_back"):
                 filename = getattr(g, field)
@@ -1036,26 +1034,22 @@ async def _run_bg_removal_background(garment_id: int):
                     continue
                 if p.stem.endswith("_nobg"):
                     continue  # già processato
-                out_path = str(p.parent / f"{p.stem}_nobg.png")
-                pairs.append((str(p), out_path))
                 field_map[str(p)] = field
 
-            if pairs:
-                # Un unico sottoprocesso carica il modello e processa tutte le immagini
-                result_map = await remove_background_batch(pairs)
-                for inp, out in result_map.items():
-                    field = field_map.get(inp)
-                    if not field:
-                        continue
+            for inp, field in field_map.items():
+                try:
+                    out = await remove_background(inp)
                     new_filename = Path(out).name
                     old_filename = getattr(g, field)
                     if new_filename != old_filename:
                         setattr(g, field, new_filename)
-                        logger.info("BG rimosso %s.%s: %s → %s (garment %d)",
-                                    field, Path(inp).suffix, old_filename, new_filename, garment_id)
+                        logger.info("BG rimosso %s: %s → %s (garment %d)",
+                                    field, old_filename, new_filename, garment_id)
                     else:
                         logger.warning("BG invariato per %s (garment %d) — rimozione fallita o non necessaria",
                                        field, garment_id)
+                except Exception as e_field:
+                    logger.error("BG removal fallito per %s (garment %d): %s", field, garment_id, e_field)
 
             g.bg_status = "done"
             await db.commit()
@@ -1798,21 +1792,21 @@ async def ai_chat(
 
 
 # ── Costanti rate limiting ────────────────────────────────────────────────────
-# Chat Stylist AI — limiti alti durante beta gratuita
-CHAT_DAILY_LIMIT_FREE          = 999
-CHAT_WEEKLY_LIMIT_FREE         = 999
-CHAT_DAILY_LIMIT_PREMIUM       = 999
-CHAT_WEEKLY_LIMIT_PREMIUM      = 999
-CHAT_DAILY_LIMIT_PREMIUM_PLUS  = 999
-CHAT_WEEKLY_LIMIT_PREMIUM_PLUS = 999
+# Chat Stylist AI
+CHAT_DAILY_LIMIT_FREE          = 2
+CHAT_WEEKLY_LIMIT_FREE         = 8
+CHAT_DAILY_LIMIT_PREMIUM       = 30
+CHAT_WEEKLY_LIMIT_PREMIUM      = 120
+CHAT_DAILY_LIMIT_PREMIUM_PLUS  = 60
+CHAT_WEEKLY_LIMIT_PREMIUM_PLUS = 240
 
-# Shopping Advisor — limiti alti durante beta gratuita
-SHOP_DAILY_LIMIT_FREE          = 999
-SHOP_WEEKLY_LIMIT_FREE         = 999
-SHOP_DAILY_LIMIT_PREMIUM       = 999
-SHOP_WEEKLY_LIMIT_PREMIUM      = 999
-SHOP_DAILY_LIMIT_PREMIUM_PLUS  = 999
-SHOP_WEEKLY_LIMIT_PREMIUM_PLUS = 999
+# Shopping Advisor
+SHOP_DAILY_LIMIT_FREE          = 1
+SHOP_WEEKLY_LIMIT_FREE         = 4
+SHOP_DAILY_LIMIT_PREMIUM       = 5
+SHOP_WEEKLY_LIMIT_PREMIUM      = 20
+SHOP_DAILY_LIMIT_PREMIUM_PLUS  = 10
+SHOP_WEEKLY_LIMIT_PREMIUM_PLUS = 40
 
 # Armocromia (solo settimanale — analisi costosa, limite conservativo)
 ARMO_WEEKLY_LIMIT_FREE         = 0    # bloccato per free
