@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { authResetPassword } from '../api/client'
 import { useT } from '../i18n'
-const logoUrl = '/Endyoapp.png'
+const logoUrl = './Endyoapp.png'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const IconEye = () => (
@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
         borderRadius: 20, padding: '40px 36px',
         boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
       }}>
-        <img src={logoUrl} alt="Endyo" style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 20 }} />
+        <img src={logoUrl} alt="Endyo" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'contain', marginBottom: 20 }} />
 
         {success ? (
           <>

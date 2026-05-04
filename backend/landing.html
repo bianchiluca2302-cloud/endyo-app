@@ -96,8 +96,7 @@
     }
     .nav-logo-icon {
       width: 30px; height: 30px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--primary), #e8810a);
-      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
       font-size: 15px;
     }
     .nav-logo-text { display: inline; }
@@ -648,8 +647,7 @@
     }
     .footer-logo-icon {
       width: 26px; height: 26px; border-radius: 6px;
-      background: linear-gradient(135deg, var(--primary), #e8810a);
-      display: flex; align-items: center; justify-content: center; font-size: 13px;
+      overflow: hidden; flex-shrink: 0;
     }
     .footer-tagline { font-size: 12px; color: var(--muted); line-height: 1.6; }
 
@@ -759,8 +757,7 @@
       }
       .mobile-app-name-icon {
         width: 34px; height: 34px; border-radius: 9px;
-        background: linear-gradient(135deg, var(--primary), #e8810a);
-        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; flex-shrink: 0;
         font-size: 16px;
       }
 
@@ -839,7 +836,7 @@
   <!-- ── Navbar ─────────────────────────────────────────────────────────────── -->
   <nav>
     <a href="#" class="nav-logo">
-      <div class="nav-logo-icon">✦</div>
+      <div class="nav-logo-icon"><img src="/portal/Endyoapp.png" alt="Endyo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       <span class="nav-logo-text">Endyo</span>
     </a>
 
@@ -860,7 +857,7 @@
 
     <!-- Nome app visibile solo su mobile, sopra il badge -->
     <div class="mobile-app-name">
-      <div class="mobile-app-name-icon">✦</div>
+      <div class="mobile-app-name-icon"><img src="/portal/Endyoapp.png" alt="Endyo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
       Endyo
     </div>
 
@@ -1311,7 +1308,7 @@
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div class="footer-logo-icon">✦</div>
+          <div class="footer-logo-icon"><img src="/portal/Endyoapp.png" alt="Endyo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
           Endyo
         </div>
         <p class="footer-tagline">

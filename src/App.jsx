@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-const logoUrl = '/Endyoapp.png'
+const logoUrl = './Endyoapp.png'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import TutorialOverlay, { shouldShowTutorial } from './components/TutorialOverlay'
@@ -157,7 +157,7 @@ export default function App() {
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <img src={logoUrl} alt="Endyo" style={{
-            width: 96, height: 96, borderRadius: 24,
+            width: 96, height: 96, borderRadius: 24, objectFit: 'contain',
             boxShadow: '0 8px 40px rgba(245,158,11,0.35)',
             animation: 'splashFade 0.5s ease forwards',
           }} />

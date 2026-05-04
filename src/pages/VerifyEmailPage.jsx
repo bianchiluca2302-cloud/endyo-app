@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { authVerifyEmail } from '../api/client'
 import { useT } from '../i18n'
-const logoUrl = '/Endyoapp.png'
+const logoUrl = './Endyoapp.png'
 import { IconCheckCircle, IconAlertTriangle } from '../components/Icons'
 
 export default function VerifyEmailPage() {
@@ -35,7 +35,7 @@ export default function VerifyEmailPage() {
         borderRadius: 20, padding: '40px 36px',
         boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
       }}>
-        <img src={logoUrl} alt="Endyo" style={{ width: 48, height: 48, borderRadius: 12, marginBottom: 20 }} />
+        <img src={logoUrl} alt="Endyo" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'contain', marginBottom: 20 }} />
 
         {status === 'loading' && (
           <>

@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react'
 import useWardrobeStore from '../store/wardrobeStore'
 import useAuthStore from '../store/authStore'
 import { useT } from '../i18n'
-const logoUrl = '/Endyoapp.png'
+const logoUrl = './Endyoapp.png'
 import { imgUrl, getAdBrands } from '../api/client'
 import useIsMobile from '../hooks/useIsMobile'
 

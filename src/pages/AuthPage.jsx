@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import { authLogin, authRegister, authForgotPassword, authResendVerification, authGoogle, authGoogleLink, authGoogleLinkInit, fetchGoogleClientId, checkUsernameAvailable, updateUsername, api } from '../api/client'
-const logoUrl = '/Endyoapp.png'
+const logoUrl = './Endyoapp.png'
 import { useT } from '../i18n'
 
 // ── Schermata scelta username dopo Google OAuth ───────────────────────────────
@@ -48,7 +48,7 @@ function UsernameSetupScreen({ onDone }) {
     }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src={logoUrl} alt="Endyo" style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 14, boxShadow: '0 4px 16px rgba(139,92,246,0.25)' }} />
+          <img src={logoUrl} alt="Endyo" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'contain', marginBottom: 14, boxShadow: '0 4px 16px rgba(139,92,246,0.25)' }} />
           <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
             Scegli il tuo username
           </h2>
@@ -1245,7 +1245,7 @@ function InstallScreen({ onBack }) {
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, marginTop: 8 }}>
         <img src={logoUrl} alt="Endyo" style={{
-          width: 56, height: 56, borderRadius: 16,
+          width: 56, height: 56, borderRadius: 16, objectFit: 'contain',
           boxShadow: '0 4px 20px rgba(245,158,11,0.35)',
         }} />
         <div style={{ textAlign: 'left' }}>
@@ -1494,7 +1494,7 @@ export default function AuthPage() {
       }}>
         {/* Logo + titolo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src={logoUrl} alt="Endyo" style={{ width: 54, height: 54, borderRadius: 14, marginBottom: 14 }} />
+          <img src={logoUrl} alt="Endyo" style={{ width: 54, height: 54, borderRadius: 14, objectFit: 'contain', marginBottom: 14 }} />
           <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
             {titles[view]}
           </h1>
