@@ -553,6 +553,16 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
 
   return (
     <form onSubmit={handleSubmit}>
+      <button type="button" onClick={onLogin} style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        background: 'none', border: 'none', color: 'var(--text-dim)',
+        fontSize: 13, cursor: 'pointer', padding: '0 0 16px', fontWeight: 500,
+      }}>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        {t('authSignIn')}
+      </button>
       <Field label={t('authEmailLabel')} type="email" value={email} onChange={v => { setEmail(v); clearFieldError('email') }}
         placeholder={t('authEmailPlaceholder')} autoComplete="email" error={fieldErrors.email} />
 
@@ -1494,7 +1504,7 @@ export default function AuthPage() {
       }}>
         {/* Logo + titolo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src={logoUrl} alt="Endyo" style={{ width: 160, height: 160, borderRadius: 30, objectFit: 'contain', marginBottom: 14 }} />
+          <img src={logoUrl} alt="Endyo" style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'contain', marginBottom: 14 }} />
           <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
             {titles[view]}
           </h1>
