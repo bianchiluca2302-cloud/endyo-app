@@ -187,6 +187,7 @@ export default function MobileUpload() {
   const [duplicates, setDuplicates] = useState([])
   const [result,    setResult]   = useState(null)
   const [showCatSheet, setShowCatSheet] = useState(false)
+  const [editedPalette, setEditedPalette] = useState([])
 
   // Quota upload giornaliera — inizializza subito da cache localStorage, poi aggiorna
   const QUOTA_CACHE_KEY = 'endyo_upload_quota'
@@ -239,6 +240,10 @@ export default function MobileUpload() {
       const data = await analyzeGarment(fd)
       setAnalysis(data.analysis)
       setTmpFiles({ tmp_front: data.tmp_front, tmp_back: data.tmp_back, tmp_label: data.tmp_label })
+      const palette = data.analysis.color_palette?.length > 0
+        ? data.analysis.color_palette
+        : (data.analysis.color_primary ? [{ name: data.analysis.color_primary, hex: '#888888' }] : [])
+      setEditedPalette(palette)
       setDuplicates(findDuplicates(data.analysis, garments))
       setStep('review')
     } catch (e) {
@@ -257,7 +262,12 @@ export default function MobileUpload() {
   const handleConfirm = async () => {
     setLoading(true); setStep('confirming')
     try {
-      const garment = await confirmGarment({ ...tmpFiles, analysis, category: analysis.category })
+      const analysisToSave = {
+        ...analysis,
+        color_palette: editedPalette,
+        color_primary: editedPalette[0]?.name || analysis.color_primary,
+      }
+      const garment = await confirmGarment({ ...tmpFiles, analysis: analysisToSave, category: analysisToSave.category })
       addGarment(garment)
       // Pulisci la cache del modulo subito dopo il salvataggio: se l'utente
       // naviga via dalla schermata "done" senza premere "Aggiungi altro",
@@ -398,7 +408,6 @@ export default function MobileUpload() {
           {[
             [CATEGORY_LABELS[analysis.category] || analysis.category, t('uploadFieldCat')],
             [analysis.brand || '—', 'Brand'],
-            [analysis.color_primary || '—', t('uploadFieldColor')],
             [analysis.size || '—', t('uploadFieldSize')],
           ].map(([v, k]) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
@@ -406,6 +415,47 @@ export default function MobileUpload() {
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{v}</span>
             </div>
           ))}
+          {/* Palette colori — editabile */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)', paddingTop: 5, flexShrink: 0 }}>{t('uploadFieldColor')}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, marginLeft: 10, minWidth: 0 }}>
+              {editedPalette.map((c, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 11, height: 11, borderRadius: '50%', background: c.hex || '#ccc', flexShrink: 0, boxShadow: '0 0 0 1px rgba(0,0,0,0.18)' }} />
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)', flexShrink: 0, width: 22, textAlign: 'right' }}>
+                    {i === 0 ? t('uploadColorBase') : t('uploadColorDetail')}
+                  </span>
+                  <input
+                    value={c.name}
+                    onChange={e => {
+                      const next = [...editedPalette]
+                      next[i] = { ...next[i], name: e.target.value }
+                      setEditedPalette(next)
+                    }}
+                    style={{
+                      flex: 1, border: '1px solid var(--border)', background: 'var(--card)',
+                      borderRadius: 7, padding: '3px 8px', fontSize: 12.5, fontWeight: 600,
+                      color: 'var(--text)', outline: 'none', minWidth: 0,
+                    }}
+                  />
+                  {editedPalette.length > 1 && (
+                    <button
+                      onClick={() => setEditedPalette(editedPalette.filter((_, j) => j !== i))}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px 4px', fontSize: 16, lineHeight: 1, flexShrink: 0 }}
+                    >×</button>
+                  )}
+                </div>
+              ))}
+              {editedPalette.length < 4 && (
+                <button
+                  onClick={() => setEditedPalette([...editedPalette, { name: '', hex: '#888888' }])}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary-light)', cursor: 'pointer', fontSize: 11.5, padding: '1px 0', textAlign: 'left', fontWeight: 600 }}
+                >
+                  {t('uploadAddColor')}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
