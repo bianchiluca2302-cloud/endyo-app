@@ -293,6 +293,7 @@ export default function MobileUpload() {
       setStep('done')
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
+      setNavLocked(false)
       setStep('review')
     } finally {
       setLoading(false)
