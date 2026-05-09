@@ -361,6 +361,18 @@ def _file_to_b64(filepath: Path) -> Optional[str]:
         return None
 
 
+def _nullable_float(val) -> float | None:
+    """Converte 'null'/'none'/stringa non-numerica → None, altrimenti float."""
+    if val is None:
+        return None
+    if isinstance(val, str) and val.strip().lower() in ("null", "none", ""):
+        return None
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
 def garment_to_dict(g: Garment) -> dict:
     return {
         "id": g.id,
@@ -1285,7 +1297,7 @@ async def confirm_garment(
         color_hex=analysis.get("color_hex"),
         color_palette=analysis.get("color_palette") or [],
         size=analysis.get("size"),
-        price=analysis.get("price"),
+        price=_nullable_float(analysis.get("price")),
         material=analysis.get("material"),
         description=analysis.get("description"),
         style_tags=analysis.get("style_tags", []),
@@ -1431,7 +1443,7 @@ async def create_garment(
         color_hex=analysis.get("color_hex"),
         color_palette=analysis.get("color_palette") or [],
         size=analysis.get("size"),
-        price=analysis.get("price"),
+        price=_nullable_float(analysis.get("price")),
         material=analysis.get("material"),
         description=analysis.get("description"),
         style_tags=analysis.get("style_tags", []),
@@ -2691,7 +2703,7 @@ async def import_wardrobe(
             color_hex=gd.get('color_hex'),
             color_palette=gd.get('color_palette') or [],
             size=gd.get('size'),
-            price=gd.get('price'),
+            price=_nullable_float(gd.get('price')),
             material=gd.get('material'),
             description=gd.get('description'),
             style_tags=gd.get('style_tags', []),
