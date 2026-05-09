@@ -1491,9 +1491,9 @@ export default function AuthPage() {
 
   return (
     <div style={{
-      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'flex-start',
-      background: 'var(--bg)', padding: 24,
+      position: 'fixed', inset: 0, overflowY: 'auto',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      background: 'var(--bg)', padding: '24px',
     }}>
       <div style={{
         width: '100%', maxWidth: 420,
