@@ -8,6 +8,27 @@ import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '
 import { IconCheckCircle, IconAlertTriangle, IconCamera, IconTag, IconShirt } from '../components/Icons'
 import useIsMobile from '../hooks/useIsMobile'
 
+async function compressImage(file) {
+  if (!file.type.startsWith('image/')) return file
+  const url = URL.createObjectURL(file)
+  const img = await new Promise((res, rej) => {
+    const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url
+  })
+  URL.revokeObjectURL(url)
+  const MAX_PX = 1920
+  let w = img.naturalWidth, h = img.naturalHeight
+  if (w > MAX_PX || h > MAX_PX) {
+    const ratio = Math.min(MAX_PX / w, MAX_PX / h)
+    w = Math.round(w * ratio); h = Math.round(h * ratio)
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = w; canvas.height = h
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.82)
+  })
+}
+
 // STEPS, CATEGORIES, CATEGORY_LABELS are built dynamically inside the component using hooks
 
 /** Trova duplicati reali: stesso capo, non solo stessa categoria.
@@ -92,10 +113,11 @@ export default function Upload() {
 
   const fileRefs = { front: useRef(), back: useRef(), label: useRef() }
 
-  const handleFile = (type, file) => {
+  const handleFile = async (type, file) => {
     if (!file) return
-    setPhotos(p => ({ ...p, [type]: file }))
-    const url = URL.createObjectURL(file)
+    const compressed = await compressImage(file).catch(() => file)
+    setPhotos(p => ({ ...p, [type]: compressed }))
+    const url = URL.createObjectURL(compressed)
     setPreviews(p => ({ ...p, [type]: url }))
   }
 

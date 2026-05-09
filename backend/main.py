@@ -1189,7 +1189,15 @@ async def analyze_garment_only(
     back_full  = str(UPLOAD_DIR / back_path)  if back_path  else None
     label_full = str(UPLOAD_DIR / label_path) if label_path else None
 
-    analysis = await analyze_garment(front_full, back_full, label_full, language=language or 'it')
+    try:
+        analysis = await analyze_garment(front_full, back_full, label_full, language=language or 'it')
+    except Exception as e:
+        # Elimina i file tmp già salvati per non lasciarli orfani
+        for p in [front_path, back_path, label_path]:
+            if p:
+                try: (UPLOAD_DIR / p).unlink(missing_ok=True)
+                except Exception: pass
+        raise HTTPException(status_code=502, detail="Analisi AI non riuscita. Riprova tra qualche secondo.")
     if category:
         analysis["category"] = category
 

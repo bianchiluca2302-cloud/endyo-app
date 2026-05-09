@@ -149,18 +149,26 @@ Return ONLY the JSON, no markdown, no explanation."""
         vision_resp = await client_vision.chat.completions.create(
             model=VISION_MODEL,
             messages=[{"role": "user", "content": vision_content}],
-            max_tokens=400,
+            max_tokens=700,
             temperature=0.1,
         )
         raw = vision_resp.choices[0].message.content.strip()
+        # Rimuovi eventuali blocchi markdown ```json ... ```
         if raw.startswith("```"):
-            raw = raw.split("```")[1]
+            parts = raw.split("```")
+            raw = parts[1] if len(parts) > 1 else raw
             if raw.startswith("json"):
                 raw = raw[4:]
+        raw = raw.strip()
         base_data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        import logging
+        logging.getLogger(__name__).error("[AI] Vision JSON parse error: %s | raw: %.200s", e, raw if 'raw' in dir() else '?')
+        raise RuntimeError(f"Risposta AI non valida (JSON malformato): {e}") from e
     except Exception as e:
-        print(f"Vision analysis error: {e}")
-        return _mock_analysis()
+        import logging
+        logging.getLogger(__name__).error("[AI] Vision analysis error: %s", e)
+        raise RuntimeError(f"Errore analisi AI: {e}") from e
 
     # ── Step 2: arricchimento qualitativo con TEXT_MODEL ──────────────────────
     if language == 'en':

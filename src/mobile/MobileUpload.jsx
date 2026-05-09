@@ -144,17 +144,28 @@ async function fixImageOrientation(file) {
   })
   URL.revokeObjectURL(url)
 
+  // Limita la risoluzione a 1920px sul lato più lungo per mantenere
+  // tutti i dettagli visibili all'analisi AI ma ridurre il peso a <1 MB
+  const MAX_PX = 1920
+  let w = img.naturalWidth
+  let h = img.naturalHeight
+  if (w > MAX_PX || h > MAX_PX) {
+    const ratio = Math.min(MAX_PX / w, MAX_PX / h)
+    w = Math.round(w * ratio)
+    h = Math.round(h * ratio)
+  }
+
   const canvas = document.createElement('canvas')
-  canvas.width  = img.naturalWidth
-  canvas.height = img.naturalHeight
+  canvas.width  = w
+  canvas.height = h
   const ctx = canvas.getContext('2d')
   // drawImage applica automaticamente l'orientamento EXIF su browser moderni
-  ctx.drawImage(img, 0, 0)
+  ctx.drawImage(img, 0, 0, w, h)
 
   return new Promise(resolve => {
     canvas.toBlob(blob => resolve(
       new File([blob], file.name, { type: 'image/jpeg' })
-    ), 'image/jpeg', 0.93)
+    ), 'image/jpeg', 0.82)
   })
 }
 
@@ -323,20 +334,26 @@ export default function MobileUpload() {
 
   /* ── STEP: analyzing ─────────────────────────────────────────────────────── */
   if (step === 'analyzing') return (
-    <LoadingScreen title={t('uploadMobileAnalyzingTitle')} subtitle={t('uploadMobileAnalyzingDesc')} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <LoadingScreen title={t('uploadMobileAnalyzingTitle')} subtitle={t('uploadMobileAnalyzingDesc')} />
+    </div>
   )
 
   /* ── STEP: confirming ────────────────────────────────────────────────────── */
   if (step === 'confirming') return (
-    <LoadingScreen title={t('uploadMobileSavingTitle')} subtitle={t('uploadMobileSavingDesc')} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <LoadingScreen title={t('uploadMobileSavingTitle')} subtitle={t('uploadMobileSavingDesc')} />
+    </div>
   )
 
   /* ── STEP: done ──────────────────────────────────────────────────────────── */
   if (step === 'done' && result) return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
+      position: 'fixed', inset: 0, zIndex: 999,
+      display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: 28, gap: 20, background: 'var(--bg)',
+      overflowY: 'auto',
     }}>
       <div style={{
         width: 80, height: 80, borderRadius: '50%',
@@ -388,7 +405,7 @@ export default function MobileUpload() {
 
   /* ── STEP: review ────────────────────────────────────────────────────────── */
   if (step === 'review' && analysis) return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 100px', background: 'var(--bg)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, overflowY: 'auto', padding: '24px 20px 100px', background: 'var(--bg)' }}>
       <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4, color: 'var(--text)' }}>
         {t('uploadMobileCheckTitle')}
       </h1>
@@ -403,16 +420,16 @@ export default function MobileUpload() {
             <img src={previews.front} alt="fronte" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         )}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>{analysis.name}</div>
           {[
             [CATEGORY_LABELS[analysis.category] || analysis.category, t('uploadFieldCat')],
             [analysis.brand || '—', 'Brand'],
             [analysis.size || '—', t('uploadFieldSize')],
           ].map(([v, k]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{k}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{v}</span>
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>{k}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textAlign: 'right', wordBreak: 'break-word', minWidth: 0 }}>{v}</span>
             </div>
           ))}
           {/* Palette colori — editabile */}
@@ -441,7 +458,7 @@ export default function MobileUpload() {
                   {editedPalette.length > 1 && (
                     <button
                       onClick={() => setEditedPalette(editedPalette.filter((_, j) => j !== i))}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px 4px', fontSize: 16, lineHeight: 1, flexShrink: 0 }}
+                      style={{ background: 'rgba(239,68,68,0.13)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', cursor: 'pointer', padding: '2px 7px', fontSize: 13, lineHeight: 1.5, flexShrink: 0, borderRadius: 6 }}
                     >×</button>
                   )}
                 </div>
