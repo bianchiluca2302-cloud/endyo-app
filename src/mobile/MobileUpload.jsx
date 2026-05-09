@@ -177,10 +177,11 @@ const _previewCache = { front: null, back: null, label: null }
 
 /* ── Main component ──────────────────────────────────────────────────────────── */
 export default function MobileUpload() {
-  const navigate    = useNavigate()
-  const addGarment  = useWardrobeStore(s => s.addGarment)
-  const garments    = useWardrobeStore(s => s.garments)
-  const language    = useSettingsStore(s => s.language || 'it')
+  const navigate      = useNavigate()
+  const addGarment    = useWardrobeStore(s => s.addGarment)
+  const garments      = useWardrobeStore(s => s.garments)
+  const setNavLocked  = useWardrobeStore(s => s.setNavLocked)
+  const language      = useSettingsStore(s => s.language || 'it')
   const t           = useT()
   const CATEGORIES  = useUploadCategories()
   const CATEGORY_LABELS = useCategoryLabels()
@@ -199,6 +200,9 @@ export default function MobileUpload() {
   const [result,    setResult]   = useState(null)
   const [showCatSheet, setShowCatSheet] = useState(false)
   const [editedPalette, setEditedPalette] = useState([])
+
+  // Sblocca la nav se il componente viene smontato mentre il processo è attivo
+  useEffect(() => () => setNavLocked(false), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quota upload giornaliera — inizializza subito da cache localStorage, poi aggiorna
   const QUOTA_CACHE_KEY = 'endyo_upload_quota'
@@ -240,7 +244,7 @@ export default function MobileUpload() {
 
   const handleAnalyze = async () => {
     if (!photos.front) { setError(t('uploadNeedFront')); return }
-    setError(null); setLoading(true); setStep('analyzing')
+    setError(null); setLoading(true); setStep('analyzing'); setNavLocked(true)
     try {
       const fd = new FormData()
       fd.append('photo_front', photos.front)
@@ -259,11 +263,11 @@ export default function MobileUpload() {
       setStep('review')
     } catch (e) {
       if (e?.response?.status === 429) {
-        // Segna quota esaurita così la UI mostra il QuotaBanner
         setUploadQuota({ remaining: 0, limit: 0, extra: 0 })
       } else {
         setError(e.response?.data?.detail || e.message)
       }
+      setNavLocked(false)
       setStep('upload')
     } finally {
       setLoading(false)
@@ -304,6 +308,7 @@ export default function MobileUpload() {
     setTmpFiles(null); setDuplicates([]); setError(null); setStep('upload')
     setManualForm({ name: '', category: '', brand: '', color: '', size: '' })
     setManualError(null)
+    setNavLocked(false)
   }
 
   const handleManualSubmit = async () => {
@@ -393,7 +398,7 @@ export default function MobileUpload() {
         }}>
           {t('uploadMobileAddMore')}
         </button>
-        <button onClick={() => navigate('/wardrobe')} style={{
+        <button onClick={() => { setNavLocked(false); navigate('/wardrobe') }} style={{
           flex: 1, padding: '14px 0', borderRadius: 14, border: 'none',
           background: 'var(--primary)', color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer',
         }}>
