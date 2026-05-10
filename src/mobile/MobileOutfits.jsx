@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { imgUrl } from '../api/client'
@@ -132,9 +132,26 @@ function BuilderSheet({ onClose, language }) {
   const [saving,     setSaving]     = useState(false)
   const [done,       setDone]       = useState(false)
   const [dragY,      setDragY]      = useState(0)
+  const [kbOffset,   setKbOffset]   = useState(0)
   const startYRef   = useRef(0)
   const draggingRef = useRef(false)
   const sheetRef    = useRef(null)
+
+  // Solleva il bottom sheet con la tastiera usando visualViewport API
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      setKbOffset(offset)
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
 
   const onHandleTouchStart = (e) => { startYRef.current = e.touches[0].clientY; draggingRef.current = true }
   const onHandleTouchMove  = (e) => {
@@ -194,7 +211,7 @@ function BuilderSheet({ onClose, language }) {
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: kbOffset, background: 'rgba(0,0,0,0.65)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }}
     >
       <div
         ref={sheetRef}

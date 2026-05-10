@@ -555,16 +555,16 @@ export default function MobileGarmentSheet({ garment, onClose }) {
             </button>
           )}
 
-          {/* Rigenera / Traduci */}
-          {!reEnriching && needsTranslation && (
+          {/* Rigenera / Traduci — sempre visibile quando non in corso */}
+          {!reEnriching && (
             <button
               onClick={handleReEnrich}
               style={{
                 ...actionBtnStyle,
-                background: 'var(--primary-dim)',
-                border: '1px solid var(--primary-border)',
-                color: 'var(--primary-light)',
-                fontWeight: 600,
+                background: needsTranslation ? 'var(--primary-dim)' : 'var(--card)',
+                border: needsTranslation ? '1px solid var(--primary-border)' : '1px solid var(--border)',
+                color: needsTranslation ? 'var(--primary-light)' : 'var(--text-muted)',
+                fontWeight: needsTranslation ? 600 : 400,
               }}
             >
               {reEnrichDone
