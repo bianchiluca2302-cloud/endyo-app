@@ -945,7 +945,7 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
       {/* Suggerimenti rapidi (solo prima risposta, nascosti quando si digita) */}
       {messages.length <= 1 && !input && (
         <div style={{ padding: '0 12px 6px', display: 'flex', gap: 5, flexWrap: 'wrap', flexShrink: 0 }}>
-          {(SUGGESTIONS[language] || SUGGESTIONS.it).map(s => (
+          {(SUGGESTIONS[language] || SUGGESTIONS.it).filter(s => selectedGarments.length > 0 || (!s.includes('selezionati') && !s.includes('selected items'))).map(s => (
             <button
               key={s}
               onClick={() => send(s)}
@@ -1543,21 +1543,7 @@ export default function OutfitBuilder() {
   // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
   const { weather } = useWeather(language)
 
-  // Keyboard height tracking per mobile Stylist tab (evita che la tastiera sollevi il menu)
-  const [kbH, setKbH] = useState(0)
-  useEffect(() => {
-    if (!isMobile || !window.visualViewport) return
-    const update = () => {
-      const kb = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)
-      setKbH(kb)
-    }
-    window.visualViewport.addEventListener('resize', update)
-    window.visualViewport.addEventListener('scroll', update)
-    return () => {
-      window.visualViewport.removeEventListener('resize', update)
-      window.visualViewport.removeEventListener('scroll', update)
-    }
-  }, [isMobile])
+  const [stylistInputFocused, setStylistInputFocused] = useState(false)
   const prevSelCountRef = useRef(0)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [detailOutfit, setDetailOutfit] = useState(null)
@@ -1975,14 +1961,17 @@ export default function OutfitBuilder() {
 
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
         {isMobile && tab === 'stylist' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingBottom: Math.max(0, kbH - 108) }}>
-            {/* wrapper flex:1 garantisce che StylistChat riempia lo spazio rimanente
-                dopo il paddingBottom (keyboard height) senza overflow indesiderati */}
+          <div style={stylistInputFocused
+            ? { position: 'fixed', inset: 0, zIndex: 501, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }
+            : { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }
+          }>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <StylistChat
                 selectedGarments={selectedGarments}
                 compact={false}
-                weather={weather}
+                weather={weather?.summary ?? null}
+                onInputFocus={() => setStylistInputFocused(true)}
+                onInputBlur={() => setTimeout(() => setStylistInputFocused(false), 150)}
                 onApplyOutfit={(ids, name, notes) => {
                   const newSel = {}
                   for (const id of (ids || [])) {
