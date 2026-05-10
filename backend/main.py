@@ -69,67 +69,10 @@ DIST_DIR = Path(__file__).parent.parent / "dist"
 
 import asyncio
 
-async def _migrate_db():
-    """Aggiunge colonne mancanti senza toccare i dati esistenti.
-    Ogni ALTER TABLE gira in una transazione propria: un errore (es. colonna
-    già esistente) non blocca le migrazioni successive.
-    """
-    from database import engine as _engine
-    from sqlalchemy import text as _text
-
-    extra_migrations = [
-        # Tabella users
-        ("users", "chat_week_count",        "INTEGER NOT NULL DEFAULT 0"),
-        ("users", "chat_week_reset_at",     "TIMESTAMP WITH TIME ZONE"),
-        ("users", "plan_started_at",        "TIMESTAMP WITH TIME ZONE"),
-        ("users", "plan_expires_at",        "TIMESTAMP WITH TIME ZONE"),
-        ("users", "scheduled_downgrade_to", "VARCHAR(20)"),
-        # Tabella brands
-        ("brands", "reset_token",           "VARCHAR(100)"),
-        ("brands", "reset_token_expires",   "TIMESTAMP WITH TIME ZONE"),
-        ("brands", "logo_url",              "VARCHAR(500)"),
-        ("brands", "description",           "TEXT"),
-        ("brands", "website",               "VARCHAR(500)"),
-        ("brands", "active",                "BOOLEAN NOT NULL DEFAULT TRUE"),
-        ("brands", "updated_at",            "TIMESTAMP WITH TIME ZONE"),
-        # Tabella outfits
-        ("outfits", "is_usual",             "BOOLEAN NOT NULL DEFAULT FALSE"),
-        # Tabella users — Google OAuth + profilo esteso
-        ("users", "google_linked",          "BOOLEAN NOT NULL DEFAULT FALSE"),
-        # Tabella user_profile — profilo esteso
-        ("user_profile", "last_name",       "VARCHAR(100)"),
-        ("user_profile", "birth_year",      "INTEGER"),
-        # Consensi GDPR
-        ("users", "terms_accepted_at",          "TIMESTAMP WITH TIME ZONE"),
-        ("users", "marketing_email",            "BOOLEAN NOT NULL DEFAULT FALSE"),
-        ("users", "marketing_phone",            "BOOLEAN NOT NULL DEFAULT FALSE"),
-        # Token collegamento Google via email
-        ("users", "google_link_token",          "VARCHAR(100)"),
-        ("users", "google_link_token_expires",  "TIMESTAMP WITH TIME ZONE"),
-        # Notifiche — timestamp ultimo accesso
-        ("users", "notifications_seen_at",      "TIMESTAMP WITH TIME ZONE"),
-        # Foto profilo persistente in DB (non dipende dal filesystem)
-        ("user_profile", "profile_picture_data", "TEXT"),
-        # Foto frontale/retro/etichetta capo persistenti in DB
-        ("garments", "photo_front_data", "TEXT"),
-        ("garments", "photo_back_data",  "TEXT"),
-        ("garments", "photo_label_data", "TEXT"),
-        # Palette colori dettagliata (array JSON: [{"name":..,"hex":..}, ...])
-        ("garments", "color_palette", "JSON"),
-    ]
-
-    for table, col, definition in extra_migrations:
-        try:
-            async with _engine.begin() as conn:
-                await conn.execute(_text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
-        except Exception:
-            pass  # colonna già esistente — ignorato
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    await _migrate_db()
     # Pre-carica il modello rembg in background (evita attesa al primo utilizzo)
     loop = asyncio.get_event_loop()
     loop.run_in_executor(None, preload_model_sync)

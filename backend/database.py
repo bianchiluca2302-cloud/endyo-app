@@ -136,16 +136,19 @@ _MIGRATIONS = [
 
 async def _migrate():
     """Aggiunge colonne introdotte dopo la creazione iniziale del DB.
-    Ogni ALTER TABLE gira in una propria transazione: un errore (colonna
-    già esistente, ecc.) non pregiudica le altre migrazioni.
+    Usa una singola connessione con SAVEPOINT per ogni ALTER TABLE: evita
+    di aprire ~50 connessioni separate e riduce drasticamente il tempo di
+    avvio (critico per il health-check di Railway a 120 s).
     """
     from sqlalchemy import text as _text
-    for table, column, col_type in _MIGRATIONS:
-        try:
-            async with engine.begin() as conn:
+    async with engine.begin() as conn:
+        for table, column, col_type in _MIGRATIONS:
+            try:
+                await conn.execute(_text("SAVEPOINT mig"))
                 await conn.execute(
                     _text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
                 )
-            print(f"[DB] Migrazione: aggiunta colonna {table}.{column}")
-        except Exception:
-            pass  # colonna già esistente o tabella inesistente — ignorato
+                await conn.execute(_text("RELEASE SAVEPOINT mig"))
+                print(f"[DB] Migrazione: aggiunta colonna {table}.{column}")
+            except Exception:
+                await conn.execute(_text("ROLLBACK TO SAVEPOINT mig"))
