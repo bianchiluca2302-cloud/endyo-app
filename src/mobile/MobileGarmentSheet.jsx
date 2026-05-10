@@ -229,12 +229,22 @@ export default function MobileGarmentSheet({ garment, onClose }) {
   /* ── Re-enrich (rigenera/traduci) ─────────────────────────────────────────── */
   const IT_TAGS = new Set(['primavera','estate','autunno','inverno','quotidiano','lavoro','serata','cerimonia','spiaggia','sportivo','elegante'])
   const EN_TAGS = new Set(['spring','summer','autumn','fall','winter','everyday','work','evening','ceremony','beach','sporty','elegant'])
+  const IT_WORDS = /\b(il|la|lo|le|un|una|del|della|dei|con|per|che|come|questo|questa|sono|nel|nella|si|è|ha|al|alla|di|da|su|tra)\b/g
+  const EN_WORDS = /\b(the|and|with|for|this|that|are|has|from|its|which|can|be|an|of|in|is|it|to|a)\b/g
   const detectGarmentLanguage = (g) => {
     const allTags = [...(g.season_tags||[]),...(g.occasion_tags||[]),...(g.style_tags||[])]
     for (const tag of allTags) {
       const lc = (tag||'').toLowerCase()
       if (IT_TAGS.has(lc)) return 'it'
       if (EN_TAGS.has(lc)) return 'en'
+    }
+    // Fallback: conta parole comuni nella descrizione
+    const desc = (g.description || '').toLowerCase()
+    if (desc.length > 10) {
+      const itCount = (desc.match(IT_WORDS) || []).length
+      const enCount = (desc.match(EN_WORDS) || []).length
+      if (itCount > enCount && itCount > 0) return 'it'
+      if (enCount > itCount && enCount > 0) return 'en'
     }
     return null
   }
