@@ -213,9 +213,12 @@ export default function Wardrobe() {
   const hasProfile  = !!(profile?.avatar_photo || profile?.name)
   const hasGarments = garments.length > 0
 
+  // Normalizza brand: "zara" / "ZARA" / " Zara " → "Zara"
+  const normalizeBrand = (b) => (b || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+
   // Marche e colori disponibili tra i capi presenti
   const availableBrands = [...new Set(
-    garments.map(g => g.brand).filter(Boolean)
+    garments.map(g => g.brand ? normalizeBrand(g.brand) : null).filter(Boolean)
   )].sort()
 
   const availableColors = [...new Map(
@@ -225,7 +228,7 @@ export default function Wardrobe() {
   ).values()]
 
   const filtered = getGarmentsByCategory(activeCat).filter(g => {
-    if (activeBrand && (g.brand || '').toLowerCase() !== activeBrand.toLowerCase()) return false
+    if (activeBrand && normalizeBrand(g.brand || '') !== activeBrand) return false
     if (activeColor && (g.color_primary || '').toLowerCase() !== activeColor.toLowerCase()) return false
     if (!search) return true
     const q = search.toLowerCase()

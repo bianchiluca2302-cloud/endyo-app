@@ -608,11 +608,13 @@ function AnalisiTab() {
     })
     const colorEntries = Object.entries(byColor).sort((a, b) => b[1] - a[1]).slice(0, 8)
 
-    // Brand counts (top 6)
+    // Brand counts (top 6) — normalizzato (Zara / zara / ZARA → Zara)
+    const normBrand = (b) => (b || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
     const byBrand = {}
     garments.forEach(g => {
       if (g.brand) {
-        byBrand[g.brand] = (byBrand[g.brand] || 0) + 1
+        const nb = normBrand(g.brand)
+        byBrand[nb] = (byBrand[nb] || 0) + 1
       }
     })
     const brandEntries = Object.entries(byBrand).sort((a, b) => b[1] - a[1]).slice(0, 6)
