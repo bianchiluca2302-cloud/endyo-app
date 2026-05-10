@@ -1543,7 +1543,18 @@ export default function OutfitBuilder() {
   // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
   const { weather } = useWeather(language)
 
-  const [stylistInputFocused, setStylistInputFocused] = useState(false)
+  const tabsRef = useRef(null)
+  const [tabsBottom, setTabsBottom] = useState(0)
+  useLayoutEffect(() => {
+    if (!isMobile) return
+    const el = tabsRef.current
+    if (!el) return
+    const update = () => setTabsBottom(el.getBoundingClientRect().bottom)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isMobile])
   const prevSelCountRef = useRef(0)
   const [brandSuggestions, setBrandSuggestions] = useState([])
   const [detailOutfit, setDetailOutfit] = useState(null)
@@ -1664,7 +1675,7 @@ export default function OutfitBuilder() {
         </div>
 
         {/* Tabs */}
-        <div style={{
+        <div ref={tabsRef} style={{
           display: 'flex', alignItems: 'center',
           borderBottom: '1px solid var(--border)',
           background: 'var(--surface)',
@@ -1960,18 +1971,24 @@ export default function OutfitBuilder() {
         )}
 
         {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
+        {/* position:fixed con top misurato dal bordo inferiore dei tab: iOS tiene gli
+            elementi fixed sopra la tastiera senza scrollare la pagina */}
         {isMobile && tab === 'stylist' && (
-          <div style={stylistInputFocused
-            ? { position: 'fixed', inset: 0, zIndex: 501, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }
-            : { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }
-          }>
+          <div style={{
+            position: 'fixed',
+            top: tabsBottom || 0,
+            left: 0, right: 0, bottom: 0,
+            zIndex: 50,
+            display: 'flex', flexDirection: 'column',
+            overflow: 'hidden',
+            background: 'var(--bg)',
+            paddingBottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
+          }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <StylistChat
                 selectedGarments={selectedGarments}
                 compact={false}
                 weather={weather?.summary ?? null}
-                onInputFocus={() => setStylistInputFocused(true)}
-                onInputBlur={() => setTimeout(() => setStylistInputFocused(false), 150)}
                 onApplyOutfit={(ids, name, notes) => {
                   const newSel = {}
                   for (const id of (ids || [])) {

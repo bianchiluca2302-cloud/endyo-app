@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { imgUrl } from '../api/client'
@@ -132,9 +132,18 @@ function BuilderSheet({ onClose, language }) {
   const [saving,     setSaving]     = useState(false)
   const [done,       setDone]       = useState(false)
   const [dragY,      setDragY]      = useState(0)
+  const [vpH,        setVpH]        = useState(() => window.visualViewport?.height ?? window.innerHeight)
   const startYRef   = useRef(0)
   const draggingRef = useRef(false)
   const sheetRef    = useRef(null)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const fn = () => setVpH(vv.height)
+    vv.addEventListener('resize', fn)
+    return () => vv.removeEventListener('resize', fn)
+  }, [])
 
   const onHandleTouchStart = (e) => { startYRef.current = e.touches[0].clientY; draggingRef.current = true }
   const onHandleTouchMove  = (e) => {
@@ -203,7 +212,7 @@ function BuilderSheet({ onClose, language }) {
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 601,
           background: '#111118',
           borderRadius: '24px 24px 0 0',
-          maxHeight: '90dvh', display: 'flex', flexDirection: 'column',
+          maxHeight: `${vpH * 0.92}px`, display: 'flex', flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           transform: `translateY(${dragY}px)`,
           transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
