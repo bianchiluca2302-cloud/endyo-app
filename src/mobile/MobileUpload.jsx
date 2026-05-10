@@ -5,6 +5,7 @@ import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useUploadCategories, useTagTranslator } from '../i18n'
 import QuotaBanner from '../components/QuotaBanner'
+import FullscreenImageViewer from '../components/FullscreenImageViewer'
 
 
 /* ── Duplicate check (same as Upload.jsx) ────────────────────────────────────── */
@@ -198,8 +199,9 @@ export default function MobileUpload() {
   const [tmpFiles,  setTmpFiles] = useState(null)
   const [duplicates, setDuplicates] = useState([])
   const [result,    setResult]   = useState(null)
-  const [showCatSheet, setShowCatSheet] = useState(false)
+  const [showCatSheet,  setShowCatSheet]  = useState(false)
   const [editedPalette, setEditedPalette] = useState([])
+  const [fullscreenUrl, setFullscreenUrl] = useState(null)
 
   // Sblocca la nav se il componente viene smontato mentre il processo è attivo
   useEffect(() => () => setNavLocked(false), []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -422,8 +424,11 @@ export default function MobileUpload() {
       {/* Foto + dati AI */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
         {previews.front && (
-          <div style={{ width: 100, flexShrink: 0, borderRadius: 14, overflow: 'hidden', background: 'var(--card)', aspectRatio: '3/4' }}>
-            <img src={previews.front} alt="fronte" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <div
+            onClick={() => setFullscreenUrl(previews.front)}
+            style={{ width: 100, flexShrink: 0, borderRadius: 14, overflow: 'hidden', background: 'var(--card)', aspectRatio: '3/4', cursor: 'zoom-in' }}
+          >
+            <img src={previews.front} alt="fronte" style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -527,6 +532,10 @@ export default function MobileUpload() {
           {t('uploadMobileSaveBtn')}
         </button>
       </div>
+
+      {fullscreenUrl && (
+        <FullscreenImageViewer src={fullscreenUrl} onClose={() => setFullscreenUrl(null)} />
+      )}
     </div>
   )
 

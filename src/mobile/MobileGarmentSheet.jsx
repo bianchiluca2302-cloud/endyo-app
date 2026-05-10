@@ -16,6 +16,7 @@ import { imgUrl, removeGarmentBackground, reEnrichGarment, fetchBgStatus } from 
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useTagTranslator, useColorOptions } from '../i18n'
+import FullscreenImageViewer from '../components/FullscreenImageViewer'
 
 /* ── Traduzione colori ───────────────────────────────────────────────────────── */
 const COLOR_TRANS = {
@@ -122,9 +123,10 @@ export default function MobileGarmentSheet({ garment, onClose }) {
   const translateTag   = useTagTranslator()
 
   /* ── Slide-up + swipe ─────────────────────────────────────────────────────── */
-  const [visible,     setVisible]     = useState(false)
-  const [dragY,       setDragY]       = useState(0)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [visible,       setVisible]       = useState(false)
+  const [dragY,         setDragY]         = useState(0)
+  const [confirmOpen,   setConfirmOpen]   = useState(false)
+  const [fullscreenUrl, setFullscreenUrl] = useState(null)
   const startYRef   = useRef(0)
   const draggingRef = useRef(false)
   const sheetRef    = useRef(null)
@@ -421,7 +423,8 @@ export default function MobileGarmentSheet({ garment, onClose }) {
                 key={currentPhotoUrl}
                 src={currentPhotoUrl}
                 alt={liveGarment.name}
-                style={{ height: '100%', width: '100%', objectFit: 'contain' }}
+                onClick={() => setFullscreenUrl(currentPhotoUrl)}
+                style={{ height: '100%', width: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
               />
             ) : (
               <div style={{ fontSize: 64, opacity: 0.15 }}>👕</div>
@@ -584,6 +587,15 @@ export default function MobileGarmentSheet({ garment, onClose }) {
           language={language}
         />,
         document.body
+      )}
+
+      {/* Fullscreen foto */}
+      {fullscreenUrl && (
+        <FullscreenImageViewer
+          src={fullscreenUrl}
+          alt={liveGarment.name}
+          onClose={() => setFullscreenUrl(null)}
+        />
       )}
     </div>
   )
