@@ -133,30 +133,76 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
+  // Lock body scroll while sheet is open — prevents background content from scrolling
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
   const handleClose = () => {
     setVisible(false)
     setTimeout(onClose, 350)
   }
 
-  /* Swipe solo sull'handle — non interferiamo con lo scroll interno */
-  const onHandleTouchStart = (e) => {
-    startYRef.current   = e.touches[0].clientY
-    draggingRef.current = true
-  }
-  const onHandleTouchMove = (e) => {
+  const startDrag = (y) => { startYRef.current = y; draggingRef.current = true }
+  const moveDrag  = (y, preventDefault) => {
     if (!draggingRef.current) return
-    const delta = e.touches[0].clientY - startYRef.current
-    if (delta > 0) { setDragY(delta); e.preventDefault() }
+    const delta = y - startYRef.current
+    if (delta > 0) { setDragY(delta); preventDefault() }
   }
-  const onHandleTouchEnd = () => {
+  const endDrag   = () => {
     draggingRef.current = false
     const sheetH = sheetRef.current?.offsetHeight || 400
     if (dragY > sheetH * 0.35) {
-      setDragY(0)                         // riattiva la transition
-      setTimeout(() => handleClose(), 0)  // chiude nel tick successivo → scorre giù
+      setDragY(0)
+      setTimeout(() => handleClose(), 0)
     } else {
       setDragY(0)
     }
+  }
+
+  /* Handle drag — always closes */
+  const onHandleTouchStart = (e) => startDrag(e.touches[0].clientY)
+  const onHandleTouchMove  = (e) => moveDrag(e.touches[0].clientY, () => e.preventDefault())
+  const onHandleTouchEnd   = () => endDrag()
+
+  /* Content drag — only closes when scrolled to top */
+  const onContentTouchStart = (e) => {
+    if ((sheetRef.current?.scrollTop ?? 0) === 0) startDrag(e.touches[0].clientY)
+  }
+  const onContentTouchMove = (e) => {
+    if ((sheetRef.current?.scrollTop ?? 0) === 0) moveDrag(e.touches[0].clientY, () => e.preventDefault())
+  }
+  const onContentTouchEnd = () => endDrag()
+
+  /* ── Edit mode ────────────────────────────────────────────────────────────── */
+  const CATEGORIES_ORDER = ['cappello','maglietta','felpa','giacchetto','pantaloni','gonna','vestito','top','scarpe','occhiali','cintura','borsa','orologio','altro']
+  const [editMode,   setEditMode]   = useState(false)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editFields, setEditFields] = useState({})
+
+  const startEdit = () => {
+    setEditFields({
+      name:     liveGarment.name     || '',
+      category: liveGarment.category || '',
+      brand:    liveGarment.brand    || '',
+      size:     liveGarment.size     || '',
+    })
+    setEditMode(true)
+  }
+  const cancelEdit = () => setEditMode(false)
+  const saveEdit = async () => {
+    setEditSaving(true)
+    try {
+      await updateGarmentFields(garment.id, {
+        name:     editFields.name.trim()     || undefined,
+        category: editFields.category        || undefined,
+        brand:    editFields.brand.trim()    || undefined,
+        size:     editFields.size.trim()     || undefined,
+      })
+      setEditMode(false)
+    } catch { /* ignore */ } finally { setEditSaving(false) }
   }
 
   /* ── Foto tabs ────────────────────────────────────────────────────────────── */
@@ -302,6 +348,9 @@ export default function MobileGarmentSheet({ garment, onClose }) {
       <div
         ref={sheetRef}
         onClick={e => e.stopPropagation()}
+        onTouchStart={onContentTouchStart}
+        onTouchMove={onContentTouchMove}
+        onTouchEnd={onContentTouchEnd}
         style={{
           width: '100%',
           background: 'var(--surface)',
@@ -333,40 +382,99 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
           {/* Titolo + azioni */}
           <div style={{ padding: '0 20px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 19, fontWeight: 800, letterSpacing: '-0.03em',
-                  color: 'var(--text)', lineHeight: 1.2,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  {liveGarment.name || 'Capo'}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
-                  {CATEGORY_LABELS[liveGarment.category] || liveGarment.category}
-                  {liveGarment.brand && <> · <strong style={{ color: 'var(--text-dim)' }}>{liveGarment.brand}</strong></>}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                {/* Elimina */}
-                <button
-                  onClick={() => setConfirmOpen(true)}
-                  style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                  }}
+            {editMode ? (
+              /* ── Edit form ── */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input
+                  value={editFields.name}
+                  onChange={e => setEditFields(f => ({ ...f, name: e.target.value }))}
+                  placeholder={language === 'en' ? 'Name' : 'Nome'}
+                  style={{ ...editInputStyle }}
+                />
+                <select
+                  value={editFields.category}
+                  onChange={e => setEditFields(f => ({ ...f, category: e.target.value }))}
+                  style={{ ...editInputStyle }}
                 >
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                  </svg>
-                </button>
+                  {CATEGORIES_ORDER.map(c => (
+                    <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={editFields.brand}
+                    onChange={e => setEditFields(f => ({ ...f, brand: e.target.value }))}
+                    placeholder={language === 'en' ? 'Brand' : 'Brand'}
+                    style={{ ...editInputStyle, flex: 1 }}
+                  />
+                  <input
+                    value={editFields.size}
+                    onChange={e => setEditFields(f => ({ ...f, size: e.target.value }))}
+                    placeholder={language === 'en' ? 'Size' : 'Taglia'}
+                    style={{ ...editInputStyle, width: 70 }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                  <button onClick={cancelEdit} style={{ ...editBtnStyle, flex: 1, background: 'var(--card)', color: 'var(--text-muted)' }}>
+                    {language === 'en' ? 'Cancel' : 'Annulla'}
+                  </button>
+                  <button onClick={saveEdit} disabled={editSaving} style={{ ...editBtnStyle, flex: 2, background: 'var(--primary)', color: '#fff', opacity: editSaving ? 0.6 : 1 }}>
+                    {editSaving
+                      ? <><div className="spinner" style={{ width: 11, height: 11, borderWidth: 2, borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} /></>
+                      : (language === 'en' ? 'Save' : 'Salva')}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 19, fontWeight: 800, letterSpacing: '-0.03em',
+                    color: 'var(--text)', lineHeight: 1.2,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
+                    {liveGarment.name || 'Capo'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
+                    {CATEGORY_LABELS[liveGarment.category] || liveGarment.category}
+                    {liveGarment.brand && <> · <strong style={{ color: 'var(--text-dim)' }}>{liveGarment.brand}</strong></>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  {/* Modifica */}
+                  <button
+                    onClick={startEdit}
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: 'var(--card)', border: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  {/* Elimina */}
+                  <button
+                    onClick={() => setConfirmOpen(true)}
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
 
-            {/* Chips: taglia, colore, prezzo */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+            {/* Chips: taglia, colore, prezzo — hidden in edit mode */}
+            {!editMode && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
             {liveGarment.size && (
               <span style={chipStyle('var(--primary-dim)', 'var(--primary-border)', 'var(--primary-light)')}>
                 📐 {liveGarment.size}
@@ -397,7 +505,7 @@ export default function MobileGarmentSheet({ garment, onClose }) {
                 🧵 {liveGarment.material}
               </span>
             )}
-            </div>{/* /chips */}
+            </div>}{/* /chips */}
           </div>{/* /padding */}
         </div>{/* /sticky header */}
 
@@ -627,4 +735,18 @@ const actionBtnStyle = {
   color: 'var(--text-muted)', cursor: 'pointer',
   WebkitTapHighlightColor: 'transparent',
   fontWeight: 500,
+}
+
+const editInputStyle = {
+  width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 14,
+  border: '1px solid var(--border)', background: 'var(--card)',
+  color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+  WebkitAppearance: 'none',
+}
+
+const editBtnStyle = {
+  padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600,
+  border: '1px solid var(--border)', cursor: 'pointer',
+  WebkitTapHighlightColor: 'transparent', display: 'flex',
+  alignItems: 'center', justifyContent: 'center',
 }

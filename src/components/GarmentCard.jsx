@@ -200,6 +200,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             alignItems: 'center',
             gap: 6,
             marginBottom: compact ? 0 : 7,
+            minHeight: 22,
           }}>
             {(() => {
               const palette = garment.color_palette?.length > 0 ? garment.color_palette : (garment.color_hex ? [{ hex: garment.color_hex, name: garment.color_primary }] : [])

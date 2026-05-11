@@ -598,15 +598,19 @@ function AnalisiTab() {
     })
     const catEntries = Object.entries(byCategory).sort((a, b) => b[1] - a[1])
 
-    // Color counts (top 8)
-    const byColor = {}
+    // Color counts (top 8) — primary + palette detail colors
+    const byColor = {}   // colorName → count
+    const colorHex = {}  // colorName → hex
     garments.forEach(g => {
-      if (g.color_primary) {
-        const c = g.color_primary.toLowerCase()
-        byColor[c] = (byColor[c] || 0) + 1
-      }
+      const palette = g.color_palette?.length > 0 ? g.color_palette : (g.color_hex ? [{ hex: g.color_hex, name: g.color_primary }] : [])
+      palette.forEach((p, idx) => {
+        if (!p.name) return
+        const c = p.name.toLowerCase()
+        byColor[c] = (byColor[c] || 0) + (idx === 0 ? 1 : 0.5)
+        if (p.hex && !colorHex[c]) colorHex[c] = p.hex
+      })
     })
-    const colorEntries = Object.entries(byColor).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    const colorEntries = Object.entries(byColor).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
     // Brand counts (top 6) — normalizzato (Zara / zara / ZARA → Zara)
     const normBrand = (b) => (b || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
@@ -641,7 +645,7 @@ function AnalisiTab() {
       .filter(g => g.actual < g.ideal * 0.7)
       .slice(0, 4)
 
-    return { catEntries, colorEntries, brandEntries, seasonEntries, gaps, total }
+    return { catEntries, colorEntries, colorHex, brandEntries, seasonEntries, gaps, total }
   }, [garments])
 
   const PALETTE = ['#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#fb923c','#fbbf24','#a3e635','#34d399','#22d3ee','#60a5fa']
@@ -724,8 +728,7 @@ function AnalisiTab() {
           <SectionTitle>{language === 'en' ? 'Colors' : 'Colori'}</SectionTitle>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {stats.colorEntries.map(([color, count]) => {
-              const g = garments.find(g => (g.color_primary||'').toLowerCase() === color && g.color_hex)
-              const hex = g?.color_hex
+              const hex = stats.colorHex[color]
               return (
                 <div key={color} style={{ textAlign: 'center' }}>
                   <div style={{
@@ -740,7 +743,7 @@ function AnalisiTab() {
                   <div style={{ fontSize: 9.5, color: 'var(--text-dim)', lineHeight: 1.2 }}>
                     {color.charAt(0).toUpperCase() + color.slice(1)}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-dim)', opacity: 0.6 }}>{count}</div>
+                  <div style={{ fontSize: 9, color: 'var(--text-dim)', opacity: 0.6 }}>{Math.round(count)}</div>
                 </div>
               )
             })}
