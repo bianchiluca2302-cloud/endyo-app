@@ -17,7 +17,7 @@ const CATEGORY_ICONS = {
   orologio:   '⌚',
 }
 
-export default function GarmentCard({ garment, onClick, selectable, selected, compact = false }) {
+export default function GarmentCard({ garment, onClick, selectable, selected, compact = false, mobile = false }) {
   const [hovered, setHovered] = useState(false)
   const [pressed, setPressed] = useState(false)
   const removeGarment    = useWardrobeStore(s => s.removeGarment)
@@ -45,7 +45,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
     pollErrors.current   = 0
     pollRef.current = setInterval(async () => {
       pollAttempts.current += 1
-      if (pollAttempts.current > 35) {          // ~2.5 min max
+      if (pollAttempts.current > 35) {
         clearInterval(pollRef.current)
         updateGarmentBg(garment.id, 'none')
         return
@@ -63,7 +63,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         }
       } catch {
         pollErrors.current += 1
-        if (pollErrors.current >= 5) {          // 5 errori consecutivi → abbandona
+        if (pollErrors.current >= 5) {
           clearInterval(pollRef.current)
           updateGarmentBg(garment.id, 'none')
         }
@@ -74,6 +74,155 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
 
   const photoUrl = liveGarment.photo_front ? imgUrl(liveGarment.photo_front) : null
 
+  /* ── Mobile render — identico alle card di MobileWardrobe ─────────────── */
+  if (mobile) {
+    const borderColor = selected     ? 'var(--primary)'           :
+                        bgProcessing ? 'rgba(251,191,36,0.5)'     :
+                                       'var(--border)'
+    return (
+      <div
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        style={{
+          borderRadius: 14,
+          boxShadow: selected
+            ? `0 0 0 2px var(--primary), 0 0 0 4px var(--primary-dim)`
+            : `0 0 0 1.5px ${borderColor}`,
+          minWidth: 0,
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+          transition: 'transform 0.12s',
+          WebkitUserSelect: 'none',
+          position: 'relative',
+        }}
+        onTouchStart={e => { e.currentTarget.style.transform = 'scale(0.97)' }}
+        onTouchEnd={e => { e.currentTarget.style.transform = 'scale(1)' }}
+        onTouchCancel={e => { e.currentTarget.style.transform = 'scale(1)' }}
+      >
+        {selected && (
+          <div style={{
+            position: 'absolute', top: 7, right: 7, zIndex: 10,
+            width: 20, height: 20, borderRadius: '50%',
+            background: 'var(--primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, color: 'white', fontWeight: 700,
+            boxShadow: '0 2px 8px rgba(139,92,246,0.4)',
+          }}>✓</div>
+        )}
+
+        <div style={{
+          borderRadius: 14,
+          overflow: 'hidden',
+          background: selected
+            ? 'linear-gradient(160deg, var(--primary-dim), var(--primary-hover-bg))'
+            : 'var(--card)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Immagine */}
+          <div style={{
+            height: 158,
+            background: 'var(--photo-bg)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
+          }}>
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={liveGarment.name}
+                loading="lazy"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            ) : (
+              <div style={{ fontSize: 44, opacity: 0.25 }}>
+                {CATEGORY_ICONS[garment.category] || '👕'}
+              </div>
+            )}
+            {bgProcessing && (
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                padding: '20px 8px 7px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              }}>
+                <div className="spinner" style={{
+                  width: 11, height: 11, borderWidth: 1.5,
+                  borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#fbbf24', flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 9.5, color: '#fcd34d', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {t('garmentRemoveBgSpinner')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div style={{ padding: '8px 10px 10px' }}>
+            <div style={{
+              fontSize: 12.5, fontWeight: 600, color: 'var(--text)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              lineHeight: 1.3, marginBottom: 4,
+            }}>
+              {liveGarment.name}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+              {liveGarment.color_hex && (
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  background: liveGarment.color_hex, border: '1px solid rgba(0,0,0,0.12)',
+                  display: 'inline-block',
+                }} />
+              )}
+              {liveGarment.color_palette?.[1]?.hex && liveGarment.color_palette[1].hex !== liveGarment.color_hex && (
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  background: liveGarment.color_palette[1].hex, border: '1px solid rgba(0,0,0,0.12)',
+                  display: 'inline-block',
+                }} />
+              )}
+              {liveGarment.brand && (
+                <span style={{
+                  fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {liveGarment.brand}
+                </span>
+              )}
+              {liveGarment.size && (
+                <span style={{
+                  fontSize: 9.5, fontWeight: 700, color: 'var(--primary-light)',
+                  background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
+                  borderRadius: 5, padding: '1px 5px', flexShrink: 0,
+                }}>
+                  {liveGarment.size}
+                </span>
+              )}
+            </div>
+
+            {(liveGarment.style_tags || []).length > 0 && (
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                {liveGarment.style_tags.slice(0, 2).map(tag => (
+                  <span key={tag} style={{
+                    fontSize: 9.5, fontWeight: 600,
+                    background: 'rgba(139,92,246,0.1)',
+                    border: '1px solid rgba(139,92,246,0.2)',
+                    color: 'var(--primary-light)',
+                    borderRadius: 5, padding: '1px 6px',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {translateTag(tag)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Desktop render ───────────────────────────────────────────────────── */
   const handleDelete = async (e) => {
     e.stopPropagation()
     if (confirm(t('garmentCardDeleteConfirm', garment.name))) {
@@ -85,13 +234,8 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
 
   return (
     /*
-     * iOS Safari border fix — soluzione definitiva con box-shadow:
-     *   • box-shadow: 0 0 0 1px simula il border ma è renderizzato FUORI
-     *     dal border-box in un layer separato — nessun background interno
-     *     (anche se sfuma per il bug overflow:hidden+border-radius di Safari)
-     *     può raggiungerlo e coprirlo.
-     *   • Badge ✓ rimane sul div esterno (position:relative) fuori
-     *     dall'inner, così non viene clippato dall'overflow:hidden interno.
+     * iOS Safari border fix — outer div: borderRadius + boxShadow only
+     * inner div: overflow:hidden + background + same borderRadius
      */
     <div
       onClick={onClick}
@@ -103,7 +247,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
       className="fade-in"
       style={{
         borderRadius: 'var(--radius)',
-        /* Border via box-shadow — immune al background bleed di Safari */
         boxShadow: (() => {
           const borderColor = selected      ? 'var(--primary-border)'  :
                               bgProcessing  ? 'rgba(251,191,36,0.4)'   :
@@ -121,7 +264,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         position: 'relative',
       }}
     >
-      {/* ── Selection check — fuori dall'inner per non essere clippato ── */}
       {selected && (
         <div style={{
           position: 'absolute', top: 9, right: 9, zIndex: 10,
@@ -133,7 +275,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         }}>✓</div>
       )}
 
-      {/* ── Inner wrapper: overflow:hidden + background dinamico, nessun border ── */}
       <div style={{
         borderRadius: 'calc(var(--radius) - 1px)',
         overflow: 'hidden',
@@ -154,10 +295,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             <img
               src={photoUrl}
               alt={garment.name}
-              style={{
-                height: '100%', width: '100%',
-                objectFit: 'contain',
-              }}
+              style={{ height: '100%', width: '100%', objectFit: 'contain' }}
             />
           ) : (
             <div style={{ fontSize: compact ? 40 : 52, opacity: 0.25 }}>
@@ -165,7 +303,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             </div>
           )}
 
-          {/* BG removal overlay */}
           {bgProcessing && (
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -187,7 +324,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         {/* ── Info ── */}
         <div style={{ padding: compact ? '8px 10px' : '11px 13px' }}>
 
-          {/* Name */}
           <div style={{
             fontSize: compact ? 12.5 : 13,
             fontWeight: 600,
@@ -199,13 +335,9 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             {garment.name}
           </div>
 
-          {/* Brand + color + size row */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            marginBottom: compact ? 0 : 7,
-            minHeight: 22,
+            display: 'flex', alignItems: 'center', gap: 6,
+            marginBottom: compact ? 0 : 7, minHeight: 22,
           }}>
             {(() => {
               const palette = garment.color_palette?.length > 0 ? garment.color_palette : (garment.color_hex ? [{ hex: garment.color_hex, name: garment.color_primary }] : [])
@@ -214,21 +346,15 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
                   background: c.hex,
                   marginRight: i < palette.length - 1 ? -5 : 0,
                   boxShadow: i > 0 ? '0 0 0 1.5px var(--card)' : undefined,
-                  zIndex: 4 - i,
-                  position: 'relative',
+                  zIndex: 4 - i, position: 'relative',
                 }} title={c.name} />
               ))
             })()}
             {garment.brand && (
               <span style={{
-                fontSize: 11,
-                color: 'var(--text-dim)',
-                fontWeight: 500,
-                flex: 1,
-                minWidth: 0,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                fontSize: 11, color: 'var(--text-dim)', fontWeight: 500,
+                flex: 1, minWidth: 0,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
                 {garment.brand}
               </span>
@@ -240,7 +366,6 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             )}
           </div>
 
-          {/* Tags row — only on non-compact */}
           {!compact && (
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
               {(garment.style_tags || []).slice(0, 2).map(tag => (
@@ -255,7 +380,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
           )}
         </div>
 
-      </div>{/* fine inner wrapper */}
+      </div>
     </div>
   )
 }

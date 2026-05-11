@@ -1775,7 +1775,7 @@ export default function OutfitBuilder() {
 
         {/* Tab: builder */}
         {tab === 'builder' && (
-          <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+          <div style={{ flex: 1, overflow: 'auto', overscrollBehavior: 'contain', padding: '16px 20px' }}>
             {/* Barra di ricerca — desktop e mobile */}
             <div style={{ position: 'relative', marginBottom: 14 }}>
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none"
@@ -1827,6 +1827,7 @@ export default function OutfitBuilder() {
                         selectable
                         selected={selected[cat] === g.id}
                         onClick={() => toggleGarment(g)}
+                        mobile={isMobile}
                       />
                     ))}
                   </div>
@@ -1858,14 +1859,6 @@ export default function OutfitBuilder() {
               </div>
             )}
           </div>
-        )}
-
-        {/* Mobile: capi selezionati — striscia sotto la lista capi */}
-        {isMobile && tab === 'builder' && selectedGarments.length > 0 && (
-          <MobileSelectionStrip
-            garments={selectedGarments}
-            onRemove={(g) => toggleGarment(g)}
-          />
         )}
 
         {/* Tab: saved outfits */}
