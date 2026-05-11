@@ -155,14 +155,6 @@ function GarmentCard({ g, onClick }) {
                 display: 'inline-block',
               }} />
             )}
-            {/* Colore dettaglio (secondo colore della palette) */}
-            {liveGarment.color_palette?.[1]?.hex && liveGarment.color_palette[1].hex !== liveGarment.color_hex && (
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: liveGarment.color_palette[1].hex, border: '1px solid rgba(0,0,0,0.12)',
-                display: 'inline-block',
-              }} />
-            )}
             {liveGarment.brand && (
               <span style={{
                 fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
@@ -606,17 +598,16 @@ function AnalisiTab() {
     })
     const catEntries = Object.entries(byCategory).sort((a, b) => b[1] - a[1])
 
-    // Color counts (top 8) — primary + palette detail colors
+    // Color counts (top 8) — solo colore primario
     const byColor = {}   // colorName → count
     const colorHex = {}  // colorName → hex
     garments.forEach(g => {
-      const palette = g.color_palette?.length > 0 ? g.color_palette : (g.color_hex ? [{ hex: g.color_hex, name: g.color_primary }] : [])
-      palette.forEach((p, idx) => {
-        if (!p.name) return
-        const c = p.name.toLowerCase()
-        byColor[c] = (byColor[c] || 0) + (idx === 0 ? 1 : 0.5)
-        if (p.hex && !colorHex[c]) colorHex[c] = p.hex
-      })
+      const name = g.color_primary
+      const hex  = g.color_hex
+      if (!name) return
+      const c = name.toLowerCase()
+      byColor[c] = (byColor[c] || 0) + 1
+      if (hex && !colorHex[c]) colorHex[c] = hex
     })
     const colorEntries = Object.entries(byColor).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
