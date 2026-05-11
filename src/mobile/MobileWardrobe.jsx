@@ -155,6 +155,13 @@ function GarmentCard({ g, onClick }) {
                 display: 'inline-block',
               }} />
             )}
+            {liveGarment.color_palette?.[1]?.hex && liveGarment.color_palette[1].hex !== liveGarment.color_hex && (
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: liveGarment.color_palette[1].hex, border: '1px solid rgba(0,0,0,0.12)',
+                display: 'inline-block',
+              }} />
+            )}
             {liveGarment.brand && (
               <span style={{
                 fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
