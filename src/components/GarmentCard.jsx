@@ -19,6 +19,7 @@ const CATEGORY_ICONS = {
 
 export default function GarmentCard({ garment, onClick, selectable, selected, compact = false }) {
   const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
   const removeGarment    = useWardrobeStore(s => s.removeGarment)
   const updateGarmentBg  = useWardrobeStore(s => s.updateGarmentBg)
   const getCurrencySymbol = useSettingsStore(s => s.getCurrencySymbol)
@@ -96,6 +97,9 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => setPressed(false)}
+      onTouchCancel={() => setPressed(false)}
       className="fade-in"
       style={{
         borderRadius: 'var(--radius)',
@@ -112,7 +116,8 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
           return borderShadow + hoverShadow
         })(),
         cursor: selectable || onClick ? 'pointer' : 'default',
-        transition: 'box-shadow 0.15s ease',
+        transition: 'box-shadow 0.15s ease, transform 0.12s ease',
+        transform: pressed ? 'scale(0.97)' : 'scale(1)',
         position: 'relative',
       }}
     >

@@ -1819,7 +1819,7 @@ export default function OutfitBuilder() {
                     {CATEGORY_LABELS[cat]}
                     {selected[cat] && <span style={{ color: 'var(--success)', marginLeft: 8 }}>✓</span>}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile && compactCards ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isMobile && compactCards ? 6 : 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? (compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)') : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isMobile ? (compactCards ? 6 : 10) : 10 }}>
                     {byCategory[cat].map(g => (
                       <GarmentCard
                         key={g.id}
@@ -1998,12 +1998,12 @@ export default function OutfitBuilder() {
         {isMobile && tab === 'stylist' && createPortal(
           <div style={{
             position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
+            top: tabsBottom ? `${tabsBottom}px` : '160px',
+            left: 0, right: 0, bottom: 0,
             zIndex: 499,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
             background: 'var(--bg)',
-            paddingTop: tabsBottom ? `${tabsBottom}px` : '160px',
             paddingBottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
           }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
