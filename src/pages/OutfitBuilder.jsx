@@ -1039,33 +1039,92 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
 
 // ── WeatherBadge — badge con tooltip previsioni orarie ───────────────────────
 function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
-  const [hovered, setHovered] = useState(false)
-  const [tapped,  setTapped]  = useState(false)
+  const [hovered,  setHovered]  = useState(false)
+  const [tapped,   setTapped]   = useState(false)
+  const [badgePos, setBadgePos] = useState(null)
+  const badgeDivRef = useRef(null)
   const isMobile = useIsMobile()
 
-  // Chiudi il tooltip quando la chat si chiude
   useEffect(() => {
     if (!chatOpen) setTapped(false)
   }, [chatOpen])
 
   const showTooltip = isMobile ? tapped : hovered
 
-  const rainLabel = language === 'en' ? 'rain' : 'pioggia'
+  // Su mobile calcola la posizione del badge per il tooltip portato al body
+  useEffect(() => {
+    if (isMobile && tapped && badgeDivRef.current) {
+      const r = badgeDivRef.current.getBoundingClientRect()
+      setBadgePos({ top: r.bottom + 8, right: window.innerWidth - r.right })
+    } else if (!tapped) {
+      setBadgePos(null)
+    }
+  }, [isMobile, tapped])
+
   const feelsLabel = language === 'en' ? 'feels' : 'percepita'
-  const humLabel = language === 'en' ? 'hum.' : 'umid.'
-  const windLabel = language === 'en' ? 'wind' : 'vento'
+  const humLabel   = language === 'en' ? 'hum.'  : 'umid.'
+  const windLabel  = language === 'en' ? 'wind'  : 'vento'
   const forecastTitle = language === 'en' ? 'Today\'s forecast' : 'Previsioni di oggi'
+
+  const tooltipBody = (pos, isFixed) => (
+    <div style={{
+      position: isFixed ? 'fixed' : 'absolute',
+      ...(isFixed && pos
+        ? { top: pos.top, right: pos.right }
+        : { bottom: 'calc(100% + 8px)', right: 0 }),
+      width: 230,
+      zIndex: isFixed ? 1500 : 999,
+      background: 'var(--card)', border: '1px solid var(--border)',
+      borderRadius: 12, padding: '12px 14px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+      pointerEvents: isFixed ? 'auto' : 'none',
+    }}>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+          {weather.icon} {weather.temp}°C — {weather.label}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconThermometer size={12} /> {feelsLabel} {weather.feels}°C</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconDroplet size={12} /> {humLabel} {weather.humidity}%</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconWind size={12} /> {windLabel} {weather.wind} km/h</span>
+        </div>
+      </div>
+      {weather.hourly?.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            {forecastTitle}
+          </div>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+            {weather.hourly.map(h => (
+              <div key={h.hour} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{String(h.hour).padStart(2, '0')}:00</span>
+                <span style={{ fontSize: 16 }}>{h.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{h.temp}°</span>
+                {h.precip > 0 && <span style={{ fontSize: 9, color: '#60a5fa' }}>{h.precip}%</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {/* Freccia verso il badge */}
+      {isFixed ? (
+        <div style={{ position: 'absolute', top: -6, right: 14, width: 10, height: 10, background: 'var(--card)', border: '1px solid var(--border)', borderBottom: 'none', borderRight: 'none', transform: 'rotate(45deg)' }} />
+      ) : (
+        <div style={{ position: 'absolute', bottom: -6, right: 14, width: 10, height: 10, background: 'var(--card)', border: '1px solid var(--border)', borderTop: 'none', borderLeft: 'none', transform: 'rotate(45deg)' }} />
+      )}
+    </div>
+  )
 
   return (
     <>
-    {isMobile && tapped && (
-      <div
-        onClick={() => setTapped(false)}
-        style={{ position: 'fixed', inset: 0, zIndex: 998 }}
-      />
+    {/* Backdrop mobile portato al body per superare la gerarchia di stacking context */}
+    {isMobile && tapped && createPortal(
+      <div onClick={() => setTapped(false)} style={{ position: 'fixed', inset: 0, zIndex: 1498 }} />,
+      document.body
     )}
     <div
-      style={{ position: 'relative', flexShrink: 0, zIndex: tapped ? 999 : 'auto' }}
+      ref={badgeDivRef}
+      style={{ position: 'relative', flexShrink: 0 }}
       onMouseEnter={() => !isMobile && setHovered(true)}
       onMouseLeave={() => !isMobile && setHovered(false)}
       onClick={e => {
@@ -1090,85 +1149,12 @@ function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
         {weather.icon} {weather.temp}°C
       </span>
 
-      {/* Tooltip previsioni */}
-      {showTooltip && (
-        <div style={{
-          position: 'absolute',
-          ...(isMobile
-            ? { top: 'calc(100% + 8px)', right: 0 }
-            : { bottom: 'calc(100% + 8px)', right: 0 }),
-          width: 230, zIndex: 999,
-          background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: '12px 14px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
-          pointerEvents: isMobile ? 'auto' : 'none',
-        }}>
-          {/* Condizioni attuali */}
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-              {weather.icon} {weather.temp}°C — {weather.label}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconThermometer size={12} /> {feelsLabel} {weather.feels}°C</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconDroplet size={12} /> {humLabel} {weather.humidity}%</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconWind size={12} /> {windLabel} {weather.wind} km/h</span>
-            </div>
-          </div>
-
-          {/* Previsioni orarie */}
-          {weather.hourly?.length > 0 && (
-            <>
-              <div style={{
-                fontSize: 10, fontWeight: 600, color: 'var(--text-dim)',
-                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
-              }}>
-                {forecastTitle}
-              </div>
-              <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
-                {weather.hourly.map(h => (
-                  <div key={h.hour} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                    flex: 1,
-                  }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>
-                      {String(h.hour).padStart(2, '0')}:00
-                    </span>
-                    <span style={{ fontSize: 16 }}>{h.icon}</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>
-                      {h.temp}°
-                    </span>
-                    {h.precip > 0 && (
-                      <span style={{ fontSize: 9, color: '#60a5fa' }}>
-                        {h.precip}%
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Freccia — punta verso il badge (su mobile il tooltip è sotto) */}
-          {isMobile ? (
-            <div style={{
-              position: 'absolute', top: -6, right: 14,
-              width: 10, height: 10,
-              background: 'var(--card)', border: '1px solid var(--border)',
-              borderBottom: 'none', borderRight: 'none',
-              transform: 'rotate(45deg)',
-            }} />
-          ) : (
-            <div style={{
-              position: 'absolute', bottom: -6, right: 14,
-              width: 10, height: 10,
-              background: 'var(--card)', border: '1px solid var(--border)',
-              borderTop: 'none', borderLeft: 'none',
-              transform: 'rotate(45deg)',
-            }} />
-          )}
-        </div>
-      )}
+      {/* Tooltip desktop (position absolute, rimane nel normal flow) */}
+      {!isMobile && showTooltip && tooltipBody(null, false)}
     </div>
+
+    {/* Tooltip mobile portato al body con position fixed — supera z-index del chat overlay */}
+    {isMobile && showTooltip && badgePos && createPortal(tooltipBody(badgePos, true), document.body)}
     </>
   )
 }
