@@ -641,6 +641,7 @@ export default function Premium() {
       features: lang === 'en' ? [
         { label: '2 AI stylist requests/day · 8/week',     included: true  },
         { label: '1 Shopping Advisor/day · 4/week',        included: true  },
+        { label: '10 garment uploads/day',                 included: true  },
         { label: 'Unlimited digital closet',               included: true  },
         { label: 'Outfit builder',                         included: true  },
         { label: 'Social feed',                            included: true  },
@@ -650,6 +651,7 @@ export default function Premium() {
       ] : [
         { label: '2 richieste stylist/giorno · 8/sett',    included: true  },
         { label: '1 Shopping Advisor/giorno · 4/sett',     included: true  },
+        { label: '10 upload capi/giorno',                  included: true  },
         { label: 'Armadio digitale illimitato',            included: true  },
         { label: 'Outfit builder',                         included: true  },
         { label: 'Social feed',                            included: true  },
@@ -667,8 +669,9 @@ export default function Premium() {
         ? 'For those who want the AI stylist always at hand.'
         : 'Per chi vuole lo stylist AI sempre a portata di mano.',
       features: lang === 'en' ? [
-        { label: '30 AI stylist requests/day · 120/week', included: true  },
+        { label: '10 AI stylist requests/day · 40/week',  included: true  },
         { label: '5 Shopping Advisor/day · 20/week',      included: true  },
+        { label: '30 garment uploads/day',                included: true  },
         { label: 'Colour season analysis (2×/week)',      included: true  },
         { label: 'Unlimited digital closet',              included: true  },
         { label: 'Advanced outfit builder',               included: true  },
@@ -676,8 +679,9 @@ export default function Premium() {
         { label: 'Ads-free experience',                   included: false },
         { label: 'AI response priority',                  included: true  },
       ] : [
-        { label: '30 richieste stylist/giorno · 120/sett', included: true  },
+        { label: '10 richieste stylist/giorno · 40/sett',  included: true  },
         { label: '5 Shopping Advisor/giorno · 20/sett',    included: true  },
+        { label: '30 upload capi/giorno',                  included: true  },
         { label: 'Armocromia AI (2×/settimana)',            included: true  },
         { label: 'Armadio digitale illimitato',            included: true  },
         { label: 'Outfit builder avanzato',                included: true  },
@@ -695,8 +699,9 @@ export default function Premium() {
         ? 'The complete Endyo experience, distraction-free.'
         : "L'esperienza Endyo completa, senza distrazioni.",
       features: lang === 'en' ? [
-        { label: '60 AI stylist requests/day · 240/week', included: true },
+        { label: '30 AI stylist requests/day · 120/week', included: true },
         { label: '10 Shopping Advisor/day · 40/week',     included: true },
+        { label: '100 garment uploads/day',               included: true },
         { label: 'Colour season analysis (5×/week)',      included: true },
         { label: 'Unlimited digital closet',              included: true },
         { label: 'Advanced outfit builder',               included: true },
@@ -704,8 +709,9 @@ export default function Premium() {
         { label: 'Zero ads',                              included: true },
         { label: 'Maximum AI priority',                   included: true },
       ] : [
-        { label: '60 richieste stylist/giorno · 240/sett', included: true },
+        { label: '30 richieste stylist/giorno · 120/sett', included: true },
         { label: '10 Shopping Advisor/giorno · 40/sett',   included: true },
+        { label: '100 upload capi/giorno',                 included: true },
         { label: 'Armocromia AI (5×/settimana)',            included: true },
         { label: 'Armadio digitale illimitato',            included: true },
         { label: 'Outfit builder avanzato',                included: true },
@@ -719,10 +725,11 @@ export default function Premium() {
   const faqItems = t('premiumFaq')
 
   const tableRows = lang === 'en' ? [
-    { label: 'Stylist AI/day',         free: '2',     premium: '30',   premiumPlus: '60' },
-    { label: 'Stylist AI/week',        free: '8',     premium: '120',  premiumPlus: '240' },
+    { label: 'Stylist AI/day',         free: '2',     premium: '10',   premiumPlus: '30' },
+    { label: 'Stylist AI/week',        free: '8',     premium: '40',   premiumPlus: '120' },
     { label: 'Shopping Advisor/day',   free: '1',     premium: '5',    premiumPlus: '10' },
     { label: 'Shopping Advisor/week',  free: '4',     premium: '20',   premiumPlus: '40' },
+    { label: 'Garment uploads/day',    free: '10',    premium: '30',   premiumPlus: '100' },
     { label: 'Colour season analysis/week', free: '—', premium: '2',   premiumPlus: '5' },
     { label: 'Digital wardrobe',       free: true,    premium: true,   premiumPlus: true },
     { label: 'Outfit builder',         free: true,    premium: true,   premiumPlus: true },
@@ -732,10 +739,11 @@ export default function Premium() {
     { label: 'Monthly price',          free: 'Free',  premium: '€4.99',  premiumPlus: '€9.99' },
     { label: 'Annual price',           free: 'Free',  premium: '€47.99', premiumPlus: '€95.99' },
   ] : [
-    { label: 'Stylist AI/giorno',      free: '2',      premium: '30',   premiumPlus: '60' },
-    { label: 'Stylist AI/settimana',   free: '8',      premium: '120',  premiumPlus: '240' },
+    { label: 'Stylist AI/giorno',      free: '2',      premium: '10',   premiumPlus: '30' },
+    { label: 'Stylist AI/settimana',   free: '8',      premium: '40',   premiumPlus: '120' },
     { label: 'Shopping Advisor/giorno', free: '1',     premium: '5',    premiumPlus: '10' },
     { label: 'Shopping Advisor/sett',  free: '4',      premium: '20',   premiumPlus: '40' },
+    { label: 'Upload capi/giorno',     free: '10',     premium: '30',   premiumPlus: '100' },
     { label: 'Armocromia AI/settimana', free: '—',     premium: '2',    premiumPlus: '5' },
     { label: 'Armadio digitale',       free: true,     premium: true,   premiumPlus: true },
     { label: 'Outfit builder',         free: true,     premium: true,   premiumPlus: true },

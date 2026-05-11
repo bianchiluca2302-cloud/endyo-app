@@ -1529,7 +1529,8 @@ export default function OutfitBuilder() {
   const t = useT()
   const CATEGORY_LABELS = useCategoryLabels()
 
-  const language = useSettingsStore(s => s.language) || 'it'
+  const language     = useSettingsStore(s => s.language) || 'it'
+  const compactCards = useSettingsStore(s => s.compactCards)
   const isMobile = useIsMobile()
   const [tab,           setTab]           = useState('builder')
   const [selected,      setSelected]      = useState({})           // { category: garmentId }
@@ -1681,6 +1682,7 @@ export default function OutfitBuilder() {
           background: 'var(--surface)',
           padding: isMobile ? '0 0 0' : '0 16px 10px',
           gap: isMobile ? 0 : 6, flexShrink: 0,
+          ...(isMobile ? { position: 'relative', zIndex: 500 } : {}),
         }}>
           {[
           ['builder', t('wardrobeStep2Cta')],
@@ -1799,7 +1801,7 @@ export default function OutfitBuilder() {
                     {CATEGORY_LABELS[cat]}
                     {selected[cat] && <span style={{ color: 'var(--success)', marginLeft: 8 }}>✓</span>}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile && compactCards ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isMobile && compactCards ? 6 : 10 }}>
                     {byCategory[cat].map(g => (
                       <GarmentCard
                         key={g.id}
@@ -1970,18 +1972,20 @@ export default function OutfitBuilder() {
           />
         )}
 
-        {/* ── Tab Stylist (solo mobile) — chat AI a schermo intero ───────────── */}
-        {/* position:fixed con top misurato dal bordo inferiore dei tab: iOS tiene gli
-            elementi fixed sopra la tastiera senza scrollare la pagina */}
+        {/* ── Tab Stylist (solo mobile) — overlay a tutto schermo ───────────── */}
+        {/* inset:0 copre tutta la viewport; paddingTop spinge il contenuto
+            sotto la barra dei tab (che ha zIndex 500 ed è visibile sopra);
+            bottom:0 su iOS 15+ traccia il visual viewport → rimane sopra la
+            tastiera senza scroll della pagina */}
         {isMobile && tab === 'stylist' && (
           <div style={{
             position: 'fixed',
-            top: tabsBottom || 0,
-            left: 0, right: 0, bottom: 0,
-            zIndex: 50,
+            inset: 0,
+            zIndex: 499,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
             background: 'var(--bg)',
+            paddingTop: tabsBottom ? `${tabsBottom}px` : '110px',
             paddingBottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
           }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

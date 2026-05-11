@@ -825,7 +825,8 @@ export default function MobileWardrobe() {
   const CATEGORY_LABELS = useCategoryLabels()
   const t               = useT()
 
-  const language    = useSettingsStore(s => s.language) || 'it'
+  const language      = useSettingsStore(s => s.language) || 'it'
+  const compactCards  = useSettingsStore(s => s.compactCards)
 
   const [search,     setSearch]     = useState('')
   const [activeCat,  setActiveCat]  = useState('')
@@ -987,7 +988,7 @@ export default function MobileWardrobe() {
             ) : filtered.length === 0 ? (
               <EmptyState hasGarments={garments.length > 0} />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, alignItems: 'stretch' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                 {filtered.map((g, i) => (
                   <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards`, height: '100%', minWidth: 0 }}>
                     <GarmentCard g={g} onClick={() => setSelected(g)} />

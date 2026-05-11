@@ -89,7 +89,7 @@ async function fetchWeather(lat, lon, lang) {
 
 /** Fallback: geolocalizzazione tramite IP */
 async function fetchWeatherByIP(lang) {
-  const geo = await fetch('http://ip-api.com/json/?fields=lat,lon,status')
+  const geo = await fetch('https://ip-api.com/json/?fields=lat,lon,status')
   const g   = await geo.json()
   if (g.status !== 'success') throw new Error('IP geo failed')
   return fetchWeather(g.lat, g.lon, lang)
