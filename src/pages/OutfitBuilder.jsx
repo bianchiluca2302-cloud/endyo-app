@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import GarmentCard from '../components/GarmentCard'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
@@ -1972,20 +1973,20 @@ export default function OutfitBuilder() {
           />
         )}
 
-        {/* ── Tab Stylist (solo mobile) — overlay a tutto schermo ───────────── */}
-        {/* inset:0 copre tutta la viewport; paddingTop spinge il contenuto
-            sotto la barra dei tab (che ha zIndex 500 ed è visibile sopra);
-            bottom:0 su iOS 15+ traccia il visual viewport → rimane sopra la
-            tastiera senza scroll della pagina */}
-        {isMobile && tab === 'stylist' && (
+        {/* ── Tab Stylist (solo mobile) — overlay portaled to body ──────────── */}
+        {/* createPortal evita il clipping da overflow:hidden degli antenati;
+            position:fixed + top/left/right/bottom espliciti per compatibilità iOS;
+            paddingTop spinge il contenuto sotto la barra dei tab;
+            paddingBottom evita sovrapposizione con la bottom nav */}
+        {isMobile && tab === 'stylist' && createPortal(
           <div style={{
             position: 'fixed',
-            inset: 0,
+            top: 0, left: 0, right: 0, bottom: 0,
             zIndex: 499,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
             background: 'var(--bg)',
-            paddingTop: tabsBottom ? `${tabsBottom}px` : '110px',
+            paddingTop: tabsBottom ? `${tabsBottom}px` : '160px',
             paddingBottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
           }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -2008,7 +2009,8 @@ export default function OutfitBuilder() {
                 onQuotaUpdate={() => {}}
               />
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Stylist AI — barra scorrevole solo su desktop */}
