@@ -831,11 +831,12 @@ export default function MobileWardrobe() {
   const language      = useSettingsStore(s => s.language) || 'it'
   const compactCards  = useSettingsStore(s => s.compactCards)
 
-  const [search,     setSearch]     = useState('')
-  const [activeCat,  setActiveCat]  = useState('')
-  const [showSearch, setShowSearch] = useState(false)
-  const [selected,   setSelected]   = useState(null)
-  const [activeTab,  setActiveTab]  = useState('armadio') // 'armadio' | 'shopping' | 'analisi'
+  const [search,        setSearch]        = useState('')
+  const [activeCat,     setActiveCat]     = useState('')
+  const [showSearch,    setShowSearch]    = useState(false)
+  const [selected,      setSelected]      = useState(null)
+  const [activeTab,     setActiveTab]     = useState('armadio') // 'armadio' | 'shopping' | 'analisi'
+  const [betaDismissed, setBetaDismissed] = useState(() => !!localStorage.getItem('endyo_beta_dismissed'))
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
 
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
@@ -981,6 +982,32 @@ export default function MobileWardrobe() {
               </button>
             ))}
           </div>
+
+          {/* Beta notice (dismissible) */}
+          {!betaDismissed && (
+            <div style={{
+              margin: '0 12px 8px',
+              padding: '10px 12px',
+              background: 'rgba(251,191,36,0.07)',
+              border: '1px solid rgba(251,191,36,0.2)',
+              borderRadius: 10,
+              display: 'flex', gap: 8, alignItems: 'flex-start',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>🚧</span>
+              <div style={{ flex: 1, fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {language === 'en'
+                  ? <>Beta version — bugs may occur. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Report one →</a></>
+                  : <>Versione beta — potrebbero esserci bug. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Segnalane uno →</a></>}
+              </div>
+              <button
+                onClick={() => { setBetaDismissed(true); localStorage.setItem('endyo_beta_dismissed', '1') }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', padding: 2, flexShrink: 0 }}
+              >
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          )}
 
           {/* Grid */}
           <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>

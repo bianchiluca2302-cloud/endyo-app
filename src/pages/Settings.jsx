@@ -966,11 +966,44 @@ export default function Settings() {
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em' }}>{t('settings')}</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
           {t('settingsDesc')}
         </p>
+      </div>
+
+      {/* ── Beta notice ───────────────────────────────────────────── */}
+      <div style={{
+        marginBottom: 20,
+        padding: '14px 16px',
+        background: 'rgba(251,191,36,0.07)',
+        border: '1px solid rgba(251,191,36,0.28)',
+        borderRadius: 12,
+        display: 'flex', gap: 12, alignItems: 'flex-start',
+      }}>
+        <span style={{ fontSize: 18, flexShrink: 0 }}>🚧</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 3 }}>
+            {language === 'en' ? 'Beta version' : 'Versione Beta'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            {language === 'en'
+              ? 'Endyo is in active development. You may encounter bugs — we\'re fixing them continuously and improving the app over time.'
+              : 'Endyo è in sviluppo attivo. Potresti incontrare dei bug — li stiamo risolvendo continuamente e l\'app migliorerà nel tempo.'}
+          </div>
+          <a
+            href="mailto:bugs@endyo.it?subject=Bug%20Report%20-%20Endyo"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              marginTop: 8, fontSize: 12, fontWeight: 600,
+              color: '#fbbf24', textDecoration: 'none',
+            }}
+          >
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            {language === 'en' ? 'Report a bug' : 'Segnala un bug'}
+          </a>
+        </div>
       </div>
 
       {/* ── ASPETTO ───────────────────────────────────────────────── */}
@@ -1426,7 +1459,7 @@ export default function Settings() {
         }}>
           {[
             [t('infoApp'),     'Endyo'],
-            [t('infoVersion'), '1.0.0'],
+            [t('infoVersion'), language === 'en' ? '1.0.0 Beta' : '1.0.0 Beta'],
             [t('infoWebsite'), 'endyo.it'],
             [t('infoContact'), 'info@endyo.it'],
             [t('infoAI'),      'OpenAI GPT-4o'],
@@ -1436,6 +1469,18 @@ export default function Settings() {
               <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>{v}</span>
             </div>
           ))}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>
+            <a
+              href="mailto:bugs@endyo.it?subject=Bug%20Report%20-%20Endyo"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                fontSize: 12, color: '#fbbf24', textDecoration: 'none', fontWeight: 600,
+              }}
+            >
+              <span>{language === 'en' ? 'Report a bug' : 'Segnala un bug'}</span>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
         </div>
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', paddingTop: 4 }}>
           {t('infoFooter')}

@@ -24,6 +24,12 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
     body: 'Evaluate a new item before buying: the AI checks how well it fits your wardrobe.',
     target: '[data-pagetour="wardrobe-shopping"]',
     position: 'left',
+  },
+  {
+    title: '🚧 Beta version',
+    body: 'Endyo is in active development. You may encounter bugs — we\'re fixing them continuously. Found one? Email us at bugs@endyo.it',
+    target: null,
+    position: 'center',
     cta: 'Got it →',
   },
 ] : [
@@ -44,6 +50,12 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
     body: 'Valuta un capo prima di comprarlo: l\'AI verifica quanto si abbina al tuo guardaroba.',
     target: '[data-pagetour="wardrobe-shopping"]',
     position: 'left',
+  },
+  {
+    title: '🚧 Versione Beta',
+    body: 'Endyo è in sviluppo attivo. Potresti incontrare dei bug — li stiamo risolvendo continuamente. Hai trovato un problema? Scrivici a bugs@endyo.it',
+    target: null,
+    position: 'center',
     cta: 'Capito →',
   },
 ]

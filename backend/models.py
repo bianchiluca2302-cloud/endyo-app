@@ -184,6 +184,10 @@ class UserProfile(Base):
     favorite_colors     = Column(JSON, default=list)
     disliked_colors     = Column(JSON, default=list)
     occasions           = Column(JSON, default=list)
+
+    # ── Memoria persistente dello stylist AI ──────────────────────────────────
+    stylist_memory      = Column(Text, nullable=True)  # conoscenze accumulate sullo stile utente
+
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
 
 

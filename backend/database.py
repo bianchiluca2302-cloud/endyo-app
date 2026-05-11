@@ -131,6 +131,8 @@ _MIGRATIONS = [
     ("brands",       "website",               "VARCHAR(500)"),
     ("brands",       "active",                "BOOLEAN NOT NULL DEFAULT TRUE"),
     ("brands",       "updated_at",            "TIMESTAMP WITH TIME ZONE"),
+    # Memoria persistente stylist AI
+    ("user_profile", "stylist_memory",        "TEXT"),
 ]
 
 

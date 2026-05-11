@@ -469,6 +469,46 @@ Return ONLY a JSON object:
         return {"additional_ids": [], "notes": "Errore nel completamento outfit."}
 
 
+async def update_stylist_memory(
+    current_memory: str | None,
+    user_message: str,
+    assistant_reply: str,
+    language: str = 'it',
+) -> str:
+    """Extract new insights from the latest exchange and merge into stylist memory.
+    Returns the updated memory string (max ~600 chars).
+    """
+    if not _openai_key("OPENAI_KEY_STYLIST"):
+        return current_memory or ""
+
+    mem = current_memory or ""
+    prompt = (
+        "You are updating a compact style memory for an AI personal stylist.\n"
+        "Current memory (may be empty):\n"
+        f"{mem or '(empty)'}\n\n"
+        "Latest exchange:\n"
+        f"User: {user_message[:400]}\n"
+        f"Stylist: {assistant_reply[:400]}\n\n"
+        "Extract 0–2 NEW, non-redundant facts about the user's style, lifestyle, body, or preferences "
+        "that are NOT already in the current memory. "
+        "Merge them concisely into the existing memory. "
+        "Keep total memory under 600 characters. Use plain sentences, no headers. "
+        "If nothing new was revealed, return the current memory unchanged. "
+        "Return ONLY the updated memory text, nothing else."
+    )
+    try:
+        resp = await client_stylist.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.3,
+        )
+        updated = resp.choices[0].message.content.strip()
+        return updated[:700]
+    except Exception:
+        return mem
+
+
 def _build_stylist_system_prompt(
     garments: list[dict],
     user_profile: dict | None,
@@ -479,6 +519,7 @@ def _build_stylist_system_prompt(
     occasion: str | None = None,
     usual_outfits: list[dict] | None = None,
     wear_history: list[dict] | None = None,
+    stylist_memory: str | None = None,
 ) -> str:
     """Costruisce il system prompt per lo stylist chat.
     Passa i capi con ID, contesto completo dell'utente e prodotti brand partner.
@@ -591,6 +632,8 @@ USER FEEDBACK — products already rejected (never suggest these again):
 {chr(10).join(dislike_notes)}
 Use this information to understand the user's taste and avoid similar suggestions."""
 
+        memory_section_en = f"\nSTYLIST MEMORY (accumulated knowledge about this user from previous sessions):\n{stylist_memory}" if stylist_memory else ""
+
         return f"""You are an expert AI stylist inside Endyo. You have full access to the user's wardrobe, profile, style history, and habits. Use ALL of this context to give advice that is genuinely superior to what a human stylist could offer — because you know exactly what they own, what they wear daily, what fits their lifestyle, and what their body and color preferences are.
 
 Always respond in English. Write naturally and concisely — like a trusted personal stylist who knows you well.
@@ -609,6 +652,7 @@ RESPONSE STYLE:
 
 {f"USER PROFILE: {profile_ctx}" if profile_ctx else ""}
 {f"WARDROBE STATS: {wardrobe_stats}" if wardrobe_stats else ""}
+{memory_section_en}
 {usual_section_en}
 {wear_section_en}
 {f"CURRENT WEATHER: {weather}" if weather else ""}
@@ -643,6 +687,8 @@ FEEDBACK UTENTE — prodotti già rifiutati (non riproporre mai):
 {chr(10).join(dislike_notes)}
 Usa queste informazioni per capire i gusti dell'utente ed evitare suggerimenti simili."""
 
+        memory_section_it = f"\nMEMORIA STYLIST (conoscenze accumulate su questo utente dalle sessioni precedenti):\n{stylist_memory}" if stylist_memory else ""
+
         return f"""Sei lo stylist AI esperto di Endyo. Hai accesso completo all'armadio dell'utente, al profilo, allo storico di stile e alle sue abitudini. Usa TUTTO questo contesto per dare consigli genuinamente superiori a quelli di un personal stylist umano — perché conosci esattamente cosa possiede, cosa indossa ogni giorno, cosa si adatta al suo stile di vita, e quali sono le sue preferenze di colore e fisico.
 
 Parla sempre in italiano. Rispondi in modo naturale e conciso — come uno stylist personale di fiducia che ti conosce bene.
@@ -661,6 +707,7 @@ STILE NELLE RISPOSTE:
 
 {f"PROFILO UTENTE: {profile_ctx}" if profile_ctx else ""}
 {f"STATISTICHE ARMADIO: {wardrobe_stats}" if wardrobe_stats else ""}
+{memory_section_it}
 {usual_section_it}
 {wear_section_it}
 {f"METEO ATTUALE: {weather}" if weather else ""}
@@ -721,6 +768,7 @@ async def stream_chat_with_stylist(
     occasion: str | None = None,
     usual_outfits: list[dict] | None = None,
     wear_history: list[dict] | None = None,
+    stylist_memory: str | None = None,
 ):
     """Generatore asincrono che restituisce token SSE dalla chat dello stylist.
     Yields: stringhe di testo (token) man mano che arrivano da OpenAI.
@@ -734,7 +782,7 @@ async def stream_chat_with_stylist(
 
     system_prompt = _build_stylist_system_prompt(
         garments, user_profile, language, brand_products, dislike_notes,
-        weather, occasion, usual_outfits, wear_history
+        weather, occasion, usual_outfits, wear_history, stylist_memory
     )
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(conversation_history[-12:])

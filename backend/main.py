@@ -2142,6 +2142,23 @@ def _check_and_increment_upload_quota(user: User) -> dict:
     }
 
 
+async def _save_stylist_memory(user_id: int, current_memory: str | None, user_msg: str, reply: str, language: str):
+    """Background task: aggiorna la memoria stylist dopo ogni chat."""
+    from ai_service import update_stylist_memory as _update_mem
+    from database import AsyncSessionLocal as _ASL
+    try:
+        new_memory = await _update_mem(current_memory, user_msg, reply, language)
+        if new_memory and new_memory != (current_memory or ""):
+            async with _ASL() as sess:
+                prof_res = await sess.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+                prof = prof_res.scalar_one_or_none()
+                if prof:
+                    prof.stylist_memory = new_memory
+                    await sess.commit()
+    except Exception as exc:
+        logger.warning("[stylist_memory] update failed: %s", exc)
+
+
 # ── Chat streaming (SSE) ──────────────────────────────────────────────────────
 @app.post("/ai/chat-stream")
 async def ai_chat_stream(
@@ -2159,6 +2176,8 @@ async def ai_chat_stream(
     profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == current_user.id))
     profile = profile_result.scalar_one_or_none()
     profile_dict = vars(profile) if profile else None
+    stylist_memory = profile.stylist_memory if profile else None
+    user_id_for_memory = current_user.id
 
     # Outfit abituali (is_usual=True) — stile di vita dell'utente
     usual_res = await db.execute(
@@ -2225,12 +2244,18 @@ async def ai_chat_stream(
                 occasion=data.occasion,
                 usual_outfits=usual_outfits,
                 wear_history=wear_history,
+                stylist_memory=stylist_memory,
             ):
                 accumulated += token
                 yield f"data: {json.dumps({'t': 'tok', 'v': token})}\n\n"
         except Exception as exc:
             yield f"data: {json.dumps({'t': 'err', 'v': str(exc)})}\n\n"
         finally:
+            # Aggiorna la memoria stylist in background (non blocca la risposta)
+            import asyncio as _asyncio
+            _asyncio.create_task(_save_stylist_memory(
+                user_id_for_memory, stylist_memory, data.message, accumulated, data.language
+            ))
             # Estrae eventuali prodotti brand suggeriti dall'AI e li invia come evento separato
             import re as _re
             bp_match = _re.search(r'<BRAND_PRODUCTS>([\s\S]*?)</BRAND_PRODUCTS>', accumulated)
