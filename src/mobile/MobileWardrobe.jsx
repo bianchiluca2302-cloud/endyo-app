@@ -151,7 +151,15 @@ function GarmentCard({ g, onClick }) {
             {liveGarment.color_hex && (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: g.color_hex, border: '1px solid rgba(0,0,0,0.12)',
+                background: liveGarment.color_hex, border: '1px solid rgba(0,0,0,0.12)',
+                display: 'inline-block',
+              }} />
+            )}
+            {/* Colore dettaglio (secondo colore della palette) */}
+            {liveGarment.color_palette?.[1]?.hex && liveGarment.color_palette[1].hex !== liveGarment.color_hex && (
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: liveGarment.color_palette[1].hex, border: '1px solid rgba(0,0,0,0.12)',
                 display: 'inline-block',
               }} />
             )}

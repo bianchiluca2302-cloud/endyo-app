@@ -839,9 +839,6 @@ function StylistChat({ selectedGarments, compact = false, onApplyOutfit, remaini
                   : t('assistantOnline', garments.length)}
             </div>
           </div>
-          {weather && (
-            <WeatherBadge weather={weather} language={language} chatOpen={false} onOpenChat={() => {}} />
-          )}
           {messages.length > 1 && (
             <button
               onClick={() => setMessages([{ role: 'assistant', content: makeWelcome(selectedGarments, language) }])}
@@ -1653,97 +1650,117 @@ export default function OutfitBuilder() {
       {!isMobile && <PageTutorial pageId="outfits" steps={OUTFIT_TOUR} />}
 
       {/* ── Left: selettore capi ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? (tab === 'stylist' ? 'calc(108px + env(safe-area-inset-bottom, 0px))' : 'calc(176px + env(safe-area-inset-bottom, 0px))') : 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? ((tab === 'builder' || tab === 'mixer') ? 'calc(176px + env(safe-area-inset-bottom, 0px))' : 'calc(108px + env(safe-area-inset-bottom, 0px))') : 0 }}>
 
-        {/* Titolo pagina — sopra i tab */}
-        <div style={{
-          padding: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 0' : '14px 16px 0',
-          background: 'var(--surface)', flexShrink: 0,
-        }}>
-          <h1 style={isMobile
-            ? { fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0 }
-            : { margin: 0 }}
-            className={isMobile ? undefined : 'page-title'}>
-            {t('outfitMixerTitle')}
-          </h1>
-          <p className="page-subtitle" style={{ margin: isMobile ? '4px 0 12px' : '3px 0 10px', ...(isMobile ? { fontSize: 12, color: 'var(--text-dim)' } : {}) }}>
-            {outfits.length === 0
-              ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
-              : `${outfits.length} ${outfits.length === 1
-                  ? (language === 'en' ? 'saved outfit' : 'outfit salvato')
-                  : (language === 'en' ? 'saved outfits' : 'outfit salvati')}`
-            }
-          </p>
-        </div>
+        {/* ── Mobile: unified header (title + meteo + tabs) come MobileWardrobe ── */}
+        {isMobile && (
+          <div ref={tabsRef} style={{
+            flexShrink: 0, background: 'var(--bg)',
+            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            paddingLeft: 20, paddingRight: 20, paddingBottom: 0,
+            borderBottom: '1px solid var(--border)',
+            position: 'relative', zIndex: 500,
+          }}>
+            {/* Riga titolo + meteo */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0 }}>
+                  {t('outfitMixerTitle')}
+                </h1>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 3 }}>
+                  {outfits.length === 0
+                    ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
+                    : `${outfits.length} ${outfits.length === 1
+                        ? (language === 'en' ? 'saved outfit' : 'outfit salvato')
+                        : (language === 'en' ? 'saved outfits' : 'outfit salvati')}`
+                  }
+                </div>
+              </div>
+              {/* Badge meteo — stesso pattern di StylistSlider */}
+              {weather && (
+                <WeatherBadge weather={weather} language={language} chatOpen={false} onOpenChat={() => {}} />
+              )}
+            </div>
+            {/* Tab bar */}
+            <div style={{ display: 'flex', gap: 0 }}>
+              {[
+                ['builder', t('wardrobeStep2Cta')],
+                ['stylist', 'Stylist'],
+                ['mixer', 'Mixer'],
+                ['saved', t('outfitsTitle')],
+              ].map(([id, label]) => {
+                const isStylist = id === 'stylist'
+                const isActive  = tab === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    style={{
+                      flex: 1, padding: '8px 4px', cursor: 'pointer',
+                      fontSize: 13, fontWeight: isActive ? 700 : 500,
+                      color: isActive ? 'var(--primary-light)' : (isStylist && stylistPulse) ? 'var(--primary-light)' : 'var(--text-dim)',
+                      background: 'none', border: 'none',
+                      borderBottom: `2px solid ${isActive ? 'var(--primary)' : (isStylist && stylistPulse) ? 'rgba(139,92,246,0.4)' : 'transparent'}`,
+                      transition: 'color 0.15s, border-color 0.15s',
+                      WebkitTapHighlightColor: 'transparent',
+                      animation: (!isActive && isStylist && stylistPulse) ? 'stylistTabPulse 0.55s ease-in-out infinite alternate' : 'none',
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Tabs */}
-        <div ref={tabsRef} style={{
+        {/* ── Desktop: titolo + tab separati ─────────────────────────────────── */}
+        {!isMobile && (
+          <div style={{ padding: '14px 16px 0', background: 'var(--surface)', flexShrink: 0 }}>
+            <h1 style={{ margin: 0 }} className="page-title">{t('outfitMixerTitle')}</h1>
+            <p className="page-subtitle" style={{ margin: '3px 0 10px' }}>
+              {outfits.length === 0
+                ? (language === 'en' ? 'No saved outfits yet' : 'Nessun outfit salvato')
+                : `${outfits.length} ${outfits.length === 1
+                    ? (language === 'en' ? 'saved outfit' : 'outfit salvato')
+                    : (language === 'en' ? 'saved outfits' : 'outfit salvati')}`
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Tabs — desktop only (mobile tabs are in the unified header above) */}
+        {!isMobile && <div ref={tabsRef} style={{
           display: 'flex', alignItems: 'center',
           borderBottom: '1px solid var(--border)',
           background: 'var(--surface)',
-          padding: isMobile ? '0 0 0' : '0 16px 10px',
-          gap: isMobile ? 0 : 6, flexShrink: 0,
-          ...(isMobile ? { position: 'relative', zIndex: 500 } : {}),
+          padding: '0 16px 10px',
+          gap: 6, flexShrink: 0,
         }}>
           {[
-          ['builder', t('wardrobeStep2Cta')],
-          ['stylist', 'Stylist'],
-          ['mixer', 'Mixer'],
-          ['saved', t('outfitsTitle')],
-        ].filter(([id]) => isMobile || !['mixer', 'stylist'].includes(id)).map(([id, label]) => {
-            const isStylist = id === 'stylist'
-            const isActive  = tab === id
-            // Mobile: underline style come MobileWardrobe
-            if (isMobile) {
-              return (
-                <button
-                  key={id}
-                  onClick={() => { setTab(id) }}
-                  style={{
-                    flex: 1, padding: '8px 4px', cursor: 'pointer',
-                    fontSize: 13, fontWeight: isActive ? 700 : 500,
-                    color: isActive ? 'var(--primary-light)' : (isStylist && stylistPulse) ? 'var(--primary-light)' : 'var(--text-dim)',
-                    background: 'none', border: 'none',
-                    borderBottom: `2px solid ${isActive ? 'var(--primary)' : (isStylist && stylistPulse) ? 'rgba(139,92,246,0.4)' : 'transparent'}`,
-                    transition: 'color 0.15s, border-color 0.15s',
-                    WebkitTapHighlightColor: 'transparent',
-                    animation: (!isActive && isStylist && stylistPulse) ? 'stylistTabPulse 0.55s ease-in-out infinite alternate' : 'none',
-                    position: 'relative',
-                  }}
-                >
-                  {label}
-                </button>
-              )
-            }
-            // Desktop: pill style
+            ['builder', t('wardrobeStep2Cta')],
+            ['saved',   t('outfitsTitle')],
+          ].map(([id, label]) => {
+            const isActive = tab === id
             return (
-            <button
-              key={id}
-              onClick={() => { setTab(id) }}
-              style={{
-                padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 99,
-                cursor: 'pointer', transition: 'all 0.18s',
-                color: isActive ? 'var(--primary-light)' : (isStylist && stylistPulse) ? 'var(--primary-light)' : 'var(--text-muted)',
-                background: isActive ? 'var(--primary-dim)' : 'transparent',
-                border: `1px solid ${isActive ? 'var(--primary-border)' : 'transparent'}`,
-                animation: (!isActive && isStylist && stylistPulse) ? 'stylistTabPulse 0.55s ease-in-out infinite alternate' : 'none',
-                position: 'relative',
-              }}
-              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)' } }}
-              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}
-            >
-              {label}
-              {/* Pallino di notifica quando lampeggia */}
-              {isStylist && stylistPulse && !isActive && (
-                <span style={{
-                  position: 'absolute', top: 4, right: 4,
-                  width: 7, height: 7, borderRadius: '50%',
-                  background: 'var(--primary)', boxShadow: '0 0 0 2px var(--surface)',
-                  animation: 'stylistDotPulse 0.7s ease-in-out infinite alternate',
-                }} />
-              )}
-            </button>
-          )})}
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                style={{
+                  padding: '8px 18px', fontSize: 13, fontWeight: 600, borderRadius: 99,
+                  cursor: 'pointer', transition: 'all 0.18s',
+                  color: isActive ? 'var(--primary-light)' : 'var(--text-muted)',
+                  background: isActive ? 'var(--primary-dim)' : 'transparent',
+                  border: `1px solid ${isActive ? 'var(--primary-border)' : 'transparent'}`,
+                }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.borderColor = 'var(--border)' } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}
+              >
+                {label}
+              </button>
+            )
+          })}
           <style>{`
             @keyframes stylistTabPulse {
               from { background: transparent; border-color: transparent; color: var(--text-muted); }
@@ -1754,7 +1771,7 @@ export default function OutfitBuilder() {
               to   { transform: scale(1.3); opacity: 1; }
             }
           `}</style>
-        </div>
+        </div>}
 
         {/* Tab: builder */}
         {tab === 'builder' && (
@@ -2240,7 +2257,7 @@ export default function OutfitBuilder() {
       </div>}
 
       {/* ── Mobile: compact save bar at bottom ───────────────────────────── */}
-      {isMobile && tab !== 'stylist' && (
+      {isMobile && (tab === 'builder' || tab === 'mixer') && (
         <div style={{
           position: 'fixed', bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
           borderTop: '1px solid var(--border)',
