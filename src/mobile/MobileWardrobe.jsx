@@ -903,7 +903,7 @@ export default function MobileWardrobe() {
         position: 'sticky', top: 0, zIndex: 100,
         background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+        paddingTop: 16,
         paddingLeft: 20, paddingRight: 20, paddingBottom: 0,
         borderBottom: '1px solid var(--border)',
       }}>

@@ -392,7 +392,7 @@ export default function MobileOutfits() {
         position: 'sticky', top: 0, zIndex: 100,
         background: 'rgba(10,10,15,0.96)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 52px) 20px 0',
+        padding: '16px 20px 0',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingBottom: 12 }}>

@@ -638,7 +638,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
       {/* ── Navbar con freccia indietro ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+        padding: '12px 16px',
         borderBottom: '1px solid var(--border)',
         background: 'var(--bg)', flexShrink: 0,
       }}>
@@ -785,7 +785,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
           {/* header */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+            padding: '12px 16px',
             borderBottom: '1px solid var(--border)', background: 'var(--bg)', flexShrink: 0,
           }}>
             <button
@@ -1321,7 +1321,7 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
       {/* ── Header con input ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+        padding: '12px 16px',
         borderBottom: '1px solid var(--border)',
         background: 'var(--bg)', flexShrink: 0,
       }}>
@@ -1482,7 +1482,7 @@ export default function MobileFriends() {
         position: 'sticky', top: 0, zIndex: 100,
         background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+        paddingTop: 16,
         paddingLeft: 20, paddingRight: 20, paddingBottom: 0,
         borderBottom: '1px solid var(--border)',
         flexShrink: 0,

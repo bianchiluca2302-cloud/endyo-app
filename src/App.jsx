@@ -25,6 +25,7 @@ import useIsMobile from './hooks/useIsMobile'
 import MobileTabBar from './mobile/MobileTabBar'
 import MobileWardrobe from './mobile/MobileWardrobe'
 import MobileUpload from './mobile/MobileUpload'
+import MobileOutfits from './mobile/MobileOutfits'
 import MobileFriends from './mobile/MobileFriends'
 import MobileProfile from './mobile/MobileProfile'
 import MobileAdBanner from './mobile/MobileAdBanner'
@@ -227,7 +228,7 @@ export default function App() {
           <ProtectedRoute>
             {isMobile ? (
               /* ── Layout MOBILE: tab bar + pagine ridisegnate da zero ─────────── */
-              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
                 {showTutorial && <MobileTutorial onDone={() => setShowTutorial(false)} />}
                 <MobileAdBanner position="top" />
                 <main style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
@@ -236,7 +237,7 @@ export default function App() {
                     <Route path="/"          element={<Navigate to={showTutorial ? "/upload" : "/wardrobe"} replace />} />
                     <Route path="/wardrobe"     element={<MobileWardrobe />} />
                     <Route path="/upload"       element={<MobileUpload />} />
-                    <Route path="/outfits"      element={<OutfitBuilder />} />
+                    <Route path="/outfits"      element={<MobileOutfits />} />
                     <Route path="/friends"      element={<MobileFriends />} />
                     <Route path="/profile"      element={<MobileProfile />} />
                     <Route path="/edit-profile" element={<Profile />} />

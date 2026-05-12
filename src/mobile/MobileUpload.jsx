@@ -544,7 +544,7 @@ export default function MobileUpload() {
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 100px', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+        paddingTop: 8,
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
           <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)', margin: 0 }}>
