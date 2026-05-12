@@ -213,7 +213,7 @@ export default function App() {
           <ProtectedRoute>
             {isMobile ? (
               /* ── Layout MOBILE: tab bar + pagine ridisegnate da zero ─────────── */
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100svh', overflow: 'hidden', background: 'var(--bg)' }}>
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
                 {showTutorial && <MobileTutorial onDone={() => setShowTutorial(false)} />}
                 <MobileAdBanner position="top" />
                 <main style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
