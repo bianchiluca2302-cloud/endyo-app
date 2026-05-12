@@ -136,6 +136,20 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
+  // ── Spinner per non-PWA durante il bootstrap del token ────────────────────
+  // Evita che ProtectedRoute rediriga a /auth (e cambi URL) mentre aspettiamo
+  // il refresh del token. Su PWA ci pensa lo splash; qui serve per Chrome mobile.
+  if (bootstrapping && !showSplash) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg)',
+      }}>
+        <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+      </div>
+    )
+  }
+
   // ── Splash screen amber — solo su PWA standalone, con fade-out ─────────────
   if (showSplash) {
     return (
@@ -229,6 +243,7 @@ export default function App() {
                     <Route path="/settings"     element={<Settings />} />
                     <Route path="/premium"      element={<Premium />} />
                     <Route path="/shopping"     element={<Shopping />} />
+                    <Route path="*"             element={<Navigate to="/wardrobe" replace />} />
                   </Routes>
                 </main>
                 <MobileAdBanner position="bottom" />
