@@ -25,7 +25,6 @@ import useIsMobile from './hooks/useIsMobile'
 import MobileTabBar from './mobile/MobileTabBar'
 import MobileWardrobe from './mobile/MobileWardrobe'
 import MobileUpload from './mobile/MobileUpload'
-import MobileOutfits from './mobile/MobileOutfits'
 import MobileFriends from './mobile/MobileFriends'
 import MobileProfile from './mobile/MobileProfile'
 import MobileAdBanner from './mobile/MobileAdBanner'
@@ -237,7 +236,7 @@ export default function App() {
                     <Route path="/"          element={<Navigate to={showTutorial ? "/upload" : "/wardrobe"} replace />} />
                     <Route path="/wardrobe"     element={<MobileWardrobe />} />
                     <Route path="/upload"       element={<MobileUpload />} />
-                    <Route path="/outfits"      element={<MobileOutfits />} />
+                    <Route path="/outfits"      element={<OutfitBuilder />} />
                     <Route path="/friends"      element={<MobileFriends />} />
                     <Route path="/profile"      element={<MobileProfile />} />
                     <Route path="/edit-profile" element={<Profile />} />
