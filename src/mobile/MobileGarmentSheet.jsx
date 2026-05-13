@@ -178,9 +178,10 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
   /* ── Edit mode ────────────────────────────────────────────────────────────── */
   const CATEGORIES_ORDER = ['cappello','maglietta','felpa','giacchetto','pantaloni','gonna','vestito','top','scarpe','occhiali','cintura','borsa','orologio','altro']
-  const [editMode,   setEditMode]   = useState(false)
-  const [editSaving, setEditSaving] = useState(false)
-  const [editFields, setEditFields] = useState({})
+  const [editMode,    setEditMode]    = useState(false)
+  const [editSaving,  setEditSaving]  = useState(false)
+  const [editFields,  setEditFields]  = useState({})
+  const [editPalette, setEditPalette] = useState([])
 
   const startEdit = () => {
     setEditFields({
@@ -189,17 +190,28 @@ export default function MobileGarmentSheet({ garment, onClose }) {
       brand:    liveGarment.brand    || '',
       size:     liveGarment.size     || '',
     })
+    setEditPalette(
+      (liveGarment.color_palette || []).length > 0
+        ? liveGarment.color_palette
+        : liveGarment.color_hex
+          ? [{ name: liveGarment.color_primary || '', hex: liveGarment.color_hex }]
+          : []
+    )
     setEditMode(true)
   }
   const cancelEdit = () => setEditMode(false)
   const saveEdit = async () => {
     setEditSaving(true)
     try {
+      const paletteToSave = editPalette.filter(c => c.hex)
       await updateGarmentFields(garment.id, {
-        name:     editFields.name.trim()     || undefined,
-        category: editFields.category        || undefined,
-        brand:    editFields.brand.trim()    || undefined,
-        size:     editFields.size.trim()     || undefined,
+        name:          editFields.name.trim()  || undefined,
+        category:      editFields.category     || undefined,
+        brand:         editFields.brand.trim() || undefined,
+        size:          editFields.size.trim()  || undefined,
+        color_palette: paletteToSave.length ? paletteToSave : undefined,
+        color_primary: paletteToSave[0]?.name || undefined,
+        color_hex:     paletteToSave[0]?.hex  || undefined,
       })
       setEditMode(false)
     } catch { /* ignore */ } finally { setEditSaving(false) }
@@ -413,6 +425,55 @@ export default function MobileGarmentSheet({ garment, onClose }) {
                     placeholder={language === 'en' ? 'Size' : 'Taglia'}
                     style={{ ...editInputStyle, width: 70 }}
                   />
+                </div>
+                {/* Color palette editor */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {language === 'en' ? 'Colors' : 'Colori'}
+                  </span>
+                  {editPalette.map((c, i) => (
+                    <div key={i} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ position: 'relative', width: 32, height: 32 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: c.hex || '#888888', border: '2px solid rgba(0,0,0,0.15)', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+                        <input
+                          type="color"
+                          value={c.hex || '#888888'}
+                          onChange={e => {
+                            const next = [...editPalette]
+                            next[i] = { ...next[i], hex: e.target.value }
+                            setEditPalette(next)
+                          }}
+                          style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: 'pointer', borderRadius: '50%', border: 'none' }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => setEditPalette(prev => prev.filter((_, j) => j !== i))}
+                        style={{
+                          width: 14, height: 14, borderRadius: '50%',
+                          background: 'var(--border)', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', padding: 0, color: 'var(--text-muted)',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        <svg width={7} height={7} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  ))}
+                  {editPalette.length < 5 && (
+                    <button
+                      onClick={() => setEditPalette(prev => [...prev, { name: '', hex: '#888888' }])}
+                      style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        border: '2px dashed var(--border)', background: 'var(--card)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', color: 'var(--text-dim)', flexShrink: 0,
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                   <button onClick={cancelEdit} style={{ ...editBtnStyle, flex: 1, background: 'var(--card)', color: 'var(--text-muted)' }}>

@@ -680,6 +680,7 @@ const SUGGESTIONS = {
 
 // ── StylistWizard — mobile questionnaire flow (replace chat with structured Q&A) ──
 function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
+  // weather is the full object from useWeather (temp, feels, humidity, wind, code, label, hourly)
   const garments = useWardrobeStore(s => s.garments)
   const outfits  = useWardrobeStore(s => s.outfits)
   const language = useSettingsStore(s => s.language) || 'it'
@@ -734,6 +735,20 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const occ = Q.find(o => o.id === occasion)
   const getById = id => garments.find(g => g.id === id)
 
+  // Build rich weather context from full weather object
+  const buildWeatherNote = (occ_id) => {
+    if (!weather) return ''
+    // For travel, the local weather is irrelevant — user is going somewhere else
+    if (occ_id === 'travel' || occ_id === 'viaggio') return ''
+    const hourlyStr = weather.hourly?.length
+      ? weather.hourly.map(h => `${h.hour}h${h.icon}${h.temp}°C(${h.precip}%)`).join(' ')
+      : ''
+    if (language === 'en') {
+      return ` Current weather: ${weather.temp}°C, feels like ${weather.feels}°C, ${weather.label}, humidity ${weather.humidity}%, wind ${weather.wind} km/h.${hourlyStr ? ` Next 5 hours: ${hourlyStr}.` : ''} Choose garments that work perfectly for these real conditions.`
+    }
+    return ` Meteo attuale: ${weather.temp}°C, percepita ${weather.feels}°C, ${weather.label}, umidità ${weather.humidity}%, vento ${weather.wind} km/h.${hourlyStr ? ` Prossime 5 ore: ${hourlyStr}.` : ''} Scegli capi adatti a queste condizioni reali.`
+  }
+
   const generate = async (occLabel, subLabel, styleLabel) => {
     setStep(3); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
 
@@ -743,7 +758,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
           ? ` Exclude garment-IDs already shown: [${shownIdsRef.current.join(', ')}].`
           : ` Escludi le combinazioni con ID già proposti: [${shownIdsRef.current.join(', ')}].`)
       : ''
-    const weatherNote = weather ? (language === 'en' ? ` Weather: ${weather}.` : ` Meteo: ${weather}.`) : ''
+    const weatherNote = buildWeatherNote(occasion)
 
     const prompt = language === 'en'
       ? gDesc
@@ -755,7 +770,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
 
     let acc = ''
     await chatWithStylistStream({
-      message: prompt, history: [], language, weather, occasion: occLabel,
+      message: prompt, history: [], language, weather: weather?.summary ?? null, occasion: occLabel,
       onToken: tok => { acc += tok; setStreamText(acc) },
       onDone: () => {
         const matches = [...acc.matchAll(/<OUTFIT>([\s\S]*?)<\/OUTFIT>/g)]
@@ -809,7 +824,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
           )}
           {needOutfits > 0 && (
             <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontSize: 24 }}>⭐</div>
+              <div style={{ fontSize: 24 }}>🎯</div>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                   {language === 'en' ? `${outfits.length} / ${MIN_OUTFITS} saved outfits` : `${outfits.length} / ${MIN_OUTFITS} outfit salvati`}
@@ -1939,7 +1954,7 @@ export default function OutfitBuilder() {
       {!isMobile && <PageTutorial pageId="outfits" steps={OUTFIT_TOUR} />}
 
       {/* ── Left: selettore capi ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom, 0px))' : 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom, 12px))' : 0 }}>
 
         {/* ── Mobile: unified header (title + meteo + tabs) come MobileWardrobe ── */}
         {isMobile && (
@@ -2102,11 +2117,28 @@ export default function OutfitBuilder() {
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                         {selectedGarments.map(g => (
                           <div key={g.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                            <div style={{ width: 46, height: 46, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1px solid var(--border)' }}>
-                              {g.photo_front
-                                ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontSize: 10 }}>{CAT_ICONS[g.category]}</div>
-                              }
+                            <div style={{ position: 'relative', width: 46, height: 46 }}>
+                              <div style={{ width: 46, height: 46, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                                {g.photo_front
+                                  ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontSize: 10 }}>{CAT_ICONS[g.category]}</div>
+                                }
+                              </div>
+                              <button
+                                onClick={() => toggleGarment(g)}
+                                style={{
+                                  position: 'absolute', top: -5, right: -5,
+                                  width: 18, height: 18, borderRadius: '50%',
+                                  background: 'var(--text)', color: 'var(--bg)',
+                                  border: 'none', cursor: 'pointer', padding: 0,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  WebkitTapHighlightColor: 'transparent', zIndex: 1,
+                                }}
+                              >
+                                <svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
+                                  <path d="M18 6 6 18M6 6l12 12"/>
+                                </svg>
+                              </button>
                             </div>
                             <span style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 46, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
                           </div>
@@ -2357,7 +2389,7 @@ export default function OutfitBuilder() {
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <StylistWizard
               selectedGarments={selectedGarments}
-              weather={weather?.summary ?? null}
+              weather={weather ?? null}
               onApplyOutfit={(ids, name, notes) => {
                 const newSel = {}
                 for (const id of (ids || [])) {

@@ -95,7 +95,7 @@ const tabLabel = { fontSize: 10, fontWeight: 500, lineHeight: 1 }
 /* ── Component ───────────────────────────────────────────────────────────────── */
 export default function MobileTabBar() {
   const t          = useT()
-  const pb         = 'env(safe-area-inset-bottom, 0px)'
+  const pb         = 'env(safe-area-inset-bottom, 12px)'
   const lang       = useSettingsStore(s => s.language) || 'it'
   const navLocked  = useWardrobeStore(s => s.navLocked)
   const [lockMsg, setLockMsg] = useState(false)
@@ -109,7 +109,7 @@ export default function MobileTabBar() {
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+      height: 'calc(64px + env(safe-area-inset-bottom, 12px))',
       background: 'var(--surface)',
       backdropFilter: 'blur(28px)',
       WebkitBackdropFilter: 'blur(28px)',
