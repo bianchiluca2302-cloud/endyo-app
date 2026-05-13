@@ -359,6 +359,15 @@ button:focus-visible,
   82%  { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
+@keyframes dropdownOpen {
+  from { opacity: 0; transform: scaleY(0.88) translateY(-6px); }
+  to   { opacity: 1; transform: scaleY(1)    translateY(0); }
+}
+@keyframes searchOpen {
+  from { opacity: 0; transform: translateY(-8px) scaleY(0.85); }
+  to   { opacity: 1; transform: translateY(0)    scaleY(1); }
+}
+
 @keyframes badgeShake {
   0%, 100% { transform: translateX(0) scale(1); }
   20%       { transform: translateX(-3px) scale(1.1); }

@@ -1257,34 +1257,42 @@ export default function MobileWardrobe() {
                 </button>
                 {showSort && (
                   <div style={{
-                    position: 'absolute', top: 44, right: 0, zIndex: 200,
-                    background: 'var(--surface)', border: '1px solid var(--border)',
-                    borderRadius: 14, overflow: 'hidden',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-                    minWidth: 170,
+                    position: 'absolute', top: 48, right: 0, zIndex: 200,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08), 0 12px 40px rgba(0,0,0,0.14), 0 0 0 1px var(--border)',
+                    minWidth: 190,
+                    transformOrigin: 'top right',
+                    animation: 'dropdownOpen 0.18s cubic-bezier(0.2,0,0,1.1) forwards',
                   }}>
-                    {SORT_OPTIONS.map((opt, i) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => { updateSetting('wardrobeSortOrder', opt.id); setShowSort(false) }}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          width: '100%', padding: '12px 16px', textAlign: 'left',
-                          background: wardrobeSortOrder === opt.id ? 'var(--primary-dim)' : 'transparent',
-                          color: wardrobeSortOrder === opt.id ? 'var(--primary-light)' : 'var(--text)',
-                          fontSize: 13.5, fontWeight: wardrobeSortOrder === opt.id ? 700 : 500,
-                          borderBottom: i < SORT_OPTIONS.length - 1 ? '1px solid var(--border)' : 'none',
-                          cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                        }}
-                      >
-                        {opt.label}
-                        {wardrobeSortOrder === opt.id && (
-                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6 9 17l-5-5"/>
-                          </svg>
-                        )}
-                      </button>
-                    ))}
+                    {SORT_OPTIONS.map((opt, i) => {
+                      const active = wardrobeSortOrder === opt.id
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => { updateSetting('wardrobeSortOrder', opt.id); setShowSort(false) }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            width: '100%', padding: '13px 16px', textAlign: 'left',
+                            background: active ? 'var(--primary-dim)' : 'transparent',
+                            color: active ? 'var(--primary-light)' : 'var(--text)',
+                            fontSize: 14, fontWeight: active ? 700 : 400,
+                            borderBottom: i < SORT_OPTIONS.length - 1 ? '1px solid var(--border)' : 'none',
+                            cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                            transition: 'background 0.12s',
+                          }}
+                        >
+                          <span style={{ flex: 1 }}>{opt.label}</span>
+                          {active && (
+                            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -1308,7 +1316,7 @@ export default function MobileWardrobe() {
 
         {/* Search input (Armadio only) */}
         {activeTab === 'armadio' && showSearch && (
-          <div style={{ paddingBottom: 10 }}>
+          <div style={{ paddingBottom: 10, transformOrigin: 'top center', animation: 'searchOpen 0.18s ease forwards' }}>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -1394,16 +1402,7 @@ export default function MobileWardrobe() {
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState hasGarments={garments.length > 0} />
-            ) : activeCat !== '' ? (
-              /* ── Flat grid when a single category is selected ── */
-              <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
-                {filtered.map((g, i) => (
-                  <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards`, height: '100%', minWidth: 0 }}>
-                    <GarmentCard g={g} onClick={() => setSelected(g)} />
-                  </div>
-                ))}
-              </div>
-            ) : wardrobeSortOrder === 'color_asc' ? (
+            ) : wardrobeSortOrder === 'color_asc' && activeCat === '' ? (
               /* ── Color-grouped sections ── */
               (() => {
                 const colorMap = {}
@@ -1414,18 +1413,45 @@ export default function MobileWardrobe() {
                 })
                 return Object.values(colorMap).sort((a, b) => b.items.length - a.items.length).map(group => (
                   <div key={group.label} style={{ marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
                       {group.hex && (
-                        <span style={{ width: 12, height: 12, borderRadius: '50%', background: group.hex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                        <span style={{ width: 13, height: 13, borderRadius: '50%', background: group.hex, border: '1.5px solid rgba(0,0,0,0.12)', flexShrink: 0, display: 'inline-block' }} />
                       )}
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize', letterSpacing: '-0.01em' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize', letterSpacing: '-0.01em' }}>
                         {group.label}
                       </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 2 }}>({group.items.length})</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({group.items.length})</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
-                        <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 40, 300)}ms backwards`, height: '100%', minWidth: 0 }}>
+                        <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards`, height: '100%', minWidth: 0 }}>
+                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()
+            ) : wardrobeSortOrder === 'brand_asc' && activeCat === '' ? (
+              /* ── Brand-grouped sections ── */
+              (() => {
+                const brandMap = {}
+                filtered.forEach(g => {
+                  const key = (g.brand || '').trim() || (language === 'en' ? 'No brand' : 'Senza brand')
+                  if (!brandMap[key]) brandMap[key] = { label: key, items: [] }
+                  brandMap[key].items.push(g)
+                })
+                return Object.values(brandMap).sort((a, b) => a.label.localeCompare(b.label)).map(group => (
+                  <div key={group.label} style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>
+                        {group.label}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({group.items.length})</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
+                      {group.items.map((g, i) => (
+                        <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards`, height: '100%', minWidth: 0 }}>
                           <GarmentCard g={g} onClick={() => setSelected(g)} />
                         </div>
                       ))}
@@ -1434,28 +1460,14 @@ export default function MobileWardrobe() {
                 ))
               })()
             ) : (
-              /* ── Category-grouped sections (default "Tutti" view) ── */
-              CATEGORIES_ORDER.map(cat => {
-                const items = filtered.filter(g => g.category === cat)
-                if (!items.length) return null
-                return (
-                  <div key={cat} style={{ marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>
-                        {CATEGORY_LABELS[cat] || cat}
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({items.length})</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
-                      {items.map((g, i) => (
-                        <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 40, 300)}ms backwards`, height: '100%', minWidth: 0 }}>
-                          <GarmentCard g={g} onClick={() => setSelected(g)} />
-                        </div>
-                      ))}
-                    </div>
+              /* ── Flat grid: date, name, or category filter active ── */
+              <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
+                {filtered.map((g, i) => (
+                  <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards`, height: '100%', minWidth: 0 }}>
+                    <GarmentCard g={g} onClick={() => setSelected(g)} />
                   </div>
-                )
-              })
+                ))}
+              </div>
             )}
           </div>
         </>
