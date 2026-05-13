@@ -797,7 +797,6 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     const needOutfits  = Math.max(0, MIN_OUTFITS  - outfits.length)
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 16, textAlign: 'center' }}>
-        <div style={{ fontSize: 40 }}>🔒</div>
         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>
           {language === 'en' ? 'Almost there!' : 'Ci siamo quasi!'}
         </div>
@@ -808,32 +807,26 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
           {needGarments > 0 && (
-            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontSize: 24 }}>👕</div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                  {language === 'en' ? `${garments.length} / ${MIN_GARMENTS} garments` : `${garments.length} / ${MIN_GARMENTS} capi`}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
-                  {language === 'en'
-                    ? `Upload ${needGarments} more to unlock`
-                    : `Carica ancora ${needGarments} capo/i per sbloccare`}
-                </div>
+            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                {language === 'en' ? `${garments.length} / ${MIN_GARMENTS} garments` : `${garments.length} / ${MIN_GARMENTS} capi`}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                {language === 'en'
+                  ? `Upload ${needGarments} more to unlock`
+                  : `Carica ancora ${needGarments} capo/i per sbloccare`}
               </div>
             </div>
           )}
           {needOutfits > 0 && (
-            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontSize: 24 }}>🎯</div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                  {language === 'en' ? `${outfits.length} / ${MIN_OUTFITS} saved outfits` : `${outfits.length} / ${MIN_OUTFITS} outfit salvati`}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
-                  {language === 'en'
-                    ? `Save ${needOutfits} more outfit${needOutfits !== 1 ? 's' : ''} in the Create tab`
-                    : `Salva ancora ${needOutfits} outfit nella scheda Crea`}
-                </div>
+            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                {language === 'en' ? `${outfits.length} / ${MIN_OUTFITS} saved outfits` : `${outfits.length} / ${MIN_OUTFITS} outfit salvati`}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                {language === 'en'
+                  ? `Save ${needOutfits} more outfit${needOutfits !== 1 ? 's' : ''} in the Create tab`
+                  : `Salva ancora ${needOutfits} outfit nella scheda Crea`}
               </div>
             </div>
           )}

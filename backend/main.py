@@ -1422,6 +1422,8 @@ class GarmentUpdate(BaseModel):
     category:      Annotated[Optional[str],   Field(default=None, max_length=50)]
     brand:         Annotated[Optional[str],   Field(default=None, max_length=100)]
     color_primary: Annotated[Optional[str],   Field(default=None, max_length=50)]
+    color_hex:     Annotated[Optional[str],   Field(default=None, max_length=7)]
+    color_palette: Annotated[Optional[list],  Field(default=None)]
     size:          Annotated[Optional[str],   Field(default=None, max_length=20)]
     price:         Annotated[Optional[float], Field(default=None, ge=0, le=100000)]
     material:      Annotated[Optional[str],   Field(default=None, max_length=100)]
