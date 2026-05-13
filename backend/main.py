@@ -4773,3 +4773,217 @@ async def stripe_billing_portal(
         return_url=f"{app_url}/#/settings",
     )
     return {"portal_url": session.url}
+
+
+# ── Sezione Viaggio ────────────────────────────────────────────────────────────
+
+TRAVEL_MONTHLY_LIMIT_PREMIUM     = 1
+TRAVEL_WEEKLY_LIMIT_PREMIUM_PLUS = 1
+
+
+class TravelPlanRequest(BaseModel):
+    destination:   str
+    start_date:    str            # YYYY-MM-DD
+    end_date:      str            # YYYY-MM-DD
+    preferred_ids: list[int] = []
+    language:      str = 'it'
+
+
+def _check_and_increment_travel_quota(user: User) -> None:
+    """Premium: 1/mese. Premium Plus: 1/settimana. Free: bloccato (403)."""
+    plan = user.plan or 'free'
+    if plan == 'premium_annual':      plan = 'premium'
+    if plan == 'premium_plus_annual': plan = 'premium_plus'
+
+    if plan == 'free':
+        raise HTTPException(403, "La pianificazione viaggio è disponibile solo per i piani Premium.")
+
+    now = datetime.now(timezone.utc)
+
+    if plan == 'premium_plus':
+        week_start = (now - timedelta(days=now.weekday())).date()
+        if user.travel_week_reset_at is None or user.travel_week_reset_at.date() < week_start:
+            user.travel_week_count    = 0
+            user.travel_week_reset_at = now
+        count = user.travel_week_count or 0
+        if count >= TRAVEL_WEEKLY_LIMIT_PREMIUM_PLUS:
+            raise HTTPException(429, "Hai già utilizzato il piano viaggio questa settimana. Riprova lunedì.")
+        user.travel_week_count = count + 1
+    else:
+        month_start = now.replace(day=1).date()
+        if user.travel_month_reset_at is None or user.travel_month_reset_at.date() < month_start:
+            user.travel_month_count    = 0
+            user.travel_month_reset_at = now
+        count = user.travel_month_count or 0
+        if count >= TRAVEL_MONTHLY_LIMIT_PREMIUM:
+            raise HTTPException(429, "Hai già utilizzato il piano viaggio questo mese. Riprova il mese prossimo.")
+        user.travel_month_count = count + 1
+
+
+async def _fetch_travel_weather(destination: str, start_date: str, end_date: str) -> str:
+    """Recupera temperatura media da Open-Meteo per destinazione e periodo."""
+    import httpx as _httpx
+    from datetime import date as _date
+
+    today = _date.today()
+    sd = datetime.strptime(start_date, "%Y-%m-%d").date()
+    ed = datetime.strptime(end_date, "%Y-%m-%d").date()
+    days_ahead = (sd - today).days
+
+    # Geocodifica
+    geo_url = (
+        f"https://geocoding-api.open-meteo.com/v1/search"
+        f"?name={destination}&count=1&language=it&format=json"
+    )
+    async with _httpx.AsyncClient(timeout=10) as http:
+        geo_resp = await http.get(geo_url)
+        geo_data = geo_resp.json()
+
+    results = geo_data.get("results", [])
+    if not results:
+        return f"meteo per {destination} non disponibile"
+
+    lat      = results[0]["latitude"]
+    lon      = results[0]["longitude"]
+    loc_name = results[0].get("name", destination)
+
+    # Previsioni (≤14 gg) o dati storici anno precedente
+    if days_ahead <= 14:
+        weather_url = (
+            f"https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lon}"
+            f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
+            f"&start_date={start_date}&end_date={end_date}&timezone=auto"
+        )
+    else:
+        ly_start = sd.replace(year=sd.year - 1)
+        ly_end   = ed.replace(year=ed.year - 1)
+        weather_url = (
+            f"https://archive-api.open-meteo.com/v1/archive"
+            f"?latitude={lat}&longitude={lon}"
+            f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
+            f"&start_date={ly_start}&end_date={ly_end}&timezone=auto"
+        )
+
+    async with _httpx.AsyncClient(timeout=10) as http:
+        w_resp = await http.get(weather_url)
+        w_data = w_resp.json()
+
+    daily     = w_data.get("daily", {})
+    t_max     = [t for t in (daily.get("temperature_2m_max") or []) if t is not None]
+    t_min     = [t for t in (daily.get("temperature_2m_min") or []) if t is not None]
+    precip    = [p for p in (daily.get("precipitation_sum")  or []) if p is not None]
+
+    if t_max and t_min:
+        avg_max   = round(sum(t_max) / len(t_max), 1)
+        avg_min   = round(sum(t_min) / len(t_min), 1)
+        avg_prec  = round(sum(precip) / len(precip), 1) if precip else 0
+        rain_str  = (" con piogge frequenti" if avg_prec > 5
+                     else " generalmente asciutto" if avg_prec < 1 else "")
+        return f"{loc_name}: {avg_min}–{avg_max}°C{rain_str}"
+    return f"meteo per {loc_name} non disponibile"
+
+
+@app.post("/api/travel/plan")
+async def create_travel_plan(
+    body:         TravelPlanRequest,
+    db:           AsyncSession = Depends(get_db),
+    current_user: User         = Depends(get_current_user),
+):
+    """Genera un piano valigia con outfit basati su meteo e guardaroba."""
+    _check_and_increment_travel_quota(current_user)
+
+    # Carica guardaroba
+    result   = await db.execute(select(Garment).where(Garment.user_id == current_user.id))
+    garments = [garment_to_dict(g) for g in result.scalars().all()]
+
+    # Meteo
+    weather_summary = ""
+    try:
+        weather_summary = await _fetch_travel_weather(body.destination, body.start_date, body.end_date)
+    except Exception as e:
+        print(f"[travel] weather fetch failed: {e}")
+        weather_summary = f"clima stimato per {body.destination}"
+
+    # Componi prompt
+    all_garments_str = "\n".join(
+        f"- [{g['id']}] {g.get('category','?')} | {g.get('color_primary','?')} | {', '.join(g.get('season_tags') or []) or '?'}"
+        for g in garments
+    )
+    preferred = [g for g in garments if g['id'] in body.preferred_ids]
+    preferred_str = "\n".join(
+        f"- [{g['id']}] {g.get('category','?')} | {g.get('color_primary','?')}"
+        for g in preferred
+    ) or ("Nessuna preferenza specificata." if body.language != 'en' else "No preferences specified.")
+
+    days = (
+        (datetime.strptime(body.end_date, "%Y-%m-%d") - datetime.strptime(body.start_date, "%Y-%m-%d")).days + 1
+    )
+
+    if body.language == 'en':
+        prompt = (
+            f"You are a professional stylist creating a travel packing plan.\n"
+            f"Destination: {body.destination}\n"
+            f"Dates: {body.start_date} to {body.end_date} ({days} days)\n"
+            f"Weather: {weather_summary}\n\n"
+            f"User wardrobe:\n{all_garments_str}\n\n"
+            f"User's preferred items:\n{preferred_str}\n\n"
+            f"Create a complete travel plan:\n"
+            f"1. Brief intro (2-3 sentences on destination and weather)\n"
+            f"2. 3-4 outfit combinations using ONLY garment IDs from the wardrobe list above. "
+            f"Format each outfit exactly as:\n"
+            f"<OUTFIT>{{\"ids\":[id1,id2,...],\"name\":\"outfit name\","
+            f"\"occasion\":\"when to wear it\",\"notes\":\"styling tip\"}}</OUTFIT>\n"
+            f"Use exact integer IDs. Each outfit must be appropriate for the weather."
+        )
+    else:
+        prompt = (
+            f"Sei uno stylist professionista che crea un piano valigia per un viaggio.\n"
+            f"Destinazione: {body.destination}\n"
+            f"Date: dal {body.start_date} al {body.end_date} ({days} giorni)\n"
+            f"Meteo previsto: {weather_summary}\n\n"
+            f"Guardaroba dell'utente:\n{all_garments_str}\n\n"
+            f"Capi preferiti da portare:\n{preferred_str}\n\n"
+            f"Crea un piano viaggio completo:\n"
+            f"1. Breve introduzione (2-3 frasi sulla destinazione e il meteo)\n"
+            f"2. 3-4 outfit usando SOLO ID capi dal guardaroba sopra. "
+            f"Formatta ogni outfit esattamente così:\n"
+            f"<OUTFIT>{{\"ids\":[id1,id2,...],\"name\":\"nome outfit\","
+            f"\"occasion\":\"quando indossarlo\",\"notes\":\"consiglio styling\"}}</OUTFIT>\n"
+            f"Usa gli ID interi esatti. Ogni outfit deve essere adatto al meteo."
+        )
+
+    # Chiamata AI
+    from ai_service import client_stylist, TEXT_MODEL
+    try:
+        response = await client_stylist.chat.completions.create(
+            model=TEXT_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=900,
+            temperature=0.7,
+        )
+        full_text = response.choices[0].message.content or ""
+    except Exception as e:
+        raise HTTPException(500, f"Errore AI: {str(e)}")
+
+    # Parsa outfit
+    outfit_matches = list(_re.finditer(r"<OUTFIT>([\s\S]*?)</OUTFIT>", full_text))
+    outfits = []
+    for m in outfit_matches:
+        try:
+            outfits.append(json.loads(m.group(1).strip()))
+        except Exception:
+            pass
+    description = _re.sub(r"<OUTFIT>[\s\S]*?</OUTFIT>", "", full_text).strip()
+
+    await db.commit()
+
+    return {
+        "destination": body.destination,
+        "start_date":  body.start_date,
+        "end_date":    body.end_date,
+        "days":        days,
+        "weather":     weather_summary,
+        "description": description,
+        "outfits":     outfits,
+    }

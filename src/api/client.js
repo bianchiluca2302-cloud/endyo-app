@@ -406,3 +406,13 @@ export const deleteBrandPost = (postId) =>
 // Endpoint pubblico — nessun token richiesto
 export const getAdBrands = () =>
   fetch(`${BASE_URL}/ads/brand`).then(r => r.json())
+
+// ── Viaggio ───────────────────────────────────────────────────────────────────
+export const fetchTravelPlan = ({ destination, startDate, endDate, preferredIds = [], language = 'it' }) =>
+  api.post('/api/travel/plan', {
+    destination,
+    start_date:    startDate,
+    end_date:      endDate,
+    preferred_ids: preferredIds,
+    language,
+  }).then(r => r.data)

@@ -48,6 +48,11 @@ class User(Base):
     upload_week_count        = Column(Integer,   default=0,      nullable=False, server_default='0')
     upload_week_reset_at     = Column(DateTime(timezone=True), nullable=True)
     upload_extra             = Column(Integer,   default=0,      nullable=False, server_default='0')  # crediti extra acquistati
+    # ── Quota Viaggio ──────────────────────────────────────────────────────────
+    travel_month_count       = Column(Integer,   default=0,      nullable=False, server_default='0')
+    travel_month_reset_at    = Column(DateTime(timezone=True), nullable=True)
+    travel_week_count        = Column(Integer,   default=0,      nullable=False, server_default='0')
+    travel_week_reset_at     = Column(DateTime(timezone=True), nullable=True)
 
     # ── Google OAuth ───────────────────────────────────────────────────────────
     google_linked        = Column(Boolean, default=False, nullable=False, server_default='false')  # account collegato a Google

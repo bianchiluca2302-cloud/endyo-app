@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
-import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus } from '../api/client'
+import useAuthStore from '../store/authStore'
+import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus, fetchTravelPlan } from '../api/client'
 import { useCategoryLabels, useT, useTagTranslator } from '../i18n'
 import MobileGarmentSheet from './MobileGarmentSheet'
 
@@ -826,6 +827,274 @@ function AnalisiTab() {
   )
 }
 
+/* ── Travel Tab ──────────────────────────────────────────────────────────────── */
+function TravelTab() {
+  const garments  = useWardrobeStore(s => s.garments)
+  const language  = useSettingsStore(s => s.language) || 'it'
+  const user      = useAuthStore(s => s.user)
+  const plan      = user?.plan || 'free'
+  const isPremium = plan !== 'free'
+
+  const today = new Date().toISOString().slice(0, 10)
+  const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+
+  const [destination,  setDestination]  = useState('')
+  const [startDate,    setStartDate]    = useState(today)
+  const [endDate,      setEndDate]      = useState(nextWeek)
+  const [preferredIds, setPreferredIds] = useState([])
+  const [showPicker,   setShowPicker]   = useState(false)
+  const [loading,      setLoading]      = useState(false)
+  const [result,       setResult]       = useState(null)
+  const [error,        setError]        = useState(null)
+
+  const il = language === 'en'
+
+  const togglePreferred = (id) =>
+    setPreferredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const generate = async () => {
+    if (!destination.trim()) return
+    setLoading(true); setError(null); setResult(null)
+    try {
+      const data = await fetchTravelPlan({ destination: destination.trim(), startDate, endDate, preferredIds, language })
+      setResult(data)
+    } catch (e) {
+      const msg = e.response?.data?.detail || (il ? 'Error generating travel plan.' : 'Errore nella generazione del piano viaggio.')
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getById = (id) => garments.find(g => g.id === id)
+
+  const inputStyle = {
+    width: '100%', padding: '12px 14px', borderRadius: 12,
+    background: 'var(--card)', border: '1px solid var(--border)',
+    color: 'var(--text)', fontSize: 15, outline: 'none',
+    WebkitAppearance: 'none', boxSizing: 'border-box',
+  }
+
+  if (!isPremium) {
+    return (
+      <div style={{ padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+        <div style={{ fontSize: 48 }}>✈️</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
+          {il ? 'Travel Planner' : 'Piano Viaggio'}
+        </div>
+        <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 280 }}>
+          {il
+            ? 'Get AI-generated packing lists and outfit plans based on real weather forecasts for your destination.'
+            : 'Ottieni liste valigia e piani outfit generati dall\'AI basati sulle previsioni meteo reali per la tua destinazione.'}
+        </div>
+        <div style={{
+          padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+          fontSize: 13, color: 'var(--text-muted)',
+        }}>
+          {il ? '🔒 Available for Premium and Premium Plus subscribers.' : '🔒 Disponibile per gli abbonati Premium e Premium Plus.'}
+        </div>
+        <a href="#/premium" style={{
+          display: 'inline-block', padding: '12px 28px', borderRadius: 14,
+          background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 15,
+          textDecoration: 'none',
+        }}>
+          {il ? 'Upgrade to Premium' : 'Passa a Premium'}
+        </a>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '16px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+            {il ? 'Destination' : 'Destinazione'}
+          </label>
+          <input
+            value={destination}
+            onChange={e => setDestination(e.target.value)}
+            placeholder={il ? 'e.g. Paris, Tokyo, Barcelona…' : 'es. Parigi, Tokyo, Barcelona…'}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+              {il ? 'From' : 'Dal'}
+            </label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              style={{ ...inputStyle, fontSize: 14 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+              {il ? 'To' : 'Al'}
+            </label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+              style={{ ...inputStyle, fontSize: 14 }} />
+          </div>
+        </div>
+
+        {/* Optional garment picker */}
+        <div>
+          <button
+            onClick={() => setShowPicker(p => !p)}
+            style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 12, padding: '10px 14px', width: '100%',
+              textAlign: 'left', cursor: 'pointer', color: 'var(--text-muted)',
+              fontSize: 13, fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <span>
+              {il ? 'Preferred items' : 'Capi preferiti'}
+              {preferredIds.length > 0 && <span style={{ color: 'var(--primary)', marginLeft: 6 }}>({preferredIds.length})</span>}
+            </span>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
+              <path d={showPicker ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}/>
+            </svg>
+          </button>
+          {showPicker && (
+            <div style={{
+              marginTop: 8, padding: 10, background: 'var(--card)', borderRadius: 12,
+              border: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto',
+            }}>
+              {garments.length === 0
+                ? <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{il ? 'No garments in wardrobe.' : 'Nessun capo nel guardaroba.'}</span>
+                : garments.map(g => {
+                  const sel = preferredIds.includes(g.id)
+                  return (
+                    <button key={g.id} onClick={() => togglePreferred(g.id)} style={{
+                      padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                      background: sel ? 'var(--primary)' : 'var(--bg)',
+                      color: sel ? '#fff' : 'var(--text-muted)',
+                      border: `1px solid ${sel ? 'transparent' : 'var(--border)'}`,
+                    }}>
+                      {g.name || g.category}
+                    </button>
+                  )
+                })
+              }
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={generate}
+          disabled={loading || !destination.trim()}
+          style={{
+            padding: '14px', borderRadius: 14, fontWeight: 700, fontSize: 15,
+            background: destination.trim() ? 'var(--primary)' : 'var(--card)',
+            color: destination.trim() ? '#fff' : 'var(--text-dim)',
+            border: 'none', cursor: destination.trim() ? 'pointer' : 'not-allowed',
+            WebkitTapHighlightColor: 'transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          {loading
+            ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'glassSpinnerSpin 0.8s linear infinite' }} />{il ? 'Generating…' : 'Generazione…'}</>
+            : <>{il ? '✈️ Generate plan' : '✈️ Genera piano'}</>
+          }
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div style={{
+          padding: '12px 14px', borderRadius: 12,
+          background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
+          fontSize: 13, color: '#fca5a5',
+        }}>
+          {error}
+        </div>
+      )}
+
+      {/* Results */}
+      {result && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'slideUp 0.38s ease backwards' }}>
+          {/* Header card */}
+          <div style={{
+            padding: '16px', borderRadius: 16,
+            background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 22 }}>✈️</span>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{result.destination}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{result.start_date} → {result.end_date} · {result.days} {il ? 'days' : 'giorni'}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
+              <span>🌡️</span>
+              <span>{result.weather}</span>
+            </div>
+          </div>
+
+          {/* AI description */}
+          {result.description && (
+            <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, padding: '0 2px' }}>
+              {result.description}
+            </div>
+          )}
+
+          {/* Outfit cards */}
+          {result.outfits.map((outfit, i) => (
+            <div key={i} style={{
+              padding: '14px', borderRadius: 16,
+              background: 'var(--card)', border: '1px solid var(--border)',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 2 }}>
+                {outfit.name}
+              </div>
+              {outfit.occasion && (
+                <div style={{ fontSize: 12, color: 'var(--primary-light)', marginBottom: 10, fontWeight: 600 }}>
+                  {outfit.occasion}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: outfit.notes ? 10 : 0 }}>
+                {(outfit.ids || []).map(id => {
+                  const g = getById(id)
+                  return g ? (
+                    <div key={id} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      width: 60,
+                    }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: 10,
+                        background: 'var(--bg)', border: '1px solid var(--border)',
+                        overflow: 'hidden', flexShrink: 0,
+                      }}>
+                        {g.photo_front
+                          ? <img src={imgUrl(g.photo_front)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👕</div>
+                        }
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word', maxWidth: 60 }}>
+                        {g.name || g.category}
+                      </div>
+                    </div>
+                  ) : null
+                })}
+              </div>
+              {outfit.notes && (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
+                  {outfit.notes}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Main component ──────────────────────────────────────────────────────────── */
 export default function MobileWardrobe() {
   const garments        = useWardrobeStore(s => s.garments)
@@ -841,7 +1110,7 @@ export default function MobileWardrobe() {
   const [activeCat,     setActiveCat]     = useState('')
   const [showSearch,    setShowSearch]    = useState(false)
   const [selected,      setSelected]      = useState(null)
-  const [activeTab,     setActiveTab]     = useState('armadio') // 'armadio' | 'shopping' | 'analisi'
+  const [activeTab,     setActiveTab]     = useState('armadio') // 'armadio' | 'shopping' | 'viaggio' | 'analisi'
   const [betaDismissed, setBetaDismissed] = useState(() => !!localStorage.getItem('endyo_beta_dismissed'))
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
 
@@ -966,6 +1235,9 @@ export default function MobileWardrobe() {
           <button style={tabStyle(activeTab === 'shopping')} onClick={() => handleTabSwitch('shopping')}>
             Shopping
           </button>
+          <button style={tabStyle(activeTab === 'viaggio')} onClick={() => handleTabSwitch('viaggio')}>
+            {language === 'en' ? 'Travel' : 'Viaggio'}
+          </button>
           <button style={tabStyle(activeTab === 'analisi')} onClick={() => handleTabSwitch('analisi')}>
             {language === 'en' ? 'Analysis' : 'Analisi'}
           </button>
@@ -1040,6 +1312,13 @@ export default function MobileWardrobe() {
       {activeTab === 'shopping' && (
         <div style={{ animation: 'slideUp 0.38s ease backwards', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
           <ShoppingTab busyRef={shoppingBusyRef} />
+        </div>
+      )}
+
+      {/* ── Viaggio tab ────────────────────────────────────────────────────────── */}
+      {activeTab === 'viaggio' && (
+        <div style={{ animation: 'slideUp 0.38s ease backwards' }}>
+          <TravelTab />
         </div>
       )}
 

@@ -133,6 +133,11 @@ _MIGRATIONS = [
     ("brands",       "updated_at",            "TIMESTAMP WITH TIME ZONE"),
     # Memoria persistente stylist AI
     ("user_profile", "stylist_memory",        "TEXT"),
+    # Quota Viaggio
+    ("users", "travel_month_count",           "INTEGER DEFAULT 0"),
+    ("users", "travel_month_reset_at",        "TIMESTAMP WITH TIME ZONE"),
+    ("users", "travel_week_count",            "INTEGER DEFAULT 0"),
+    ("users", "travel_week_reset_at",         "TIMESTAMP WITH TIME ZONE"),
 ]
 
 
