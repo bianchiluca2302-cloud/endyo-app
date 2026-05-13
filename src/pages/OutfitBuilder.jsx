@@ -1970,21 +1970,18 @@ export default function OutfitBuilder() {
         )}
 
         {/* ── Tab Stylist (solo mobile) ────────────────────────────────────── */}
-        {/* Rendiamo l'overlay dentro il React tree (senza portal) così rimane
-            nello stesso stacking context del MobileTabBar (z-index:500) e
-            il tab bar resta visibile sopra l'overlay (z-index:499).
-            position:fixed non viene clippato da overflow:hidden degli antenati
-            perché nessuno di essi ha transform/filter/perspective. */}
+        {/* bottom = 108px + safe-area: tab bar (58px a bottom:50) + ad banner (50px a bottom:0).
+            L'overlay termina esattamente sopra il tab bar — nessun problema di z-index. */}
         {isMobile && tab === 'stylist' && (
           <div style={{
             position: 'fixed',
             top: tabsBottom ? `${tabsBottom}px` : '160px',
-            left: 0, right: 0, bottom: 0,
+            left: 0, right: 0,
+            bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
             zIndex: 499,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
             background: 'var(--bg)',
-            paddingBottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
           }}>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <StylistChat
