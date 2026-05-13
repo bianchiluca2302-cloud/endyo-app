@@ -1636,7 +1636,7 @@ export default function OutfitBuilder() {
       {!isMobile && <PageTutorial pageId="outfits" steps={OUTFIT_TOUR} />}
 
       {/* ── Left: selettore capi ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? ((tab === 'builder' || tab === 'mixer') ? 'calc(176px + env(safe-area-inset-bottom, 0px))' : 'calc(108px + env(safe-area-inset-bottom, 0px))') : 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? ((tab === 'builder' || tab === 'mixer') ? 'calc(126px + env(safe-area-inset-bottom, 0px))' : 'calc(58px + env(safe-area-inset-bottom, 0px))') : 0 }}>
 
         {/* ── Mobile: unified header (title + meteo + tabs) come MobileWardrobe ── */}
         {isMobile && (
@@ -1977,7 +1977,7 @@ export default function OutfitBuilder() {
             position: 'fixed',
             top: tabsBottom ? `${tabsBottom}px` : '160px',
             left: 0, right: 0,
-            bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))',
+            bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))',
             zIndex: 499,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
@@ -2235,7 +2235,7 @@ export default function OutfitBuilder() {
       {/* ── Mobile: compact save bar at bottom ───────────────────────────── */}
       {isMobile && (tab === 'builder' || tab === 'mixer') && (
         <div style={{
-          position: 'fixed', bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
+          position: 'fixed', bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
           borderTop: '1px solid var(--border)',
           background: 'var(--surface)',
           padding: '10px 14px',

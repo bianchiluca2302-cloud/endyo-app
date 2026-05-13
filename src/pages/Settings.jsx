@@ -924,7 +924,7 @@ export default function Settings() {
     <div style={{
       height: '100%', overflow: 'auto',
       padding: isMobile ? '20px 16px' : '28px 32px',
-      paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom, 0px) + 130px)' : '60px',
+      paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom, 0px) + 80px)' : '60px',
       maxWidth: 760, margin: '0 auto',
       animation: 'slideUp 0.32s ease backwards',
     }}>

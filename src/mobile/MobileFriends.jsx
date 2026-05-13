@@ -678,7 +678,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
       </div>
 
       {/* ── Corpo scrollabile ── */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
 
         {/* Header profilo */}
         <div style={{ padding: '20px 16px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -1572,7 +1572,7 @@ export default function MobileFriends() {
 
         {/* ── FEED ── */}
         {tab === 'feed' && (
-          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+          <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {loading && posts.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
@@ -1654,7 +1654,7 @@ export default function MobileFriends() {
 
         {/* ── I MIEI POST ── */}
         {tab === 'myposts' && (
-          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             <MyPostsTab
               user={user}
               onCreatePost={() => setShowCreate(true)}
@@ -1666,7 +1666,7 @@ export default function MobileFriends() {
 
         {/* ── NOTIFICHE ── */}
         {tab === 'notifiche' && (
-          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)' }}>
+          <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {notifLoading ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />

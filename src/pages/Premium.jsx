@@ -758,7 +758,7 @@ export default function Premium() {
     <div style={{
       maxWidth: 860, margin: '0 auto',
       padding: isMobile ? '16px 16px' : '32px 24px 60px',
-      paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom, 0px) + 140px)' : '60px',
+      paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom, 0px) + 90px)' : '60px',
       animation: 'slideUp 0.32s ease backwards',
     }}>
 

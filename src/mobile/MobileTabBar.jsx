@@ -108,7 +108,7 @@ export default function MobileTabBar() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 50, left: 0, right: 0,
+      position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'calc(58px + env(safe-area-inset-bottom, 0px))',
       background: 'var(--surface)',
       backdropFilter: 'blur(28px)',

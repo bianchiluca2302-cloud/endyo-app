@@ -1013,7 +1013,7 @@ export default function Profile() {
     <div style={{
       padding: isMobile ? '20px 16px' : '32px 40px 60px',
       paddingBottom: isMobile
-        ? 'calc(env(safe-area-inset-bottom, 0px) + 130px)'
+        ? 'calc(env(safe-area-inset-bottom, 0px) + 80px)'
         : '60px',
       ...(isMobile ? { animation: 'slideUp 0.38s ease backwards' } : {}),
     }}>
