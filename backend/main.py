@@ -200,6 +200,13 @@ async def brand_portal_redirect():
     return RedirectResponse(url="/portal/brand.html")
 
 
+@app.get("/portal")
+@app.get("/portal/")
+async def portal_root_redirect():
+    """Redirect /portal/ → /portal/index.html (PWA start_url fallback)."""
+    return RedirectResponse(url="/portal/index.html", status_code=301)
+
+
 # ── Landing page pubblica ─────────────────────────────────────────────────────
 _LANDING_PATH = Path(__file__).parent / "landing.html"
 
