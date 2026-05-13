@@ -141,7 +141,10 @@ export default function MobileGarmentSheet({ garment, onClose }) {
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = ''
-      if (main) { main.style.overflow = ''; main.scrollTop = savedTop }
+      if (main) {
+        main.style.overflow = 'auto'   // explicit restore — empty string leaves it unstyled
+        requestAnimationFrame(() => { main.scrollTop = savedTop })
+      }
     }
   }, [])
 

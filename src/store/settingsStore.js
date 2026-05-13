@@ -143,6 +143,7 @@ const DEFAULTS = {
   showPrices:         true,
   compactCards:       false,
   autoRemoveBg:       true,
+  wardrobeSortOrder:  'date_desc', // date_desc | date_asc | name_asc | color_asc | brand_asc
 }
 
 const useSettingsStore = create(

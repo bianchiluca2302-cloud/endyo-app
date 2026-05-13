@@ -1350,7 +1350,7 @@ export default function MobileFriends() {
   const garments = useWardrobeStore(s => s.garments)
   const language = useSettingsStore(s => s.language) || 'it'
 
-  const [tab,                    setTab]                    = useState('feed')   // 'feed' | 'myposts'
+  const [tab,                    setTab]                    = useState(() => { try { return sessionStorage.getItem('mf_tab') || 'feed' } catch { return 'feed' } })   // 'feed' | 'myposts'
   const [posts,                  setPosts]                  = useState([])
   const [loading,                setLoading]                = useState(true)
   const [showSearch,             setShowSearch]             = useState(false)
@@ -1400,6 +1400,8 @@ export default function MobileFriends() {
     } catch { /* ignore */ }
     finally { setLoading(false) }
   }, [])
+
+  useEffect(() => { try { sessionStorage.setItem('mf_tab', tab) } catch {} }, [tab])
 
   useEffect(() => {
     if (tab === 'feed') loadFeed(1)

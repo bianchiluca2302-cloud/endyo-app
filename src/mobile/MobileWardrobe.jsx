@@ -1103,21 +1103,40 @@ export default function MobileWardrobe() {
 
   const language      = useSettingsStore(s => s.language) || 'it'
   const compactCards  = useSettingsStore(s => s.compactCards)
+  const wardrobeSortOrder  = useSettingsStore(s => s.wardrobeSortOrder || 'date_desc')
+  const updateSetting      = useSettingsStore(s => s.updateSetting)
 
   const [search,        setSearch]        = useState('')
   const [activeCat,     setActiveCat]     = useState('')
   const [showSearch,    setShowSearch]    = useState(false)
+  const [showSort,      setShowSort]      = useState(false)
   const [selected,      setSelected]      = useState(null)
-  const [activeTab,     setActiveTab]     = useState('armadio') // 'armadio' | 'shopping' | 'viaggio' | 'analisi'
+  const [activeTab,     setActiveTab]     = useState(() => { try { return sessionStorage.getItem('mw_tab') || 'armadio' } catch { return 'armadio' } })
   const [betaDismissed, setBetaDismissed] = useState(() => !!localStorage.getItem('endyo_beta_dismissed'))
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
 
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
+  useEffect(() => { try { sessionStorage.setItem('mw_tab', activeTab) } catch {} }, [activeTab])
 
   const handleTabSwitch = (tab) => {
     if (shoppingBusyRef.current && activeTab === 'shopping' && tab !== 'shopping') return
     setActiveTab(tab)
   }
+
+  /* Sort options */
+  const SORT_OPTIONS = language === 'en' ? [
+    { id: 'date_desc', label: 'Newest first' },
+    { id: 'date_asc',  label: 'Oldest first' },
+    { id: 'name_asc',  label: 'Name A→Z'     },
+    { id: 'color_asc', label: 'Color'         },
+    { id: 'brand_asc', label: 'Brand A→Z'    },
+  ] : [
+    { id: 'date_desc', label: 'Più recenti'   },
+    { id: 'date_asc',  label: 'Più vecchi'    },
+    { id: 'name_asc',  label: 'Nome A→Z'      },
+    { id: 'color_asc', label: 'Colore'        },
+    { id: 'brand_asc', label: 'Brand A→Z'     },
+  ]
 
   /* Categories derived from actual garments */
   const categories = useMemo(
@@ -1125,7 +1144,7 @@ export default function MobileWardrobe() {
     [garments]
   )
 
-  /* Filter */
+  /* Filter + Sort */
   const filtered = useMemo(() => {
     let list = garments
     if (activeCat) list = list.filter(g => g.category === activeCat)
@@ -1137,8 +1156,16 @@ export default function MobileWardrobe() {
         (g.color_primary || '').toLowerCase().includes(q)
       )
     }
+    list = [...list]
+    switch (wardrobeSortOrder) {
+      case 'date_asc':  list.sort((a, b) => (a.id || 0) - (b.id || 0)); break
+      case 'name_asc':  list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break
+      case 'color_asc': list.sort((a, b) => (a.color_primary || '').localeCompare(b.color_primary || '')); break
+      case 'brand_asc': list.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break
+      default:          list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
+    }
     return list
-  }, [garments, activeCat, search])
+  }, [garments, activeCat, search, wardrobeSortOrder])
 
   /* Chip style */
   const chipStyle = (active) => ({
@@ -1165,9 +1192,17 @@ export default function MobileWardrobe() {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
 
+      {/* Sort popover backdrop */}
+      {showSort && (
+        <div
+          onClick={() => setShowSort(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 150 }}
+        />
+      )}
+
       {/* ── Sticky header ──────────────────────────────────────────────────────── */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 100,
+        position: 'sticky', top: 0, zIndex: 160,
         background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         paddingTop: 16,
@@ -1189,19 +1224,72 @@ export default function MobileWardrobe() {
             )}
           </div>
           {activeTab === 'armadio' && (
-            <button
-              onClick={() => { setShowSearch(s => !s); if (showSearch) setSearch('') }}
-              style={{
-                width: 38, height: 38, borderRadius: '50%',
-                background: showSearch ? 'var(--primary-dim)' : 'var(--card)',
-                border: `1px solid ${showSearch ? 'var(--primary-border)' : 'var(--border)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: showSearch ? 'var(--primary-light)' : 'var(--text-muted)',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              {showSearch ? <CloseIcon /> : <SearchIcon />}
-            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {/* Sort button */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowSort(s => !s)}
+                  style={{
+                    width: 38, height: 38, borderRadius: '50%',
+                    background: showSort || wardrobeSortOrder !== 'date_desc' ? 'var(--primary-dim)' : 'var(--card)',
+                    border: `1px solid ${showSort || wardrobeSortOrder !== 'date_desc' ? 'var(--primary-border)' : 'var(--border)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: showSort || wardrobeSortOrder !== 'date_desc' ? 'var(--primary-light)' : 'var(--text-muted)',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M7 12h10M11 18h2"/>
+                  </svg>
+                </button>
+                {showSort && (
+                  <div style={{
+                    position: 'absolute', top: 44, right: 0, zIndex: 200,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 14, overflow: 'hidden',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                    minWidth: 170,
+                  }}>
+                    {SORT_OPTIONS.map((opt, i) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => { updateSetting('wardrobeSortOrder', opt.id); setShowSort(false) }}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', padding: '12px 16px', textAlign: 'left',
+                          background: wardrobeSortOrder === opt.id ? 'var(--primary-dim)' : 'transparent',
+                          color: wardrobeSortOrder === opt.id ? 'var(--primary-light)' : 'var(--text)',
+                          fontSize: 13.5, fontWeight: wardrobeSortOrder === opt.id ? 700 : 500,
+                          borderBottom: i < SORT_OPTIONS.length - 1 ? '1px solid var(--border)' : 'none',
+                          cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        {opt.label}
+                        {wardrobeSortOrder === opt.id && (
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6 9 17l-5-5"/>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Search button */}
+              <button
+                onClick={() => { setShowSearch(s => !s); if (showSearch) setSearch(''); setShowSort(false) }}
+                style={{
+                  width: 38, height: 38, borderRadius: '50%',
+                  background: showSearch ? 'var(--primary-dim)' : 'var(--card)',
+                  border: `1px solid ${showSearch ? 'var(--primary-border)' : 'var(--border)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: showSearch ? 'var(--primary-light)' : 'var(--text-muted)',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {showSearch ? <CloseIcon /> : <SearchIcon />}
+              </button>
+            </div>
           )}
         </div>
 
