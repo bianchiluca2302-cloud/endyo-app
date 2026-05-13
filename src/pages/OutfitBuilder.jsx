@@ -678,6 +678,207 @@ const SUGGESTIONS = {
   en: ['Create a casual look for today', 'What to wear for a dinner?', 'How do I style the selected items?', 'Weekend look'],
 }
 
+// ── StylistWizard — mobile questionnaire flow (replace chat with structured Q&A) ──
+function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
+  const garments = useWardrobeStore(s => s.garments)
+  const language = useSettingsStore(s => s.language) || 'it'
+  const shownIdsRef = useRef([])
+
+  const Q = language === 'en' ? [
+    { id: 'work',    label: 'Work',    emoji: '🏢', sub: 'What environment?',     subs: ['Formal', 'Smart casual', 'Creative/startup'] },
+    { id: 'casual',  label: 'Casual',  emoji: '👟', sub: 'Where are you going?',  subs: ['City', 'At a friend\'s', 'Shopping', 'Weekend trip'] },
+    { id: 'evening', label: 'Evening', emoji: '🌙', sub: 'What kind of evening?', subs: ['Romantic dinner', 'Night out', 'Event/cocktail'] },
+    { id: 'sport',   label: 'Sport',   emoji: '🏃', sub: 'What activity?',        subs: ['Gym', 'Running', 'Outdoor', 'Yoga/pilates'] },
+    { id: 'travel',  label: 'Travel',  emoji: '✈️', sub: 'What climate?',         subs: ['Hot', 'Mild/spring', 'Cold/autumn'] },
+  ] : [
+    { id: 'lavoro',  label: 'Lavoro',  emoji: '🏢', sub: 'Che ambiente?',         subs: ['Formale', 'Smart casual', 'Creativo'] },
+    { id: 'casual',  label: 'Casual',  emoji: '👟', sub: 'Dove andrai?',          subs: ['In città', 'A casa di amici', 'Shopping', 'Weekend'] },
+    { id: 'serata',  label: 'Serata',  emoji: '🌙', sub: 'Che tipo di serata?',   subs: ['Cena romantica', 'Uscita amici', 'Evento/cocktail'] },
+    { id: 'sport',   label: 'Sport',   emoji: '🏃', sub: 'Che attività?',         subs: ['Palestra', 'Running', 'All\'aperto', 'Yoga'] },
+    { id: 'viaggio', label: 'Viaggio', emoji: '✈️', sub: 'Che clima prevedi?',    subs: ['Caldo', 'Mite/primaverile', 'Freddo/autunnale'] },
+  ]
+
+  const [step,          setStep]          = useState(0) // 0=occasion 1=sub 2=loading 3=results
+  const [occasion,      setOccasion]      = useState(null)
+  const [streamText,    setStreamText]    = useState('')
+  const [resultText,    setResultText]    = useState('')
+  const [resultOutfits, setResultOutfits] = useState([])
+  const [resultError,   setResultError]   = useState(null)
+
+  const hasSelection = selectedGarments.length > 0
+  const occ = Q.find(o => o.id === occasion)
+  const getById = id => garments.find(g => g.id === id)
+
+  const generate = async (occLabel, subLabel) => {
+    setStep(2); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
+
+    const gDesc = hasSelection ? selectedGarments.map(g => g.name).join(', ') : null
+    const shownNote = shownIdsRef.current.length
+      ? (language === 'en'
+          ? ` Exclude garment-IDs already shown: [${shownIdsRef.current.join(', ')}].`
+          : ` Escludi le combinazioni con ID già proposti: [${shownIdsRef.current.join(', ')}].`)
+      : ''
+    const weatherNote = weather ? (language === 'en' ? ` Weather: ${weather}.` : ` Meteo: ${weather}.`) : ''
+
+    const prompt = language === 'en'
+      ? gDesc
+        ? `Selected: ${gDesc}. Occasion: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Give EXACTLY 3 outfit options using my selected garments, then 1 "substitute" variant replacing one garment with another from my wardrobe. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
+        : `Occasion: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Browse my wardrobe and give EXACTLY 3 complete outfits, then 1 "substitute" variant. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
+      : gDesc
+        ? `Selezionati: ${gDesc}. Occasione: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Proponi ESATTAMENTE 3 outfit con i capi selezionati, poi 1 variante "sostitutiva" scambiando un capo con un altro del mio armadio. Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
+        : `Occasione: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Sfoglia il mio armadio e proponi ESATTAMENTE 3 outfit completi, poi 1 variante "sostitutiva". Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
+
+    let acc = ''
+    await chatWithStylistStream({
+      message: prompt, history: [], language, weather, occasion: occLabel,
+      onToken: tok => { acc += tok; setStreamText(acc) },
+      onDone: () => {
+        const matches = [...acc.matchAll(/<OUTFIT>([\s\S]*?)<\/OUTFIT>/g)]
+        const outfits = matches.flatMap(m => { try { return [JSON.parse(m[1])] } catch { return [] } })
+        outfits.forEach(o => { if (o.ids) shownIdsRef.current = [...new Set([...shownIdsRef.current, ...o.ids])] })
+        setResultText(acc.replace(/<OUTFIT>[\s\S]*?<\/OUTFIT>/g, '').replace(/<BRAND_PRODUCTS>[\s\S]*?<\/BRAND_PRODUCTS>/g, '').trim())
+        setResultOutfits(outfits)
+        setStep(3)
+      },
+      onError: err => { setResultError(err); setStep(3) },
+    })
+  }
+
+  const reset = () => { setStep(0); setOccasion(null) }
+
+  const cardBtn = {
+    border: 'none', background: 'transparent', cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  }
+
+  /* ── Step 0: Occasion ── */
+  if (step === 0) return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      {hasSelection && (
+        <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 13, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <IconSparkle size={14} />
+          {language === 'en' ? `${selectedGarments.length} garment${selectedGarments.length !== 1 ? 's' : ''} selected` : `${selectedGarments.length} capo/i selezionati`}
+        </div>
+      )}
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>
+        {language === 'en' ? 'What\'s the occasion?' : 'Per quale occasione?'}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16 }}>
+        {language === 'en' ? 'I\'ll find the perfect outfit for you.' : 'Troverò l\'outfit perfetto per te.'}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {Q.map(o => (
+          <button key={o.id} onClick={() => { setOccasion(o.id); setStep(1) }}
+            style={{ ...cardBtn, padding: '20px 12px', borderRadius: 16, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 28 }}>{o.emoji}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  /* ── Step 1: Sub-question ── */
+  if (step === 1 && occ) return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <button onClick={() => setStep(0)}
+        style={{ ...cardBtn, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 13, marginBottom: 16 }}>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        {occ.emoji} {occ.label}
+      </button>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{occ.sub}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {occ.subs.map(s => (
+          <button key={s} onClick={() => generate(occ.label, s)}
+            style={{ ...cardBtn, padding: '14px 18px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  /* ── Step 2: Loading ── */
+  if (step === 2) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 20 }}>
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px var(--primary-shadow)' }}>
+        <div className="spinner" style={{ width: 30, height: 30, borderWidth: 3, borderColor: 'rgba(255,255,255,0.25)', borderTopColor: '#fff' }} />
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+          {language === 'en' ? 'Crafting your outfits…' : 'Creo i tuoi outfit…'}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
+          {language === 'en' ? 'AI is browsing your wardrobe' : 'L\'AI sta sfogliando il tuo armadio'}
+        </div>
+      </div>
+    </div>
+  )
+
+  /* ── Step 3: Results ── */
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+          {language === 'en' ? 'Your outfits' : 'I tuoi outfit'}
+        </div>
+        <button onClick={reset}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
+          {language === 'en' ? 'New search' : 'Nuova ricerca'}
+        </button>
+      </div>
+      {resultError && (
+        <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, marginBottom: 12 }}>
+          ⚠ {resultError}
+        </div>
+      )}
+      {resultText && !resultOutfits.length && (
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65, padding: '12px 14px', background: 'var(--card)', borderRadius: 12, border: '1px solid var(--border)' }}>
+          <MarkdownText text={resultText} />
+        </div>
+      )}
+      {resultOutfits.map((outfit, i) => {
+        const isSubstitute = i === resultOutfits.length - 1 && resultOutfits.length > 1
+        const og = (outfit.ids || []).map(id => getById(id)).filter(Boolean)
+        return (
+          <div key={i} style={{ marginBottom: 14, borderRadius: 16, border: `1.5px solid ${isSubstitute ? 'var(--primary-border)' : 'var(--border)'}`, background: isSubstitute ? 'var(--primary-dim)' : 'var(--card)', overflow: 'hidden' }}>
+            {isSubstitute && (
+              <div style={{ padding: '7px 14px', borderBottom: '1px solid var(--primary-border)', fontSize: 11, fontWeight: 700, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <IconSparkle size={12} /> {language === 'en' ? 'Substitute suggestion' : 'Variante sostitutiva'}
+              </div>
+            )}
+            <div style={{ padding: '12px 14px' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{outfit.name || `Outfit ${i + 1}`}</div>
+              {og.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {og.map(g => (
+                    <div key={g.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                        {g.photo_front
+                          ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}><IconTshirt size={20} /></div>
+                        }
+                      </div>
+                      <span style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {outfit.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>{outfit.notes}</div>}
+              {onApplyOutfit && outfit.ids?.length > 0 && (
+                <button onClick={() => onApplyOutfit(outfit.ids, outfit.name, outfit.notes)}
+                  style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--primary), #7c3aed)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {language === 'en' ? 'Apply outfit' : 'Applica outfit'} →
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 /**
  * @param {object}   props
  * @param {Array}    props.selectedGarments  — capi selezionati nell'editor
@@ -1941,6 +2142,27 @@ export default function OutfitBuilder() {
           </div>
         )}
 
+        {/* Tab: stylist — mobile only, rendered inline (no position:fixed) so tab bar stays visible */}
+        {isMobile && tab === 'stylist' && (
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <StylistWizard
+              selectedGarments={selectedGarments}
+              weather={weather?.summary ?? null}
+              onApplyOutfit={(ids, name, notes) => {
+                const newSel = {}
+                for (const id of (ids || [])) {
+                  const g = getById(id)
+                  if (g) newSel[g.category] = g.id
+                }
+                setSelected(newSel)
+                if (name) setOutfitName(name)
+                if (notes) setCompleteNotes(notes)
+                setTab('builder')
+              }}
+            />
+          </div>
+        )}
+
         {/* Modale dettaglio outfit */}
         {detailOutfit && (
           <OutfitDetailModal
@@ -1969,42 +2191,6 @@ export default function OutfitBuilder() {
           />
         )}
 
-        {/* ── Tab Stylist (solo mobile) ────────────────────────────────────── */}
-        {/* bottom = 108px + safe-area: tab bar (58px a bottom:50) + ad banner (50px a bottom:0).
-            L'overlay termina esattamente sopra il tab bar — nessun problema di z-index. */}
-        {isMobile && tab === 'stylist' && (
-          <div style={{
-            position: 'fixed',
-            top: tabsBottom ? `${tabsBottom}px` : '160px',
-            left: 0, right: 0,
-            bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))',
-            zIndex: 499,
-            display: 'flex', flexDirection: 'column',
-            overflow: 'hidden',
-            background: 'var(--bg)',
-          }}>
-            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <StylistChat
-                selectedGarments={selectedGarments}
-                compact={false}
-                weather={weather?.summary ?? null}
-                onApplyOutfit={(ids, name, notes) => {
-                  const newSel = {}
-                  for (const id of (ids || [])) {
-                    const g = getById(id)
-                    if (g) newSel[g.category] = g.id
-                  }
-                  setSelected(newSel)
-                  if (name) setOutfitName(name)
-                  if (notes) setCompleteNotes(notes)
-                  setTab('builder')
-                }}
-                remainingQuota={null}
-                onQuotaUpdate={() => {}}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Stylist AI — barra scorrevole solo su desktop */}
         {!isMobile && (

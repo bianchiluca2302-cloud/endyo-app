@@ -135,50 +135,72 @@ export default function App() {
 
   const showBackendError = error && !loading && accessToken
 
-  // ── Spinner per non-PWA durante il bootstrap del token ────────────────────
-  // Evita che ProtectedRoute rediriga a /auth (e cambi URL) mentre aspettiamo
-  // il refresh del token. Su PWA ci pensa lo splash; qui serve per Chrome mobile.
+  // ── Spinner bootstrap (non-PWA) — vetro opaco ─────────────────────────────
   if (bootstrapping && !showSplash) {
     return (
       <div style={{
-        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 20,
         background: 'var(--bg)',
       }}>
-        <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+        <style>{`@keyframes glassSpinnerSpin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{
+          padding: '32px 40px', borderRadius: 28,
+          background: 'rgba(245,158,11,0.06)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(245,158,11,0.15)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.08)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        }}>
+          <img src={logoUrl} alt="Endyo" style={{ width: 72, height: 72, borderRadius: 18, objectFit: 'contain' }} />
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            border: '3px solid rgba(245,158,11,0.2)', borderTopColor: '#f59e0b',
+            animation: 'glassSpinnerSpin 0.8s linear infinite',
+          }} />
+        </div>
+        <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase' }}>endyo</span>
       </div>
     )
   }
 
-  // ── Splash screen amber — solo su PWA standalone, con fade-out ─────────────
+  // ── Splash screen — vetro opaco, solo PWA standalone ───────────────────────
   if (showSplash) {
     return (
       <div style={{
-        height: '100vh', width: '100vw',
+        position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #f59e0b 0%, #fffdf5 100%)',
-        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'radial-gradient(ellipse at 50% 40%, rgba(245,158,11,0.18) 0%, var(--bg) 70%)',
         opacity: splashFading ? 0 : 1,
         transition: splashFading ? 'opacity 0.4s ease' : 'none',
         pointerEvents: 'none',
       }}>
         <style>{`
-          @keyframes splashFade { 0%{opacity:0;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
+          @keyframes splashFade { 0%{opacity:0;transform:scale(0.88)} 100%{opacity:1;transform:scale(1)} }
           @keyframes splashSlide { 0%{left:-40%} 100%{left:140%} }
         `}</style>
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <img src={logoUrl} alt="Endyo" style={{
-            width: 96, height: 96, borderRadius: 24, objectFit: 'contain',
-            boxShadow: '0 8px 40px rgba(245,158,11,0.35)',
-            animation: 'splashFade 0.5s ease forwards',
-          }} />
-        </div>
-        <div style={{ paddingBottom: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{
-            width: 40, height: 3, borderRadius: 2,
-            background: 'rgba(217,119,6,0.18)', overflow: 'hidden', position: 'relative',
+            padding: '36px 44px', borderRadius: 32,
+            background: 'rgba(245,158,11,0.07)',
+            backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+            border: '1px solid rgba(245,158,11,0.18)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+            animation: 'splashFade 0.45s ease forwards',
+          }}>
+            <img src={logoUrl} alt="Endyo" style={{
+              width: 88, height: 88, borderRadius: 22, objectFit: 'contain',
+              boxShadow: '0 8px 32px rgba(245,158,11,0.25)',
+            }} />
+          </div>
+        </div>
+        <div style={{ paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 44, height: 3, borderRadius: 2,
+            background: 'rgba(245,158,11,0.12)', overflow: 'hidden', position: 'relative',
           }}>
             <div style={{
               position: 'absolute', left: 0, top: 0, height: '100%', width: '40%', borderRadius: 2,
@@ -186,7 +208,7 @@ export default function App() {
               animation: 'splashSlide 1s ease-in-out infinite',
             }} />
           </div>
-          <span style={{ fontSize: 11, color: 'rgba(146,64,14,0.55)', letterSpacing: '0.06em', fontWeight: 600 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase' }}>
             endyo
           </span>
         </div>
