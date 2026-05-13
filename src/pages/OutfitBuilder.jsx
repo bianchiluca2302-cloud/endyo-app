@@ -1643,7 +1643,7 @@ export default function OutfitBuilder() {
           <div ref={tabsRef} style={{
             flexShrink: 0, background: 'var(--bg)',
             backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            paddingTop: 16,
             paddingLeft: 20, paddingRight: 20, paddingBottom: 0,
             borderBottom: '1px solid var(--border)',
             position: 'relative', zIndex: 500,
@@ -1969,12 +1969,13 @@ export default function OutfitBuilder() {
           />
         )}
 
-        {/* ── Tab Stylist (solo mobile) — overlay portaled to body ──────────── */}
-        {/* createPortal evita il clipping da overflow:hidden degli antenati;
-            position:fixed + top/left/right/bottom espliciti per compatibilità iOS;
-            paddingTop spinge il contenuto sotto la barra dei tab;
-            paddingBottom evita sovrapposizione con la bottom nav */}
-        {isMobile && tab === 'stylist' && createPortal(
+        {/* ── Tab Stylist (solo mobile) ────────────────────────────────────── */}
+        {/* Rendiamo l'overlay dentro il React tree (senza portal) così rimane
+            nello stesso stacking context del MobileTabBar (z-index:500) e
+            il tab bar resta visibile sopra l'overlay (z-index:499).
+            position:fixed non viene clippato da overflow:hidden degli antenati
+            perché nessuno di essi ha transform/filter/perspective. */}
+        {isMobile && tab === 'stylist' && (
           <div style={{
             position: 'fixed',
             top: tabsBottom ? `${tabsBottom}px` : '160px',
@@ -2005,8 +2006,7 @@ export default function OutfitBuilder() {
                 onQuotaUpdate={() => {}}
               />
             </div>
-          </div>,
-          document.body
+          </div>
         )}
 
         {/* Stylist AI — barra scorrevole solo su desktop */}
