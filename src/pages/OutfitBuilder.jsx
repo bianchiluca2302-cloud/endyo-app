@@ -1826,12 +1826,12 @@ export default function OutfitBuilder() {
   const language     = useSettingsStore(s => s.language) || 'it'
   const compactCards = useSettingsStore(s => s.compactCards)
   const isMobile = useIsMobile()
-  const [tab,           setTab]           = useState('builder')
-  const [selected,      setSelected]      = useState({})           // { category: garmentId }
+  const [tab,           setTab]           = useState(() => { try { return sessionStorage.getItem('ob_tab') || 'builder' } catch { return 'builder' } })
+  const [selected,      setSelected]      = useState(() => { try { return JSON.parse(sessionStorage.getItem('ob_selected') || '{}') } catch { return {} } })
   const [mixerActiveId, setMixerActiveId] = useState(null)
   const mixerTransformsRef    = useRef({})   // transforms correnti del mixer
   const defaultTransformsRef  = useRef(null) // transforms da applicare al prossimo load
-  const [outfitName, setOutfitName] = useState('')
+  const [outfitName, setOutfitName] = useState(() => { try { return sessionStorage.getItem('ob_outfitName') || '' } catch { return '' } })
   const [saveMsg,   setSaveMsg]   = useState(null)
   const [completing, setCompleting] = useState(false)
   const [completeNotes, setCompleteNotes] = useState(null)
@@ -1857,6 +1857,11 @@ export default function OutfitBuilder() {
   const [builderSearch,  setBuilderSearch]  = useState('')
   const [savedSearch,    setSavedSearch]    = useState('')
   const [saveOpen,       setSaveOpen]       = useState(false)
+
+  // Persist tab + selection across navigation (sessionStorage, same session only)
+  useEffect(() => { try { sessionStorage.setItem('ob_tab', tab) } catch {} }, [tab])
+  useEffect(() => { try { sessionStorage.setItem('ob_selected', JSON.stringify(selected)) } catch {} }, [selected])
+  useEffect(() => { try { sessionStorage.setItem('ob_outfitName', outfitName) } catch {} }, [outfitName])
 
   // Carica contatori wear al mount e quando cambia tab
   useEffect(() => {
@@ -2303,9 +2308,9 @@ export default function OutfitBuilder() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                 gap: 16,
               }}>
-                {filtered.map(outfit => (
+                {filtered.map((outfit, i) => (
+                  <div key={outfit.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards` }}>
                   <SavedOutfitCard
-                    key={outfit.id}
                     outfit={outfit}
                     getById={getById}
                     onClick={() => setDetailOutfit(outfit)}
@@ -2318,6 +2323,7 @@ export default function OutfitBuilder() {
                       } catch {}
                     }}
                   />
+                  </div>
                 ))}
               </div>
             )

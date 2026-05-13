@@ -167,20 +167,18 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-              {liveGarment.color_hex && (
-                <span style={{
-                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                  background: liveGarment.color_hex, border: '1px solid rgba(0,0,0,0.12)',
-                  display: 'inline-block',
-                }} />
-              )}
-              {liveGarment.color_palette?.[1]?.hex && liveGarment.color_palette[1].hex !== liveGarment.color_hex && (
-                <span style={{
-                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                  background: liveGarment.color_palette[1].hex, border: '1px solid rgba(0,0,0,0.12)',
-                  display: 'inline-block',
-                }} />
-              )}
+              {(() => {
+                const palette = liveGarment.color_palette?.length > 0
+                  ? liveGarment.color_palette
+                  : liveGarment.color_hex ? [{ hex: liveGarment.color_hex }] : []
+                return palette.slice(0, 4).map((c, i) => c.hex ? (
+                  <span key={i} style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: c.hex, border: '1px solid rgba(0,0,0,0.12)',
+                    display: 'inline-block',
+                  }} />
+                ) : null)
+              })()}
               {liveGarment.brand && (
                 <span style={{
                   fontSize: 10.5, color: 'var(--text-dim)', flex: 1,

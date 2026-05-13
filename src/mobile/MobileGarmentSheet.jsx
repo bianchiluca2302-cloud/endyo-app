@@ -133,11 +133,16 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
-  // Lock body scroll while sheet is open — prevents background content from scrolling
+  // Lock main scroll while sheet is open — save and restore position to prevent jump to top
   useEffect(() => {
-    const prev = document.body.style.overflow
+    const main = document.querySelector('main')
+    const savedTop = main ? main.scrollTop : 0
+    if (main) main.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    return () => {
+      document.body.style.overflow = ''
+      if (main) { main.style.overflow = ''; main.scrollTop = savedTop }
+    }
   }, [])
 
   const handleClose = () => {
