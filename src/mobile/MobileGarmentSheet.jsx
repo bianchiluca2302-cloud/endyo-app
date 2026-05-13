@@ -725,8 +725,8 @@ export default function MobileGarmentSheet({ garment, onClose }) {
             </button>
           )}
 
-          {/* Rigenera / Traduci — sempre visibile quando non in corso */}
-          {!reEnriching && (
+          {/* Traduci — visibile solo se il capo è in una lingua diversa da quella selezionata */}
+          {!reEnriching && needsTranslation && (
             <button
               onClick={handleReEnrich}
               style={{

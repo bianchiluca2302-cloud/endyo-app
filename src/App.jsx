@@ -223,16 +223,22 @@ export default function App() {
       <div style={{
         height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 20,
-        background: 'linear-gradient(160deg, #f59e0b 0%, #fffdf5 100%)',
+        background: 'var(--bg)',
         position: 'fixed', inset: 0, zIndex: 9999,
       }}>
-        <svg width={56} height={56} viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth={1.5} strokeLinecap="round">
-          <rect x="2" y="7" width="20" height="14" rx="2"/>
-          <path d="M16 2l-4 5-4-5"/>
-        </svg>
-        <div style={{ textAlign: 'center', color: '#92400e' }}>
+        <div style={{
+          width: 72, height: 72, borderRadius: 22,
+          background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width={34} height={34} viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" strokeWidth={1.5} strokeLinecap="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 2l-4 5-4-5"/>
+          </svg>
+        </div>
+        <div style={{ textAlign: 'center', color: 'var(--text)' }}>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Ruota il telefono</div>
-          <div style={{ fontSize: 13, opacity: 0.7 }}>Endyo funziona solo in modalità verticale</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Endyo funziona solo in modalità verticale</div>
         </div>
       </div>
     )}

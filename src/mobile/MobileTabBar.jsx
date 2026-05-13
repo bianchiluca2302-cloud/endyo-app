@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useAuthStore from '../store/authStore'
 import useSettingsStore from '../store/settingsStore'
@@ -99,6 +99,15 @@ export default function MobileTabBar() {
   const lang       = useSettingsStore(s => s.language) || 'it'
   const navLocked  = useWardrobeStore(s => s.navLocked)
   const [lockMsg, setLockMsg] = useState(false)
+  const navigate   = useNavigate()
+  const location   = useLocation()
+
+  const resetTab = (path, sessionKeys = []) => {
+    if (location.pathname === path) {
+      sessionKeys.forEach(k => { try { sessionStorage.removeItem(k) } catch {} })
+      navigate(path, { state: { resetAt: Date.now() }, replace: true })
+    }
+  }
 
   const handleLockedTap = () => {
     if (lockMsg) return
@@ -150,9 +159,9 @@ export default function MobileTabBar() {
         paddingBottom: pb,
         borderTop: '1px solid var(--border)',
       }}>
-        <NavLink data-mobiletour="tab-wardrobe" to="/wardrobe" style={({ isActive }) => ({
-          ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)',
-        })}>
+        <NavLink data-mobiletour="tab-wardrobe" to="/wardrobe"
+          onClick={() => resetTab('/wardrobe', ['mw_tab'])}
+          style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
               <WardrobeIcon filled={isActive} />
@@ -161,9 +170,9 @@ export default function MobileTabBar() {
           )}
         </NavLink>
 
-        <NavLink data-mobiletour="tab-outfit" to="/outfits" style={({ isActive }) => ({
-          ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)',
-        })}>
+        <NavLink data-mobiletour="tab-outfit" to="/outfits"
+          onClick={() => resetTab('/outfits', ['ob_tab', 'ob_selected', 'ob_outfitName'])}
+          style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
               <OutfitIcon filled={isActive} />
@@ -220,9 +229,9 @@ export default function MobileTabBar() {
         paddingBottom: pb,
         borderTop: '1px solid var(--border)',
       }}>
-        <NavLink data-mobiletour="tab-friends" to="/friends" style={({ isActive }) => ({
-          ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)',
-        })}>
+        <NavLink data-mobiletour="tab-friends" to="/friends"
+          onClick={() => resetTab('/friends', ['mf_tab'])}
+          style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
               <FriendsIcon filled={isActive} />

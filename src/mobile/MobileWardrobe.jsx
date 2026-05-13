@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import useAuthStore from '../store/authStore'
@@ -32,6 +33,8 @@ const CameraIcon = () => (
     <circle cx="12" cy="13" r="4"/>
   </svg>
 )
+
+const CATEGORIES_ORDER = ['cappello','maglietta','felpa','giacchetto','pantaloni','scarpe','occhiali','cintura','borsa','orologio','altro']
 
 /* ── Garment card ────────────────────────────────────────────────────────────── */
 function GarmentCard({ g, onClick }) {
@@ -1114,9 +1117,19 @@ export default function MobileWardrobe() {
   const [activeTab,     setActiveTab]     = useState(() => { try { return sessionStorage.getItem('mw_tab') || 'armadio' } catch { return 'armadio' } })
   const [betaDismissed, setBetaDismissed] = useState(() => !!localStorage.getItem('endyo_beta_dismissed'))
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
+  const location = useLocation()
 
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
   useEffect(() => { try { sessionStorage.setItem('mw_tab', activeTab) } catch {} }, [activeTab])
+
+  // Reset to armadio tab when tab bar icon is tapped while already on this page
+  useEffect(() => {
+    if (!location.state?.resetAt) return
+    setActiveTab('armadio')
+    setActiveCat('')
+    setSearch('')
+    setShowSearch(false)
+  }, [location.state?.resetAt]) // eslint-disable-line
 
   const handleTabSwitch = (tab) => {
     if (shoppingBusyRef.current && activeTab === 'shopping' && tab !== 'shopping') return
@@ -1373,7 +1386,7 @@ export default function MobileWardrobe() {
             </div>
           )}
 
-          {/* Grid */}
+          {/* Grid / Sections */}
           <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {loading && garments.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
@@ -1381,7 +1394,8 @@ export default function MobileWardrobe() {
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState hasGarments={garments.length > 0} />
-            ) : (
+            ) : activeCat !== '' ? (
+              /* ── Flat grid when a single category is selected ── */
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                 {filtered.map((g, i) => (
                   <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards`, height: '100%', minWidth: 0 }}>
@@ -1389,6 +1403,59 @@ export default function MobileWardrobe() {
                   </div>
                 ))}
               </div>
+            ) : wardrobeSortOrder === 'color_asc' ? (
+              /* ── Color-grouped sections ── */
+              (() => {
+                const colorMap = {}
+                filtered.forEach(g => {
+                  const key = (g.color_primary || '').trim().toLowerCase() || '—'
+                  if (!colorMap[key]) colorMap[key] = { label: g.color_primary || '—', hex: g.color_hex || g.color_palette?.[0]?.hex || null, items: [] }
+                  colorMap[key].items.push(g)
+                })
+                return Object.values(colorMap).sort((a, b) => b.items.length - a.items.length).map(group => (
+                  <div key={group.label} style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
+                      {group.hex && (
+                        <span style={{ width: 12, height: 12, borderRadius: '50%', background: group.hex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                      )}
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize', letterSpacing: '-0.01em' }}>
+                        {group.label}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 2 }}>({group.items.length})</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
+                      {group.items.map((g, i) => (
+                        <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 40, 300)}ms backwards`, height: '100%', minWidth: 0 }}>
+                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()
+            ) : (
+              /* ── Category-grouped sections (default "Tutti" view) ── */
+              CATEGORIES_ORDER.map(cat => {
+                const items = filtered.filter(g => g.category === cat)
+                if (!items.length) return null
+                return (
+                  <div key={cat} style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 2px 8px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>
+                        {CATEGORY_LABELS[cat] || cat}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({items.length})</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
+                      {items.map((g, i) => (
+                        <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 40, 300)}ms backwards`, height: '100%', minWidth: 0 }}>
+                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         </>

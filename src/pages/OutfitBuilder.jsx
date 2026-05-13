@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import GarmentCard from '../components/GarmentCard'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
@@ -1826,6 +1827,7 @@ export default function OutfitBuilder() {
   const language     = useSettingsStore(s => s.language) || 'it'
   const compactCards = useSettingsStore(s => s.compactCards)
   const isMobile = useIsMobile()
+  const location = useLocation()
   const [tab,           setTab]           = useState(() => { try { return sessionStorage.getItem('ob_tab') || 'builder' } catch { return 'builder' } })
   const [selected,      setSelected]      = useState(() => { try { return JSON.parse(sessionStorage.getItem('ob_selected') || '{}') } catch { return {} } })
   const [mixerActiveId, setMixerActiveId] = useState(null)
@@ -1862,6 +1864,15 @@ export default function OutfitBuilder() {
   useEffect(() => { try { sessionStorage.setItem('ob_tab', tab) } catch {} }, [tab])
   useEffect(() => { try { sessionStorage.setItem('ob_selected', JSON.stringify(selected)) } catch {} }, [selected])
   useEffect(() => { try { sessionStorage.setItem('ob_outfitName', outfitName) } catch {} }, [outfitName])
+
+  // Reset to builder tab when tab bar icon is tapped while already on this page
+  useEffect(() => {
+    if (!location.state?.resetAt) return
+    setTab('builder')
+    setSelected({})
+    setOutfitName('')
+    setMixerActiveId(null)
+  }, [location.state?.resetAt]) // eslint-disable-line
 
   // Carica contatori wear al mount e quando cambia tab
   useEffect(() => {

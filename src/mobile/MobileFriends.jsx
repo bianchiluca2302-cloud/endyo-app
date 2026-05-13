@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   getSocialFeed, toggleLike, imgUrl,
   searchUsers, followUser, unfollowUser, fetchFollowing,
@@ -1349,6 +1350,7 @@ export default function MobileFriends() {
   const user     = useAuthStore(s => s.user)
   const garments = useWardrobeStore(s => s.garments)
   const language = useSettingsStore(s => s.language) || 'it'
+  const location = useLocation()
 
   const [tab,                    setTab]                    = useState(() => { try { return sessionStorage.getItem('mf_tab') || 'feed' } catch { return 'feed' } })   // 'feed' | 'myposts'
   const [posts,                  setPosts]                  = useState([])
@@ -1402,6 +1404,12 @@ export default function MobileFriends() {
   }, [])
 
   useEffect(() => { try { sessionStorage.setItem('mf_tab', tab) } catch {} }, [tab])
+
+  // Reset to feed tab when tab bar icon is tapped while already on this page
+  useEffect(() => {
+    if (!location.state?.resetAt) return
+    setTab('feed')
+  }, [location.state?.resetAt]) // eslint-disable-line
 
   useEffect(() => {
     if (tab === 'feed') loadFeed(1)
