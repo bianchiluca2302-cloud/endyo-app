@@ -200,7 +200,11 @@ export default function MobileUpload() {
   const [duplicates, setDuplicates] = useState([])
   const [result,    setResult]   = useState(null)
   const [showCatSheet,  setShowCatSheet]  = useState(false)
-  const [editedPalette, setEditedPalette] = useState([])
+  const [editedPalette,   setEditedPalette]   = useState([])
+  const [editedName,      setEditedName]      = useState('')
+  const [editedCategory,  setEditedCategory]  = useState('')
+  const [editedBrand,     setEditedBrand]     = useState('')
+  const [editedSize,      setEditedSize]      = useState('')
   const [fullscreenUrl, setFullscreenUrl] = useState(null)
 
   // Sblocca la nav se il componente viene smontato mentre il processo è attivo
@@ -261,6 +265,10 @@ export default function MobileUpload() {
         ? data.analysis.color_palette
         : (data.analysis.color_primary ? [{ name: data.analysis.color_primary, hex: '#888888' }] : [])
       setEditedPalette(palette)
+      setEditedName(data.analysis.name || '')
+      setEditedCategory(data.analysis.category || '')
+      setEditedBrand(data.analysis.brand || '')
+      setEditedSize(data.analysis.size || '')
       setDuplicates(findDuplicates(data.analysis, garments))
       setStep('review')
     } catch (e) {
@@ -281,6 +289,10 @@ export default function MobileUpload() {
     try {
       const analysisToSave = {
         ...analysis,
+        name:          editedName      || analysis.name,
+        category:      editedCategory  || analysis.category,
+        brand:         editedBrand     !== undefined ? editedBrand : analysis.brand,
+        size:          editedSize      !== undefined ? editedSize  : analysis.size,
         color_palette: editedPalette,
         color_primary: editedPalette[0]?.name || analysis.color_primary,
       }
@@ -432,24 +444,65 @@ export default function MobileUpload() {
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>{analysis.name}</div>
+          {/* Nome — editabile */}
+          <input
+            value={editedName}
+            onChange={e => setEditedName(e.target.value)}
+            style={{
+              fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 10,
+              width: '100%', background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '6px 10px', outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+          {/* Categoria — select */}
           {[
-            [CATEGORY_LABELS[analysis.category] || analysis.category, t('uploadFieldCat')],
-            [analysis.brand || '—', 'Brand'],
-            [analysis.size || '—', t('uploadFieldSize')],
-          ].map(([v, k]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>{k}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textAlign: 'right', wordBreak: 'break-word', minWidth: 0 }}>{v}</span>
+            { label: t('uploadFieldCat'), value: editedCategory, onChange: v => setEditedCategory(v),
+              isSelect: true, options: CATEGORIES },
+            { label: 'Brand', value: editedBrand, onChange: v => setEditedBrand(v) },
+            { label: t('uploadFieldSize'), value: editedSize, onChange: v => setEditedSize(v) },
+          ].map(({ label, value, onChange, isSelect, options }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{label}</span>
+              {isSelect ? (
+                <select
+                  value={value}
+                  onChange={e => onChange(e.target.value)}
+                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 6px', outline: 'none', maxWidth: 140 }}
+                >
+                  <option value="">{language === 'en' ? 'Auto' : 'Auto'}</option>
+                  {(options || []).map(opt => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={value}
+                  onChange={e => onChange(e.target.value)}
+                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', outline: 'none', textAlign: 'right', minWidth: 0, maxWidth: 140, boxSizing: 'border-box' }}
+                />
+              )}
             </div>
           ))}
-          {/* Palette colori — editabile */}
+          {/* Palette colori — editabile con color picker */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', paddingTop: 5, flexShrink: 0 }}>{t('uploadFieldColor')}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', paddingTop: 5, flexShrink: 0 }}>{t('uploadFieldColor')}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, marginLeft: 10, minWidth: 0 }}>
               {editedPalette.map((c, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 11, height: 11, borderRadius: '50%', background: c.hex || '#ccc', flexShrink: 0, boxShadow: '0 0 0 1px rgba(0,0,0,0.18)' }} />
+                  {/* Color picker dot */}
+                  <div style={{ position: 'relative', flexShrink: 0, width: 22, height: 22 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: c.hex || '#888888', boxShadow: '0 0 0 1.5px rgba(0,0,0,0.2)', pointerEvents: 'none', position: 'absolute', inset: 0 }} />
+                    <input
+                      type="color"
+                      value={c.hex || '#888888'}
+                      onChange={e => {
+                        const next = [...editedPalette]
+                        next[i] = { ...next[i], hex: e.target.value }
+                        setEditedPalette(next)
+                      }}
+                      style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: 'pointer', borderRadius: '50%', border: 'none' }}
+                    />
+                  </div>
                   <span style={{ fontSize: 10, color: 'var(--text-dim)', flexShrink: 0, width: 22, textAlign: 'right' }}>
                     {i === 0 ? t('uploadColorBase') : t('uploadColorDetail')}
                   </span>
@@ -636,19 +689,19 @@ export default function MobileUpload() {
           required
           style={{ gridRow: '1 / 3', height: '100%', borderRadius: 20 }}
         />
-        {/* Retro */}
-        <PhotoSlot
-          label="Retro"
-          preview={previews.back}
-          onChange={f => handleFile('back', f)}
-          small
-          style={{ height: '100%' }}
-        />
         {/* Etichetta */}
         <PhotoSlot
           label="Etichetta"
           preview={previews.label}
           onChange={f => handleFile('label', f)}
+          small
+          style={{ height: '100%' }}
+        />
+        {/* Retro */}
+        <PhotoSlot
+          label="Retro"
+          preview={previews.back}
+          onChange={f => handleFile('back', f)}
           small
           style={{ height: '100%' }}
         />

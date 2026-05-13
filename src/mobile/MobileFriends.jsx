@@ -13,72 +13,6 @@ import CreatePostModal from '../components/CreatePostModal'
 import OutfitCanvas from '../components/OutfitCanvas'
 import MobileGarmentSheet from './MobileGarmentSheet'
 
-/* ── Google Ad inline (ogni 3 post nel feed) ─────────────────────────────────── */
-const ADSENSE_CLIENT_ID = 'ca-pub-XXXXXXXXXXXXXXXXX'
-const ADSENSE_SLOT_FEED = 'CCCCCCCCCC'
-const hasRealCreds = !ADSENSE_CLIENT_ID.includes('XXXX')
-const isElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron')
-
-function FeedAdCard({ language }) {
-  useEffect(() => {
-    if (!isElectron && hasRealCreds) {
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch {}
-    }
-  }, [])
-
-  const label = language === 'en' ? 'Ad' : 'Annuncio'
-
-  if (isElectron || !hasRealCreds) {
-    return (
-      <div style={{
-        marginBottom: 12, borderRadius: 18,
-        boxShadow: '0 0 0 1.5px var(--border)',
-        background: 'var(--card)',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px 6px',
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#4285f4,#34a853)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 13, fontWeight: 800, flexShrink: 0,
-          }}>G</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Google</div>
-            <div style={{ fontSize: 10, color: '#4285f4', fontWeight: 600 }}>{label}</div>
-          </div>
-        </div>
-        <div style={{
-          height: 140, background: 'linear-gradient(135deg,var(--card),var(--surface))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          color: 'var(--text-dim)',
-        }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
-            <rect x="2" y="3" width="20" height="14" rx="2"/>
-            <path d="M8 21h8M12 17v4"/>
-          </svg>
-          <span style={{ fontSize: 11, letterSpacing: '0.04em' }}>{label} · 320×50</span>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ marginBottom: 12, borderRadius: 18, overflow: 'hidden', boxShadow: '0 0 0 1.5px var(--border)' }}>
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block', width: '100%', height: 140 }}
-        data-ad-client={ADSENSE_CLIENT_ID}
-        data-ad-slot={ADSENSE_SLOT_FEED}
-        data-ad-format="rectangle"
-        data-full-width-responsive="true"
-      />
-    </div>
-  )
-}
 
 /* ── SuggestedUsers — consiglia utenti basandosi sui tag stile dell'armadio ───── */
 function SuggestedUsers({ language, garments, onSelectUser }) {
@@ -1610,8 +1544,6 @@ export default function MobileFriends() {
                   onSelectUser={username => setProfileUser(username)}
                 />
 
-                {/* Sempre almeno 1 annuncio */}
-                <FeedAdCard language={language} />
               </>
             ) : (
               <>
@@ -1625,10 +1557,6 @@ export default function MobileFriends() {
                       onDelete={handleDeletePost}
                       onTap={p => { setSelectedPost(p); setSelectedPostFromMyPosts(false) }}
                     />
-                    {/* Annuncio dopo il 1° post, poi ogni 3 — almeno 1 sempre garantito */}
-                    {(index === 0 || (index > 0 && (index + 1) % 3 === 0)) && (
-                      <FeedAdCard language={language} />
-                    )}
                   </div>
                 ))}
                 {hasMore && (

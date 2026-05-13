@@ -681,25 +681,50 @@ const SUGGESTIONS = {
 // ── StylistWizard — mobile questionnaire flow (replace chat with structured Q&A) ──
 function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const garments = useWardrobeStore(s => s.garments)
+  const outfits  = useWardrobeStore(s => s.outfits)
   const language = useSettingsStore(s => s.language) || 'it'
   const shownIdsRef = useRef([])
 
+  const MIN_GARMENTS = 12
+  const MIN_OUTFITS  = 3
+
   const Q = language === 'en' ? [
-    { id: 'work',    label: 'Work',    emoji: '🏢', sub: 'What environment?',     subs: ['Formal', 'Smart casual', 'Creative/startup'] },
-    { id: 'casual',  label: 'Casual',  emoji: '👟', sub: 'Where are you going?',  subs: ['City', 'At a friend\'s', 'Shopping', 'Weekend trip'] },
-    { id: 'evening', label: 'Evening', emoji: '🌙', sub: 'What kind of evening?', subs: ['Romantic dinner', 'Night out', 'Event/cocktail'] },
-    { id: 'sport',   label: 'Sport',   emoji: '🏃', sub: 'What activity?',        subs: ['Gym', 'Running', 'Outdoor', 'Yoga/pilates'] },
-    { id: 'travel',  label: 'Travel',  emoji: '✈️', sub: 'What climate?',         subs: ['Hot', 'Mild/spring', 'Cold/autumn'] },
+    { id: 'work',    label: 'Work',    emoji: '🏢',
+      sub: 'What environment?',     subs: ['Formal (meetings/clients)', 'Smart casual (creative office)', 'Business casual', 'Working from home'],
+      style: 'What style?',         styles: ['Classic and polished', 'Modern and refined', 'Creative and personal'] },
+    { id: 'casual',  label: 'Casual',  emoji: '👟',
+      sub: 'Where are you going?',  subs: ['City (shopping, café)', 'At a friend\'s', 'Weekend getaway', 'Relaxed day in'],
+      style: 'What\'s your vibe?',  styles: ['Minimal / clean', 'Streetwear / urban', 'Preppy / classic'] },
+    { id: 'evening', label: 'Evening', emoji: '🌙',
+      sub: 'What kind of evening?', subs: ['Romantic dinner', 'Night out with friends', 'Event / cocktail party', 'Concert / theatre'],
+      style: 'How dressed up?',     styles: ['Elegant (formal)', 'Smart casual chic', 'Cool but relaxed'] },
+    { id: 'sport',   label: 'Sport',   emoji: '🏃',
+      sub: 'What activity?',        subs: ['Gym / CrossFit', 'Running / outdoor', 'Yoga / pilates', 'Team sport'],
+      style: 'Your priority?',      styles: ['Performance (technical)', 'Athleisure (street-sport)', 'Comfort above all'] },
+    { id: 'travel',  label: 'Travel',  emoji: '✈️',
+      sub: 'What climate?',         subs: ['Hot (beach / tropical)', 'Mild / spring', 'Cold / autumn', 'Freezing / mountain'],
+      style: 'Travel style?',       styles: ['Comfortable and practical', 'Smart and versatile', 'Adventurous / outdoor'] },
   ] : [
-    { id: 'lavoro',  label: 'Lavoro',  emoji: '🏢', sub: 'Che ambiente?',         subs: ['Formale', 'Smart casual', 'Creativo'] },
-    { id: 'casual',  label: 'Casual',  emoji: '👟', sub: 'Dove andrai?',          subs: ['In città', 'A casa di amici', 'Shopping', 'Weekend'] },
-    { id: 'serata',  label: 'Serata',  emoji: '🌙', sub: 'Che tipo di serata?',   subs: ['Cena romantica', 'Uscita amici', 'Evento/cocktail'] },
-    { id: 'sport',   label: 'Sport',   emoji: '🏃', sub: 'Che attività?',         subs: ['Palestra', 'Running', 'All\'aperto', 'Yoga'] },
-    { id: 'viaggio', label: 'Viaggio', emoji: '✈️', sub: 'Che clima prevedi?',    subs: ['Caldo', 'Mite/primaverile', 'Freddo/autunnale'] },
+    { id: 'lavoro',  label: 'Lavoro',  emoji: '🏢',
+      sub: 'Che ambiente?',         subs: ['Formale (riunioni/clienti)', 'Smart casual (ufficio creativo)', 'Business casual', 'Da casa / smart working'],
+      style: 'Che impronta stilistica?', styles: ['Classico e sobrio', 'Moderno e curato', 'Creativo e personale'] },
+    { id: 'casual',  label: 'Casual',  emoji: '👟',
+      sub: 'Dove andrai?',          subs: ['In città (shopping, caffè)', 'A casa di amici', 'Weekend fuori porta', 'Giornata relax a casa'],
+      style: 'Che stile ti piace?', styles: ['Minimal / clean', 'Streetwear / urban', 'Preppy / classico'] },
+    { id: 'serata',  label: 'Serata',  emoji: '🌙',
+      sub: 'Che tipo di serata?',   subs: ['Cena romantica', 'Uscita con amici (locale/aperitivo)', 'Evento / cocktail party', 'Teatro / concerto'],
+      style: 'Quanto vuoi essere curato?', styles: ['Elegante (formale)', 'Smart casual chic', 'Cool ma rilassato'] },
+    { id: 'sport',   label: 'Sport',   emoji: '🏃',
+      sub: 'Che attività?',         subs: ['Palestra / CrossFit', 'Running / outdoor', 'Yoga / pilates', 'Sport di squadra'],
+      style: 'Che priorità hai?',   styles: ['Performance (tecnico)', 'Athleisure (street-sport)', 'Comodo sopra tutto'] },
+    { id: 'viaggio', label: 'Viaggio', emoji: '✈️',
+      sub: 'Che clima prevedi?',    subs: ['Caldo (spiaggia / tropicale)', 'Mite / primaverile', 'Freddo / autunnale', 'Freddo intenso / montagna'],
+      style: 'Stile di viaggio?',   styles: ['Comodo e pratico', 'Smart e versatile', 'Avventuroso / outdoor'] },
   ]
 
-  const [step,          setStep]          = useState(0) // 0=occasion 1=sub 2=loading 3=results
+  const [step,          setStep]          = useState(0) // 0=occasion 1=sub 2=style 3=loading 4=results
   const [occasion,      setOccasion]      = useState(null)
+  const [selectedSub,   setSelectedSub]   = useState(null)
   const [streamText,    setStreamText]    = useState('')
   const [resultText,    setResultText]    = useState('')
   const [resultOutfits, setResultOutfits] = useState([])
@@ -709,8 +734,8 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const occ = Q.find(o => o.id === occasion)
   const getById = id => garments.find(g => g.id === id)
 
-  const generate = async (occLabel, subLabel) => {
-    setStep(2); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
+  const generate = async (occLabel, subLabel, styleLabel) => {
+    setStep(3); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
 
     const gDesc = hasSelection ? selectedGarments.map(g => g.name).join(', ') : null
     const shownNote = shownIdsRef.current.length
@@ -722,11 +747,11 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
 
     const prompt = language === 'en'
       ? gDesc
-        ? `Selected: ${gDesc}. Occasion: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Give EXACTLY 3 outfit options using my selected garments, then 1 "substitute" variant replacing one garment with another from my wardrobe. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
-        : `Occasion: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Browse my wardrobe and give EXACTLY 3 complete outfits, then 1 "substitute" variant. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
+        ? `Selected garments: ${gDesc}. Occasion: ${occLabel} – ${subLabel}. Style: ${styleLabel}.${weatherNote}${shownNote} Give EXACTLY 3 outfit options using my selected garments plus complementary items from my wardrobe, then 1 "substitute" variant replacing one garment with a better alternative from my wardrobe. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
+        : `Occasion: ${occLabel} – ${subLabel}. Style: ${styleLabel}.${weatherNote}${shownNote} Browse my entire wardrobe and give EXACTLY 3 complete outfits that match perfectly, then 1 "substitute" variant. Each needs an <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT> block.`
       : gDesc
-        ? `Selezionati: ${gDesc}. Occasione: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Proponi ESATTAMENTE 3 outfit con i capi selezionati, poi 1 variante "sostitutiva" scambiando un capo con un altro del mio armadio. Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
-        : `Occasione: ${occLabel} – ${subLabel}.${weatherNote}${shownNote} Sfoglia il mio armadio e proponi ESATTAMENTE 3 outfit completi, poi 1 variante "sostitutiva". Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
+        ? `Capi selezionati: ${gDesc}. Occasione: ${occLabel} – ${subLabel}. Stile: ${styleLabel}.${weatherNote}${shownNote} Proponi ESATTAMENTE 3 outfit con i capi selezionati più elementi complementari dal mio armadio, poi 1 variante "sostitutiva" scambiando un capo con un'alternativa migliore dal mio armadio. Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
+        : `Occasione: ${occLabel} – ${subLabel}. Stile: ${styleLabel}.${weatherNote}${shownNote} Sfoglia l'intero armadio e proponi ESATTAMENTE 3 outfit completi e perfetti, poi 1 variante "sostitutiva". Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.`
 
     let acc = ''
     await chatWithStylistStream({
@@ -738,17 +763,73 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         outfits.forEach(o => { if (o.ids) shownIdsRef.current = [...new Set([...shownIdsRef.current, ...o.ids])] })
         setResultText(acc.replace(/<OUTFIT>[\s\S]*?<\/OUTFIT>/g, '').replace(/<BRAND_PRODUCTS>[\s\S]*?<\/BRAND_PRODUCTS>/g, '').trim())
         setResultOutfits(outfits)
-        setStep(3)
+        setStep(4)
       },
-      onError: err => { setResultError(err); setStep(3) },
+      onError: err => { setResultError(err); setStep(4) },
     })
   }
 
-  const reset = () => { setStep(0); setOccasion(null) }
+  const reset = () => { setStep(0); setOccasion(null); setSelectedSub(null) }
 
   const cardBtn = {
     border: 'none', background: 'transparent', cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
+  }
+
+  /* ── Blocker: not enough data yet ── */
+  if (garments.length < MIN_GARMENTS || outfits.length < MIN_OUTFITS) {
+    const needGarments = Math.max(0, MIN_GARMENTS - garments.length)
+    const needOutfits  = Math.max(0, MIN_OUTFITS  - outfits.length)
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 16, textAlign: 'center' }}>
+        <div style={{ fontSize: 40 }}>🔒</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>
+          {language === 'en' ? 'Almost there!' : 'Ci siamo quasi!'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.65, maxWidth: 280 }}>
+          {language === 'en'
+            ? 'To get accurate stylist recommendations, add a bit more to your wardrobe first.'
+            : 'Per ricevere consigli precisi dalla stylist, aggiungi ancora qualcosa al tuo armadio.'}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
+          {needGarments > 0 && (
+            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 24 }}>👕</div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                  {language === 'en' ? `${garments.length} / ${MIN_GARMENTS} garments` : `${garments.length} / ${MIN_GARMENTS} capi`}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                  {language === 'en'
+                    ? `Upload ${needGarments} more to unlock`
+                    : `Carica ancora ${needGarments} capo/i per sbloccare`}
+                </div>
+              </div>
+            </div>
+          )}
+          {needOutfits > 0 && (
+            <div style={{ padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 24 }}>⭐</div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                  {language === 'en' ? `${outfits.length} / ${MIN_OUTFITS} saved outfits` : `${outfits.length} / ${MIN_OUTFITS} outfit salvati`}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                  {language === 'en'
+                    ? `Save ${needOutfits} more outfit${needOutfits !== 1 ? 's' : ''} in the Create tab`
+                    : `Salva ancora ${needOutfits} outfit nella scheda Crea`}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+          {language === 'en'
+            ? 'The stylist needs enough data to know your style.'
+            : 'La stylist ha bisogno di dati sufficienti per conoscerti.'}
+        </div>
+      </div>
+    )
   }
 
   /* ── Step 0: Occasion ── */
@@ -789,7 +870,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{occ.sub}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {occ.subs.map(s => (
-          <button key={s} onClick={() => generate(occ.label, s)}
+          <button key={s} onClick={() => { setSelectedSub(s); setStep(2) }}
             style={{ ...cardBtn, padding: '14px 18px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
             {s}
           </button>
@@ -798,8 +879,28 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     </div>
   )
 
-  /* ── Step 2: Loading ── */
-  if (step === 2) return (
+  /* ── Step 2: Style / vibe ── */
+  if (step === 2 && occ) return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <button onClick={() => setStep(1)}
+        style={{ ...cardBtn, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 13, marginBottom: 16 }}>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        {selectedSub}
+      </button>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{occ.style}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {occ.styles.map(s => (
+          <button key={s} onClick={() => generate(occ.label, selectedSub, s)}
+            style={{ ...cardBtn, padding: '14px 18px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  /* ── Step 3: Loading ── */
+  if (step === 3) return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 20 }}>
       <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px var(--primary-shadow)' }}>
         <div className="spinner" style={{ width: 30, height: 30, borderWidth: 3, borderColor: 'rgba(255,255,255,0.25)', borderTopColor: '#fff' }} />
@@ -815,7 +916,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     </div>
   )
 
-  /* ── Step 3: Results ── */
+  /* ── Step 4: Results ── */
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -1747,6 +1848,7 @@ export default function OutfitBuilder() {
   const [wearCounts,     setWearCounts]     = useState({})  // { outfitId: count }
   const [builderSearch,  setBuilderSearch]  = useState('')
   const [savedSearch,    setSavedSearch]    = useState('')
+  const [saveOpen,       setSaveOpen]       = useState(false)
 
   // Carica contatori wear al mount e quando cambia tab
   useEffect(() => {
@@ -1837,7 +1939,7 @@ export default function OutfitBuilder() {
       {!isMobile && <PageTutorial pageId="outfits" steps={OUTFIT_TOUR} />}
 
       {/* ── Left: selettore capi ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? ((tab === 'builder' || tab === 'mixer') ? 'calc(126px + env(safe-area-inset-bottom, 0px))' : 'calc(58px + env(safe-area-inset-bottom, 0px))') : 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--border)', overflow: 'hidden', paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom, 0px))' : 0 }}>
 
         {/* ── Mobile: unified header (title + meteo + tabs) come MobileWardrobe ── */}
         {isMobile && (
@@ -1963,6 +2065,85 @@ export default function OutfitBuilder() {
         {/* Tab: builder */}
         {tab === 'builder' && (
           <div style={{ flex: 1, overflow: 'auto', overscrollBehavior: 'contain', padding: '16px 20px' }}>
+
+            {/* ── Collapsible save section (mobile only) ── */}
+            {isMobile && (
+              <div style={{ marginBottom: 14, borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', overflow: 'hidden' }}>
+                <button
+                  onClick={() => setSaveOpen(v => !v)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: selectedGarments.length > 0 ? 'var(--primary-light)' : 'var(--text)' }}>
+                      {language === 'en' ? 'Selected garments' : 'Vestiti selezionati'}
+                    </span>
+                    {selectedGarments.length > 0 && (
+                      <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--primary)', color: '#fff', borderRadius: 99, padding: '1px 7px' }}>
+                        {selectedGarments.length}
+                      </span>
+                    )}
+                  </div>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round"
+                    style={{ transform: saveOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                {saveOpen && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {selectedGarments.length === 0 ? (
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', padding: '8px 0' }}>
+                        {language === 'en' ? 'Tap garments below to select them' : 'Tocca i capi qui sotto per selezionarli'}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                        {selectedGarments.map(g => (
+                          <div key={g.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                            <div style={{ width: 46, height: 46, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                              {g.photo_front
+                                ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontSize: 10 }}>{CAT_ICONS[g.category]}</div>
+                              }
+                            </div>
+                            <span style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 46, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      className="input"
+                      placeholder={t('outfitsNamePlaceholder')}
+                      value={outfitName}
+                      onChange={e => setOutfitName(e.target.value)}
+                      style={{ fontSize: 13 }}
+                    />
+                    {saveMsg && <div style={{ fontSize: 12, color: 'var(--success)', fontWeight: 500 }}>{saveMsg}</div>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => { setSelected({}); setMixerActiveId(null) }}
+                        disabled={selectedGarments.length === 0}
+                        className="btn btn-ghost"
+                        style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px' }}
+                      >
+                        {t('outfitsResetCta')}
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={selectedGarments.length === 0 || !outfitName.trim()}
+                        className="btn btn-primary"
+                        style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: !outfitName.trim() ? 0.4 : 1 }}
+                      >
+                        {t('outfitsSaveCta')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Barra di ricerca — desktop e mobile */}
             <div style={{ position: 'relative', marginBottom: 14 }}>
               <svg width={15} height={15} viewBox="0 0 24 24" fill="none"
@@ -2122,6 +2303,35 @@ export default function OutfitBuilder() {
         {/* Tab: mixer — mobile only, full-width interactive mixer */}
         {isMobile && tab === 'mixer' && (
           <div style={{ flex: 1, overflow: 'auto', padding: '12px 12px 0' }}>
+            {/* Save section — always visible at top */}
+            <div style={{ marginBottom: 12, padding: '12px 14px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input
+                className="input"
+                placeholder={t('outfitsNamePlaceholder')}
+                value={outfitName}
+                onChange={e => setOutfitName(e.target.value)}
+                style={{ fontSize: 13 }}
+              />
+              {saveMsg && <div style={{ fontSize: 12, color: 'var(--success)', fontWeight: 500 }}>{saveMsg}</div>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { setSelected({}); setMixerActiveId(null) }}
+                  disabled={selectedGarments.length === 0}
+                  className="btn btn-ghost"
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px' }}
+                >
+                  {t('outfitsResetCta')}
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={selectedGarments.length === 0 || !outfitName.trim()}
+                  className="btn btn-primary"
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: !outfitName.trim() ? 0.4 : 1 }}
+                >
+                  {t('outfitsSaveCta')}
+                </button>
+              </div>
+            </div>
             {selectedGarments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-muted)' }}>
                 <div style={{ opacity: 0.2, marginBottom: 12 }}><IconTshirt size={40} /></div>
@@ -2418,41 +2628,6 @@ export default function OutfitBuilder() {
         </div>
       </div>}
 
-      {/* ── Mobile: compact save bar at bottom ───────────────────────────── */}
-      {isMobile && (tab === 'builder' || tab === 'mixer') && (
-        <div style={{
-          position: 'fixed', bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0,
-          borderTop: '1px solid var(--border)',
-          background: 'var(--surface)',
-          padding: '10px 14px',
-          display: 'flex', gap: 8, alignItems: 'center',
-          zIndex: 10,
-        }}>
-          <input
-            className="input"
-            placeholder={t('outfitsNamePlaceholder')}
-            value={outfitName}
-            onChange={e => setOutfitName(e.target.value)}
-            style={{ flex: 1, fontSize: 13 }}
-          />
-          <button
-            onClick={() => { setSelected({}); setMixerActiveId(null) }}
-            disabled={selectedGarments.length === 0}
-            className="btn btn-ghost"
-            style={{ fontSize: 12, padding: '8px 10px', flexShrink: 0 }}
-          >
-            {t('outfitsResetCta')}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={selectedGarments.length === 0 || !outfitName.trim()}
-            className="btn btn-primary"
-            style={{ fontSize: 12, padding: '8px 14px', flexShrink: 0 }}
-          >
-            {t('outfitsSaveCta')}
-          </button>
-        </div>
-      )}
     </div>
   )
 }

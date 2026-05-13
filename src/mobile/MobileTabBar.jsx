@@ -84,11 +84,11 @@ const tabItem = {
   alignItems: 'center', justifyContent: 'center',
   gap: 4,
   textDecoration: 'none',
-  padding: '10px 4px 6px',
+  padding: '10px 4px 12px',
   userSelect: 'none', WebkitUserSelect: 'none',
   transition: 'color 0.15s',
   WebkitTapHighlightColor: 'transparent',
-  minHeight: 56,
+  minHeight: 64,
 }
 const tabLabel = { fontSize: 10, fontWeight: 500, lineHeight: 1 }
 
@@ -109,7 +109,7 @@ export default function MobileTabBar() {
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      height: 'calc(58px + env(safe-area-inset-bottom, 0px))',
+      height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
       background: 'var(--surface)',
       backdropFilter: 'blur(28px)',
       WebkitBackdropFilter: 'blur(28px)',
