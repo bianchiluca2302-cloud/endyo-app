@@ -1,5 +1,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Disable text selection on tap (mobile double-tap copy) */
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
+
 :root {
   --bg:        #0d0d14;
   --surface:   #13131e;
