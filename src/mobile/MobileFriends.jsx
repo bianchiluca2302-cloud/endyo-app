@@ -1219,9 +1219,10 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
   const [loading,        setLoading]        = useState(false)
   const [visible,   setVisible]   = useState(false)
   const [dragY,     setDragY]     = useState(0)
-  const startYRef   = useRef(0)
-  const draggingRef = useRef(false)
-  const sheetRef    = useRef(null)
+  const startYRef        = useRef(0)
+  const draggingRef      = useRef(false)
+  const sheetRef         = useRef(null)
+  const followingListRef = useRef([])
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
@@ -1250,8 +1251,10 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
   useEffect(() => {
     fetchFollowing()
       .then(list => {
-        setFollowingList(list || [])
-        setFollowing(new Set((list || []).map(u => u.username)))
+        const safe = list || []
+        followingListRef.current = safe
+        setFollowingList(safe)
+        setFollowing(new Set(safe.map(u => u.username)))
       })
       .catch(() => {})
   }, [])
@@ -1262,9 +1265,8 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
     const timer = setTimeout(async () => {
       try {
         const q = query.toLowerCase()
-        const [apiResults] = await Promise.all([searchUsers(query)])
-        // merge with followingList (already loaded) so followed users always appear
-        const fromFollowing = followingList.filter(u =>
+        const apiResults = await searchUsers(query)
+        const fromFollowing = followingListRef.current.filter(u =>
           u.username?.toLowerCase().includes(q) &&
           !apiResults.some(r => r.id === u.id)
         )
@@ -1274,7 +1276,7 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
       finally { setLoading(false) }
     }, 150)
     return () => clearTimeout(timer)
-  }, [query, followingList])
+  }, [query])
 
   const toggleFollow = async (u) => {
     const isF = following.has(u.username)
