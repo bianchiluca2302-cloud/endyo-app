@@ -17,6 +17,8 @@ import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { useT, useCategoryLabels, useTagTranslator, useColorOptions } from '../i18n'
 import FullscreenImageViewer from '../components/FullscreenImageViewer'
+import { useToast } from '../components/Toast'
+import { hapticMedium, hapticError, hapticSuccess } from '../hooks/useHaptic'
 
 /* ── Traduzione colori ───────────────────────────────────────────────────────── */
 const COLOR_TRANS = {
@@ -129,6 +131,7 @@ export default function MobileGarmentSheet({ garment, onClose }) {
   const t              = useT()
   const CATEGORY_LABELS = useCategoryLabels()
   const translateTag   = useTagTranslator()
+  const toast          = useToast()
 
   /* ── Slide-up + swipe ─────────────────────────────────────────────────────── */
   const [visible,       setVisible]       = useState(false)
@@ -308,8 +311,12 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
   const handleRemoveBg = () => {
     if (bgProcessing || bgDone) return
+    hapticMedium()
     updateGarmentBg(garment.id, 'processing')
-    removeGarmentBackground(garment.id).catch(() => updateGarmentBg(garment.id, 'none'))
+    removeGarmentBackground(garment.id).catch(() => {
+      updateGarmentBg(garment.id, 'none')
+      toast.show(language === 'en' ? 'Background removal failed' : 'Rimozione sfondo fallita', 'error')
+    })
   }
 
   /* ── Re-enrich (rigenera/traduci) ─────────────────────────────────────────── */
@@ -361,15 +368,27 @@ export default function MobileGarmentSheet({ garment, onClose }) {
           : {}),
       })
       setReEnrichDone(true)
+      hapticSuccess()
+      toast.show(language === 'en' ? 'Garment updated' : 'Capo aggiornato', 'success')
       setTimeout(() => setReEnrichDone(false), 3000)
-    } catch (e) { console.error('Re-enrich error:', e) }
-    finally     { setGarmentEnriching(garment.id, false) }
+    } catch (e) {
+      console.error('Re-enrich error:', e)
+      hapticError()
+      toast.show(language === 'en' ? 'Update failed, try again' : 'Aggiornamento fallito, riprova', 'error')
+    }
+    finally { setGarmentEnriching(garment.id, false) }
   }
 
   /* ── Elimina ──────────────────────────────────────────────────────────────── */
   const handleDelete = async () => {
-    await removeGarment(garment.id)
-    handleClose()
+    try {
+      hapticMedium()
+      await removeGarment(garment.id)
+      handleClose()
+    } catch {
+      hapticError()
+      toast.show(language === 'en' ? 'Failed to delete garment' : 'Eliminazione fallita', 'error')
+    }
   }
 
   /* ── Render ───────────────────────────────────────────────────────────────── */

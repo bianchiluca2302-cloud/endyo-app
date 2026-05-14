@@ -27,6 +27,7 @@ import MobileWardrobe from './mobile/MobileWardrobe'
 import MobileUpload from './mobile/MobileUpload'
 import MobileFriends from './mobile/MobileFriends'
 import MobileProfile from './mobile/MobileProfile'
+import { ToastProvider } from './components/Toast'
 
 const ROUTER_FUTURE = {
   v7_startTransition:  true,
@@ -217,6 +218,7 @@ export default function App() {
   }
 
   return (
+    <ToastProvider>
     <>
     {/* Blocca orizzontale su mobile: overlay fisso sopra tutto, NON smonta il router */}
     {isMobile && isLandscape && (
@@ -303,6 +305,7 @@ export default function App() {
       </Routes>
     </HashRouter>
     </>
+    </ToastProvider>
   )
 }
 

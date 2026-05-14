@@ -5,6 +5,7 @@ import useAuthStore from '../store/authStore'
 import useSettingsStore from '../store/settingsStore'
 import { imgUrl } from '../api/client'
 import { useT } from '../i18n'
+import { hapticLight } from '../hooks/useHaptic'
 
 /* ── Icons ───────────────────────────────────────────────────────────────────── */
 const WardrobeIcon = ({ filled }) => (
@@ -160,7 +161,7 @@ export default function MobileTabBar() {
         borderTop: '1px solid var(--border)',
       }}>
         <NavLink data-mobiletour="tab-wardrobe" to="/wardrobe"
-          onClick={() => resetTab('/wardrobe', ['mw_tab'])}
+          onClick={() => { hapticLight(); resetTab('/wardrobe', ['mw_tab']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
@@ -171,7 +172,7 @@ export default function MobileTabBar() {
         </NavLink>
 
         <NavLink data-mobiletour="tab-outfit" to="/outfits"
-          onClick={() => resetTab('/outfits', ['ob_tab', 'ob_selected', 'ob_outfitName'])}
+          onClick={() => { hapticLight(); resetTab('/outfits', ['ob_tab', 'ob_selected', 'ob_outfitName']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
@@ -230,7 +231,7 @@ export default function MobileTabBar() {
         borderTop: '1px solid var(--border)',
       }}>
         <NavLink data-mobiletour="tab-friends" to="/friends"
-          onClick={() => resetTab('/friends', ['mf_tab'])}
+          onClick={() => { hapticLight(); resetTab('/friends', ['mf_tab']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
@@ -240,7 +241,9 @@ export default function MobileTabBar() {
           )}
         </NavLink>
 
-        <NavLink data-mobiletour="tab-profile" to="/profile" style={tabItem}>
+        <NavLink data-mobiletour="tab-profile" to="/profile"
+          onClick={() => hapticLight()}
+          style={tabItem}>
           {({ isActive }) => <ProfileTab isActive={isActive} />}
         </NavLink>
       </div>

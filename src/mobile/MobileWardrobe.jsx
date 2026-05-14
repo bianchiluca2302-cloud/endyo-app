@@ -6,6 +6,10 @@ import useAuthStore from '../store/authStore'
 import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus, fetchTravelPlan } from '../api/client'
 import { useCategoryLabels, useT, useTagTranslator } from '../i18n'
 import MobileGarmentSheet from './MobileGarmentSheet'
+import useDebounce from '../hooks/useDebounce'
+import usePullToRefresh from '../hooks/usePullToRefresh'
+import { hapticLight, hapticMedium } from '../hooks/useHaptic'
+import { useToast } from '../components/Toast'
 
 /* ── Icons ───────────────────────────────────────────────────────────────────── */
 const SearchIcon = () => (
@@ -117,7 +121,7 @@ function GarmentCard({ g, onClick }) {
      * inner div: overflow:hidden + background + same borderRadius
      */
     <div
-      onClick={onClick}
+      onClick={() => { hapticLight(); onClick?.() }}
       role="button"
       tabIndex={0}
       style={{
@@ -1130,6 +1134,7 @@ function TravelTab() {
 export default function MobileWardrobe() {
   const garments        = useWardrobeStore(s => s.garments)
   const loading         = useWardrobeStore(s => s.loading)
+  const init            = useWardrobeStore(s => s.init)
   const setNavLocked    = useWardrobeStore(s => s.setNavLocked)
   const CATEGORY_LABELS = useCategoryLabels()
   const t               = useT()
@@ -1148,6 +1153,13 @@ export default function MobileWardrobe() {
   const [betaDismissed, setBetaDismissed] = useState(() => !!localStorage.getItem('endyo_beta_dismissed'))
   const shoppingBusyRef = useRef(false) // true mentre shopping è in analisi/risultati
   const location = useLocation()
+  const scrollAreaRef = useRef(null)
+  const debouncedSearch = useDebounce(search, 260)
+  const toast = useToast()
+  const { refreshing, pullY } = usePullToRefresh(
+    async () => { try { await init() } catch { toast.show(language === 'en' ? 'Failed to refresh' : 'Aggiornamento fallito', 'error') } },
+    scrollAreaRef
+  )
 
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
   useEffect(() => { try { sessionStorage.setItem('mw_tab', activeTab) } catch {} }, [activeTab])
@@ -1163,6 +1175,7 @@ export default function MobileWardrobe() {
 
   const handleTabSwitch = (tab) => {
     if (shoppingBusyRef.current && activeTab === 'shopping' && tab !== 'shopping') return
+    hapticLight()
     setActiveTab(tab)
   }
 
@@ -1189,8 +1202,8 @@ export default function MobileWardrobe() {
   const filtered = useMemo(() => {
     let list = garments
     if (activeCat) list = list.filter(g => g.category === activeCat)
-    if (search.trim()) {
-      const q = search.toLowerCase()
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       list = list.filter(g =>
         (g.name || '').toLowerCase().includes(q) ||
         (g.brand || '').toLowerCase().includes(q) ||
@@ -1205,7 +1218,7 @@ export default function MobileWardrobe() {
       default:          list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
     }
     return list
-  }, [garments, activeCat, search, wardrobeSortOrder])
+  }, [garments, activeCat, debouncedSearch, wardrobeSortOrder])
 
   /* Chip style */
   const chipStyle = (active) => ({
@@ -1380,7 +1393,15 @@ export default function MobileWardrobe() {
       </div>
 
       {/* ── Scrollable content area ─────────────────────────────────────────────── */}
-      <div className="wardrobe-scroll-area" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
+      <div ref={scrollAreaRef} className="wardrobe-scroll-area" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
+
+      {/* ── Pull-to-refresh indicator ────────────────────────────────────────────── */}
+      {(pullY > 0 || refreshing) && (
+        <div className="ptr-indicator" style={{ height: refreshing ? 36 : pullY * 0.6 }}>
+          <div className={refreshing ? 'spinner spinner-sm' : ''} style={!refreshing ? { opacity: Math.min(pullY / 30, 1) } : {}} />
+          {refreshing && <span style={{ fontSize: 11 }}>{language === 'en' ? 'Refreshing…' : 'Aggiornamento…'}</span>}
+        </div>
+      )}
 
       {/* ── Armadio tab ────────────────────────────────────────────────────────── */}
       {activeTab === 'armadio' && (
@@ -1428,8 +1449,16 @@ export default function MobileWardrobe() {
           {/* Grid / Sections */}
           <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {loading && garments.length === 0 ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+              <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="skeleton-card" style={{ animation: `slideUp 0.3s ease ${i * 60}ms backwards` }}>
+                    <div className="skeleton" style={{ height: 158, borderRadius: 0 }} />
+                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div className="skeleton" style={{ height: 11, width: '70%' }} />
+                      <div className="skeleton" style={{ height: 9, width: '45%' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState hasGarments={garments.length > 0} />

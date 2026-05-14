@@ -409,6 +409,37 @@ button:focus-visible,
 /* ── Mobile nav scrollbar hidden ────────────────────────────────────────────*/
 nav::-webkit-scrollbar { display: none; }
 
+/* ── Skeleton shimmer ────────────────────────────────────────────────────────*/
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: calc(400px + 100%) 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ── Toast animation ─────────────────────────────────────────────────────────*/
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Pull-to-refresh indicator ───────────────────────────────────────────────*/
+.ptr-indicator {
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; transition: height 0.2s ease;
+  color: var(--text-dim); font-size: 12px; gap: 6px;
+}
+
 /* ── Mobile responsive (≤640px) ─────────────────────────────────────────────*/
 @media (max-width: 640px) {
   .page-header {
