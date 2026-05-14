@@ -19,7 +19,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import useWardrobeStore from './store/wardrobeStore'
 import useAuthStore from './store/authStore'
-import useSettingsStore, { applyTheme } from './store/settingsStore'
+import useSettingsStore, { applyTheme, ACCENT_COLORS, THEMES } from './store/settingsStore'
 import { authRefresh } from './api/client'
 import useIsMobile from './hooks/useIsMobile'
 import MobileTabBar from './mobile/MobileTabBar'
@@ -42,6 +42,12 @@ export default function App() {
   const settings     = useSettingsStore()
   const updateSetting = useSettingsStore(s => s.updateSetting)
   const isMobile     = useIsMobile()
+
+  const accentInfo = ACCENT_COLORS.find(c => c.id === settings.accentColor) || ACCENT_COLORS[0]
+  const themeObj   = THEMES.find(t => t.id === settings.theme) || THEMES[0]
+  const isDark     = themeObj.dark || (themeObj.auto && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const accentHex  = accentInfo.hex
+  const accentLight = accentInfo.light
 
   // Reset sort order to default on every app start (don't persist across restarts)
   useEffect(() => { updateSetting('wardrobeSortOrder', 'date_desc') }, []) // eslint-disable-line
@@ -150,17 +156,42 @@ export default function App() {
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 28,
-        background: 'var(--bg)',
+        alignItems: 'center', justifyContent: 'center', gap: 24,
+        background: 'var(--bg)', overflow: 'hidden',
       }}>
         <style>{`@keyframes glassSpinnerSpin { to { transform: rotate(360deg); } }`}</style>
-        <img src={logoUrl} alt="Endyo" style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'contain', boxShadow: '0 8px 32px rgba(245,158,11,0.18)' }} />
+        {/* Ambient glow orb */}
+        <div style={{
+          position: 'absolute', width: 320, height: 320, borderRadius: '50%',
+          background: accentHex, filter: 'blur(80px)',
+          opacity: isDark ? 0.22 : 0.13, pointerEvents: 'none',
+        }} />
+        {/* Frosted glass card */}
+        <div style={{
+          position: 'relative', width: 128, height: 128, borderRadius: 32, flexShrink: 0,
+          backdropFilter: 'blur(48px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(48px) saturate(180%)',
+          background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.55)'}`,
+          boxShadow: isDark
+            ? '0 4px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
+            : '0 4px 48px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <img src={logoUrl} alt="Endyo" style={{
+            width: 72, height: 72, borderRadius: 18, objectFit: 'contain',
+            filter: `drop-shadow(0 4px 20px ${accentHex}99)`,
+          }} />
+        </div>
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
-          border: '2.5px solid rgba(245,158,11,0.15)', borderTopColor: '#f59e0b',
+          border: `2.5px solid ${accentHex}28`, borderTopColor: accentHex,
           animation: 'glassSpinnerSpin 0.8s linear infinite',
         }} />
-        <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase', marginTop: -14 }}>endyo</span>
+        <span style={{
+          fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
+          color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.28)', marginTop: -8,
+        }}>endyo</span>
       </div>
     )
   }
@@ -172,36 +203,66 @@ export default function App() {
         position: 'fixed', inset: 0, zIndex: 9999,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg)',
+        background: 'var(--bg)', overflow: 'hidden',
         opacity: splashFading ? 0 : 1,
         transition: splashFading ? 'opacity 0.4s ease' : 'none',
         pointerEvents: 'none',
       }}>
         <style>{`
-          @keyframes splashFade { 0%{opacity:0;transform:scale(0.9)} 100%{opacity:1;transform:scale(1)} }
+          @keyframes splashFade { 0%{opacity:0;transform:scale(0.90)} 100%{opacity:1;transform:scale(1)} }
           @keyframes splashSlide { 0%{left:-40%} 100%{left:140%} }
+          @keyframes splashGlow { 0%,100%{opacity:${isDark ? 0.20 : 0.12}} 50%{opacity:${isDark ? 0.32 : 0.20}} }
         `}</style>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+        {/* Ambient glow orb */}
+        <div style={{
+          position: 'absolute', width: 420, height: 420, borderRadius: '50%',
+          background: accentHex, filter: 'blur(90px)',
+          opacity: isDark ? 0.22 : 0.13,
+          animation: 'splashGlow 3s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Frosted glass card */}
+        <div style={{
+          position: 'relative', width: 164, height: 164, borderRadius: 40, flexShrink: 0,
+          backdropFilter: 'blur(48px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(48px) saturate(180%)',
+          background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.55)'}`,
+          boxShadow: isDark
+            ? `0 4px 64px rgba(0,0,0,0.50), 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.12)`
+            : `0 4px 64px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.80)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'splashFade 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        }}>
           <img src={logoUrl} alt="Endyo" style={{
-            width: 96, height: 96, borderRadius: 24, objectFit: 'contain',
-            boxShadow: '0 8px 40px rgba(245,158,11,0.22)',
-            animation: 'splashFade 0.4s ease forwards',
+            width: 104, height: 104, borderRadius: 26, objectFit: 'contain',
+            filter: `drop-shadow(0 4px 28px ${accentHex}cc)`,
           }} />
         </div>
-        <div style={{ paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+
+        {/* Bottom: progress + label */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          paddingBottom: 'max(56px, env(safe-area-inset-bottom, 56px))',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        }}>
           <div style={{
             width: 44, height: 3, borderRadius: 2,
-            background: 'rgba(245,158,11,0.12)', overflow: 'hidden', position: 'relative',
+            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+            overflow: 'hidden', position: 'relative',
           }}>
             <div style={{
               position: 'absolute', left: 0, top: 0, height: '100%', width: '40%', borderRadius: 2,
-              background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+              background: `linear-gradient(90deg, ${accentHex}, ${accentLight})`,
               animation: 'splashSlide 1s ease-in-out infinite',
             }} />
           </div>
-          <span style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase' }}>
-            endyo
-          </span>
+          <span style={{
+            fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
+            color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.28)',
+          }}>endyo</span>
         </div>
       </div>
     )
