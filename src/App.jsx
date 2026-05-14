@@ -35,7 +35,8 @@ const ROUTER_FUTURE = {
 }
 
 export default function App() {
-  const init         = useWardrobeStore(s => s.init)
+  const init                = useWardrobeStore(s => s.init)
+  const prefetchSocialFeed  = useWardrobeStore(s => s.prefetchSocialFeed)
   const error        = useWardrobeStore(s => s.error)
   const loading      = useWardrobeStore(s => s.loading)
   const settings     = useSettingsStore()
@@ -122,9 +123,12 @@ export default function App() {
       })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 3. Carica dati armadio dopo aver ottenuto un token valido ───────────────
+  // ── 3. Carica dati armadio + prefetch social feed dopo login ──────────────
   useEffect(() => {
-    if (accessToken) init()
+    if (accessToken) {
+      init()
+      prefetchSocialFeed()
+    }
   }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 4. Mostra tutorial al primo accesso ────────────────────────────────────

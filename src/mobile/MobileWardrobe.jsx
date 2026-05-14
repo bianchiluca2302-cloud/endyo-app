@@ -1162,6 +1162,9 @@ export default function MobileWardrobe() {
   )
 
   useEffect(() => { init() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Animate cards only when returning to page with cached data; suppress on first load to avoid
+  // misalignment between skeleton placeholders and real cards appearing below them.
+  const animateCards = useRef(garments.length > 0)
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
   useEffect(() => { try { sessionStorage.setItem('mw_tab', activeTab) } catch {} }, [activeTab])
 
@@ -1452,7 +1455,7 @@ export default function MobileWardrobe() {
             {loading && garments.length === 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="skeleton-card" style={{ animation: `slideUp 0.3s ease ${i * 60}ms backwards` }}>
+                  <div key={i} className="skeleton-card">
                     <div className="skeleton" style={{ height: 158, borderRadius: 0 }} />
                     <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div className="skeleton" style={{ height: 11, width: '70%' }} />
@@ -1486,7 +1489,7 @@ export default function MobileWardrobe() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
-                        <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards`, height: '100%', minWidth: 0 }}>
+                        <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
                           <GarmentCard g={g} onClick={() => setSelected(g)} />
                         </div>
                       ))}
@@ -1513,7 +1516,7 @@ export default function MobileWardrobe() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
-                        <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards`, height: '100%', minWidth: 0 }}>
+                        <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
                           <GarmentCard g={g} onClick={() => setSelected(g)} />
                         </div>
                       ))}
@@ -1525,7 +1528,7 @@ export default function MobileWardrobe() {
               /* ── Flat grid: date, name, or category filter active ── */
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                 {filtered.map((g, i) => (
-                  <div key={g.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards`, height: '100%', minWidth: 0 }}>
+                  <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
                     <GarmentCard g={g} onClick={() => setSelected(g)} />
                   </div>
                 ))}

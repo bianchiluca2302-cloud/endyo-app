@@ -1357,13 +1357,14 @@ export default function MobileFriends() {
 
   const toast = useToast()
   const feedScrollRef = useRef(null)
+  const sentinelRef   = useRef(null)
+  const pageRef       = useRef(1)
 
   const [tab,                    setTab]                    = useState(() => { try { return sessionStorage.getItem('mf_tab') || 'feed' } catch { return 'feed' } })   // 'feed' | 'myposts'
-  const [posts,                  setPosts]                  = useState([])
-  const [loading,                setLoading]                = useState(true)
+  const [posts,                  setPosts]                  = useState(() => useWardrobeStore.getState().socialPosts)
+  const [loading,                setLoading]                = useState(() => useWardrobeStore.getState().socialPosts.length === 0)
   const [showSearch,             setShowSearch]             = useState(false)
   const [showCreate,             setShowCreate]             = useState(false)
-  const [page,                   setPage]                   = useState(1)
   const [hasMore,                setHasMore]                = useState(true)
   const [profileUser,            setProfileUser]            = useState(null)
   const [selectedPost,           setSelectedPost]           = useState(null)
@@ -1402,14 +1403,35 @@ export default function MobileFriends() {
       setLoading(true)
       const data  = await getSocialFeed(p)
       const items = Array.isArray(data) ? data : (data.posts || data.items || data.feed || [])
-      if (p === 1) setPosts(items)
-      else setPosts(prev => [...prev, ...items])
+      if (p === 1) {
+        setPosts(items)
+        useWardrobeStore.getState().setSocialPosts(items)
+      } else {
+        setPosts(prev => [...prev, ...items])
+      }
       setHasMore(items.length >= 10)
     } catch { /* ignore */ }
     finally { setLoading(false) }
   }, [])
 
-  const { pullY, refreshing } = usePullToRefresh(feedScrollRef, () => loadFeed(1))
+  // Infinite scroll: load next page when the 5th-from-last post enters the viewport
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && hasMore && !loading) {
+        pageRef.current += 1
+        loadFeed(pageRef.current)
+      }
+    }, { threshold: 0.1 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [posts.length, hasMore, loading, loadFeed])
+
+  const { pullY, refreshing } = usePullToRefresh(feedScrollRef, async () => {
+    pageRef.current = 1
+    await loadFeed(1)
+  })
 
   useEffect(() => { try { sessionStorage.setItem('mf_tab', tab) } catch {} }, [tab])
 
@@ -1419,9 +1441,10 @@ export default function MobileFriends() {
     setTab('feed')
   }, [location.state?.resetAt]) // eslint-disable-line
 
+  // Only fetch on mount/tab-change if no prefetched data is available
   useEffect(() => {
-    if (tab === 'feed') loadFeed(1)
-  }, [tab, loadFeed])
+    if (tab === 'feed' && useWardrobeStore.getState().socialPosts.length === 0) loadFeed(1)
+  }, [tab]) // eslint-disable-line
 
   const handlePostCreated = () => { setShowCreate(false); loadFeed(1) }
   const handleDeletePost  = (postId) => setPosts(prev => prev.filter(p => p.id !== postId))
@@ -1589,7 +1612,10 @@ export default function MobileFriends() {
             ) : (
               <>
                 {posts.map((post, index) => (
-                  <div key={post.id} style={{ animation: `slideUp 0.38s ease ${Math.min(index * 60, 420)}ms backwards` }}>
+                  <div key={post.id}>
+                    {index === Math.max(4, posts.length - 5) && (
+                      <div ref={sentinelRef} style={{ height: 1 }} />
+                    )}
                     <PostCard
                       post={post}
                       currentUser={user?.username}
@@ -1600,21 +1626,15 @@ export default function MobileFriends() {
                     />
                   </div>
                 ))}
-                {hasMore && (
-                  <button
-                    onClick={() => { const next = page + 1; setPage(next); loadFeed(next) }}
-                    disabled={loading}
-                    style={{
-                      width: '100%', padding: '13px', borderRadius: 14,
-                      background: 'var(--card)', border: '1px solid var(--border)',
-                      color: 'var(--text-muted)', fontSize: 14, fontWeight: 500,
-                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    {loading
-                      ? (language === 'en' ? 'Loading…' : 'Caricamento…')
-                      : (language === 'en' ? 'Load more' : 'Carica altri')}
-                  </button>
+                {loading && posts.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
+                    <div className="spinner spinner-sm" />
+                  </div>
+                )}
+                {!hasMore && posts.length > 0 && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-dim)', padding: '12px 0 4px' }}>
+                    {language === 'en' ? 'You\'re all caught up' : 'Sei aggiornato'}
+                  </div>
                 )}
               </>
             )}

@@ -5,6 +5,7 @@ import {
   fetchOutfits, createOutfit as apiCreateOutfit, deleteOutfit as apiDeleteOutfit,
   setOutfitUsual as apiSetOutfitUsual,
   fetchProfile, saveProfile as apiSaveProfile,
+  getSocialFeed,
 } from '../api/client'
 
 const useWardrobeStore = create((set, get) => ({
@@ -128,6 +129,18 @@ const useWardrobeStore = create((set, get) => ({
   // Aggiorna il profilo solo localmente (senza chiamata API)
   patchProfile: (data) => {
     set(state => ({ profile: { ...state.profile, ...data } }))
+  },
+
+  // ── Social feed cache (preloaded on login, used by MobileFriends) ────────
+  socialPosts: [],
+  setSocialPosts: (posts) => set({ socialPosts: posts }),
+  prefetchSocialFeed: async () => {
+    if (get().socialPosts.length > 0) return
+    try {
+      const data  = await getSocialFeed(1)
+      const items = Array.isArray(data) ? data : (data.posts || data.items || data.feed || [])
+      set({ socialPosts: items })
+    } catch {}
   },
 
   // ── Init ──────────────────────────────────────────────────────────────────
