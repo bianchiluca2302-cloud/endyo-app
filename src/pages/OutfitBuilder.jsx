@@ -747,23 +747,23 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const [resultError,   setResultError]   = useState(null)
   const [warnDismissed, setWarnDismissed] = useState(false)
 
+  const hasSelection = selectedGarments.length > 0
+
   // Detect garments whose season_tags conflict with the current real-world season
   const seasonMismatches = useMemo(() => {
-    if (!hasSelection) return []
+    if (selectedGarments.length === 0) return []
     const month = new Date().getMonth() + 1 // 1-12
     const currentSeason = month >= 6 && month <= 8 ? 'estate'
       : month >= 12 || month <= 2 ? 'inverno'
       : month >= 3 && month <= 5 ? 'primavera'
       : 'autunno'
     const opposite = currentSeason === 'estate' ? ['inverno'] : currentSeason === 'inverno' ? ['estate'] : []
-    if (opposite.length === 0) return [] // spring/autumn are transitional — no strong conflicts
+    if (opposite.length === 0) return []
     return selectedGarments.filter(g => {
       const tags = (g.season_tags || []).map(t => t.toLowerCase())
       return tags.length > 0 && tags.every(t => opposite.includes(t))
     })
-  }, [selectedGarments, hasSelection])
-
-  const hasSelection = selectedGarments.length > 0
+  }, [selectedGarments])
   const occ = Q.find(o => o.id === occasion)
   const getById = id => garments.find(g => g.id === id)
 
