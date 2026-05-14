@@ -60,8 +60,8 @@ function GarmentPickerItem({ g, selected, onToggle }) {
         overflow: 'hidden', border: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {g.front_photo_url
-          ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        {(g.photo_front || g.front_photo_url)
+          ? <img src={imgUrl(g.photo_front || g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           : <ShirtIcon />
         }
       </div>
