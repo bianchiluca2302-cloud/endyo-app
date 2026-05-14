@@ -343,6 +343,27 @@ User style profile:
 
     user_request = f"Specific request: {request}" if request else ""
 
+    # Pre-compute which mandatory categories exist in the wardrobe
+    avail_cats = {g["category"] for g in garments}
+    top_cats = {"maglietta", "felpa", "giacchetto"}
+    has_top      = bool(avail_cats & top_cats)
+    has_pantaloni = "pantaloni" in avail_cats
+    has_scarpe    = "scarpe"    in avail_cats
+    acc_cats      = {"cappello", "occhiali", "cintura", "borsa", "orologio"}
+    has_acc       = bool(avail_cats & acc_cats)
+
+    mandatory_note = "MANDATORY RULES FOR EVERY OUTFIT:\n"
+    if has_top:
+        mandatory_note += "- ALWAYS include exactly one top (maglietta, felpa, or giacchetto). An outfit without a top is INVALID.\n"
+    if has_pantaloni:
+        mandatory_note += "- ALWAYS include pantaloni. An outfit without pants is INVALID.\n"
+    if has_scarpe:
+        mandatory_note += "- ALWAYS include scarpe. An outfit without shoes is INVALID.\n"
+    if has_acc:
+        mandatory_note += "- ALWAYS include 1–2 accessories (cappello, occhiali, cintura, borsa, orologio) that stylistically complete the outfit. Choose them based on color harmony and occasion.\n"
+    mandatory_note += "- At most one item per category.\n"
+    mandatory_note += "- Every garment_id you use MUST exist in the Available garments list above."
+
     prompt = f"""You are a professional fashion stylist. Create {n} complete outfits from these wardrobe items.
 {profile_text}
 {user_request}
@@ -350,11 +371,9 @@ User style profile:
 Available garments:
 {json.dumps(garment_summary, indent=2, ensure_ascii=False)}
 
-Rules:
-- Each outfit should include at most one item per category
-- Outfits must make sense stylistically (colors, style, occasion match)
-- Prefer cohesive, wearable combinations
-- Explain WHY this combination works
+{mandatory_note}
+
+Outfits must be stylistically cohesive: colors, style tags, and occasion must match. Explain WHY the combination works.
 
 Return a JSON array with exactly {n} outfits:
 [
@@ -369,11 +388,47 @@ Return a JSON array with exactly {n} outfits:
 
 Return ONLY the JSON array."""
 
+    # Build per-category lookup for post-processing validation
+    garments_by_id  = {g["id"]: g for g in garments}
+    garments_by_cat = {}
+    for g in garments:
+        garments_by_cat.setdefault(g["category"], []).append(g["id"])
+
+    def _fix_outfit(outfit):
+        ids = set(int(i) for i in outfit.get("garment_ids", []) if i in garments_by_id or int(i) in garments_by_id)
+        # Filter hallucinated IDs
+        ids = {i for i in ids if i in garments_by_id}
+        cur_cats = {garments_by_id[i]["category"] for i in ids}
+
+        # Enforce top
+        if has_top and not (cur_cats & top_cats):
+            for cat in ("maglietta", "felpa", "giacchetto"):
+                if garments_by_cat.get(cat):
+                    ids.add(garments_by_cat[cat][0]); cur_cats.add(cat); break
+
+        # Enforce pantaloni
+        if has_pantaloni and "pantaloni" not in cur_cats:
+            ids.add(garments_by_cat["pantaloni"][0]); cur_cats.add("pantaloni")
+
+        # Enforce scarpe
+        if has_scarpe and "scarpe" not in cur_cats:
+            ids.add(garments_by_cat["scarpe"][0]); cur_cats.add("scarpe")
+
+        # Add accessories (up to 2) if AI skipped them
+        added = 0
+        for cat in ("cintura", "borsa", "orologio", "occhiali", "cappello"):
+            if added >= 2: break
+            if cat not in cur_cats and garments_by_cat.get(cat):
+                ids.add(garments_by_cat[cat][0]); cur_cats.add(cat); added += 1
+
+        outfit["garment_ids"] = list(ids)
+        return outfit
+
     try:
         response = await client.chat.completions.create(
             model=TEXT_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=1500,
+            max_tokens=1800,
             temperature=0.7,
         )
         raw = response.choices[0].message.content.strip()
@@ -381,7 +436,8 @@ Return ONLY the JSON array."""
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        return json.loads(raw)
+        outfits = json.loads(raw)
+        return [_fix_outfit(o) for o in outfits]
     except Exception as e:
         print(f"Outfit generation error: {e}")
         return _mock_outfits(garments, n)
@@ -665,7 +721,12 @@ USER'S WARDROBE ({len(garments)} items):
 CREATING OUTFITS FROM WARDROBE:
 When suggesting a combination using items the user already owns, ALWAYS append at the very end:
 <OUTFIT>{{"ids":[id1,id2],"name":"Look name","notes":"One sentence explaining why this works"}}</OUTFIT>
-Use exact numeric IDs from the wardrobe above. Include 2–5 items. Be proactive: if the request makes the context clear, suggest an outfit immediately without being asked.
+Use exact numeric IDs from the wardrobe above. Include 3–6 items following these rules:
+- ALWAYS include one top (maglietta/felpa/giacchetto) if available — an outfit without a top is incomplete
+- ALWAYS include pantaloni if available
+- ALWAYS include scarpe if available
+- ALWAYS add 1–2 accessories (cintura, borsa, orologio, occhiali, cappello) that complement the look's style and colors
+Be proactive: if the request makes the context clear, suggest an outfit immediately without being asked.
 Factor in weather, season tags, occasion, and the user's actual wear patterns. Prioritise items they haven't worn recently if the wardrobe history is available.
 {brand_section}"""
 
@@ -720,7 +781,12 @@ ARMADIO DELL'UTENTE ({len(garments)} capi):
 CREARE OUTFIT DALL'ARMADIO:
 Quando suggerisci una combinazione con capi che l'utente già possiede, aggiungi SEMPRE in fondo:
 <OUTFIT>{{"ids":[id1,id2],"name":"Nome look","notes":"Una frase che spiega perché funziona"}}</OUTFIT>
-Usa ID numerici esatti dall'armadio sopra. Include 2–5 capi. Sii proattivo: se il contesto è chiaro, suggerisci subito un outfit senza aspettare che venga richiesto esplicitamente.
+Usa ID numerici esatti dall'armadio sopra. Include 3–6 capi rispettando queste regole:
+- Includi SEMPRE una maglia/felpa/giacchetto se disponibile — un outfit senza top è incompleto
+- Includi SEMPRE i pantaloni se disponibili
+- Includi SEMPRE le scarpe se disponibili
+- Aggiungi SEMPRE 1–2 accessori (cintura, borsa, orologio, occhiali, cappello) che completano lo stile e armonizzano con i colori
+Sii proattivo: se il contesto è chiaro, suggerisci subito un outfit senza aspettare che venga richiesto esplicitamente.
 Tieni conto di meteo, tag di stagione, occasione e le abitudini reali dell'utente. Se c'è uno storico, privilegia capi non indossati di recente per variare.
 {brand_section}"""
 
