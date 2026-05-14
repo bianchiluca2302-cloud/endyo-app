@@ -2449,6 +2449,7 @@ export default function OutfitBuilder() {
           <OutfitDetailModal
             outfit={detailOutfit}
             getById={getById}
+            wearCount={wearCounts[detailOutfit.id] || 0}
             onClose={() => setDetailOutfit(null)}
             onLoad={() => {
               const newSel = {}
@@ -2935,9 +2936,11 @@ function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
 }
 
 // ── OutfitDetailModal ─────────────────────────────────────────────────────────
-function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete }) {
+function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCount = 0 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
   const t = useT()
+  const language = useSettingsStore(s => s.language) || 'it'
   const CATEGORY_LABELS = useCategoryLabels()
 
   return (
@@ -2945,9 +2948,9 @@ function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete }) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.65)',
+        background: 'rgba(0,0,0,0.7)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 24,
+        padding: 20,
       }}
     >
       <div
@@ -2956,97 +2959,166 @@ function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete }) {
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
-          borderRadius: 16,
+          borderRadius: 20,
           width: '100%', maxWidth: 460,
-          maxHeight: '90vh',
+          maxHeight: '92vh',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
         }}
       >
+        {/* Photo strip */}
+        {garments.length > 0 && (
+          <div style={{
+            height: 130, display: 'flex', flexShrink: 0,
+            background: 'var(--photo-bg)', overflow: 'hidden',
+          }}>
+            {garments.slice(0, 4).map((g, i) => {
+              const photo = g.photo_front ? imgUrl(g.photo_front) : null
+              return (
+                <div key={g.id} style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
+                  borderRight: i < Math.min(garments.length, 4) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                }}>
+                  {photo
+                    ? <img src={photo} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <span style={{ fontSize: 32, opacity: 0.18 }}>{CAT_ICONS[g.category]}</span>
+                  }
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* Header */}
         <div style={{
-          padding: '18px 20px 14px',
+          padding: '14px 18px 12px',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-          flexShrink: 0,
+          display: 'flex', alignItems: 'flex-start', gap: 10, flexShrink: 0,
         }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{outfit.name}</h2>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-              {outfit.ai_generated ? <span className="tag tag-purple">{t('outfitsAiLabel')}</span> : null}
-              {outfit.occasion && <span className="tag tag-purple">{outfit.occasion}</span>}
-              {outfit.season   && <span className="tag tag-green">{outfit.season}</span>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {outfit.name}
+            </h2>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+              {outfit.ai_generated && <span className="tag tag-purple">{t('outfitsAiLabel')}</span>}
+              {outfit.occasion    && <span className="tag tag-purple">{outfit.occasion}</span>}
+              {outfit.season      && <span className="tag tag-green">{outfit.season}</span>}
+              <span className="tag tag-gray">{garments.length} {language === 'en' ? 'pieces' : 'capi'}</span>
+              {wearCount > 0 && <span className="tag tag-amber">{wearCount}× {language === 'en' ? 'worn' : 'indossato'}</span>}
             </div>
           </div>
-          <button onClick={onClose} className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 14, flexShrink: 0 }}>✕</button>
+          <button
+            onClick={onClose}
+            style={{
+              width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+              background: 'var(--card)', border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13,
+            }}
+          >✕</button>
         </div>
 
-        {/* Body scrollabile */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-          {/* MiniMixer */}
-          {garments.length > 0 && <MiniMixer garments={garments} transforms={outfit.transforms || {}} />}
-
+        {/* Body */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '14px 18px' }}>
           {/* Note AI */}
           {outfit.notes && (
             <div style={{
               fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6,
               background: 'rgba(108,63,199,0.07)', border: '1px solid rgba(108,63,199,0.18)',
-              borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+              borderRadius: 10, padding: '10px 14px', marginBottom: 14,
             }}>
               {outfit.notes}
             </div>
           )}
 
-          {/* Lista capi */}
-          <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+          {/* Garment list */}
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>
             {t('outfitsGarments', garments.length)}
           </div>
-          {garments.map(g => {
-            const photo = g.photo_front ? imgUrl(g.photo_front) : null
-            return (
-              <div key={g.id} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 0', borderBottom: '1px solid var(--border)',
-              }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 8, flexShrink: 0,
-                  background: 'var(--card)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  overflow: 'hidden',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {garments.map(g => {
+              const photo = g.photo_front ? imgUrl(g.photo_front) : null
+              return (
+                <div key={g.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '8px 10px', borderRadius: 12,
+                  background: 'var(--card)', border: '1px solid var(--border)',
                 }}>
-                  {photo
-                    ? <img src={photo} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 800, opacity: 0.5 }}>{CAT_ICONS[g.category]}</span>
-                  }
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {g.name}
+                  <div style={{
+                    width: 50, height: 50, borderRadius: 9, flexShrink: 0,
+                    background: 'var(--photo-bg)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}>
+                    {photo
+                      ? <img src={photo} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      : <span style={{ fontSize: 22, opacity: 0.22 }}>{CAT_ICONS[g.category]}</span>
+                    }
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 1 }}>
-                    {CATEGORY_LABELS[g.category]}{g.brand ? ` · ${g.brand}` : ''}{g.size ? ` · ${g.size}` : ''}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {g.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                      {CATEGORY_LABELS[g.category]}{g.brand ? ` · ${g.brand}` : ''}{g.size ? ` · ${g.size}` : ''}
+                    </div>
                   </div>
+                  {g.color_hex && (
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: g.color_hex, flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.15)' }} />
+                  )}
                 </div>
-                {g.color_hex && (
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: g.color_hex, flexShrink: 0, border: '1px solid rgba(255,255,255,0.15)' }} />
-                )}
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: '14px 20px',
-          borderTop: '1px solid var(--border)',
-          display: 'flex', gap: 8, flexShrink: 0,
-        }}>
-          <button onClick={onDelete} className="btn btn-danger" style={{ fontSize: 13, padding: '8px 14px' }}>
-            {t('outfitsDeleteBtn')}
-          </button>
-          <button onClick={onLoad} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}>
-            {t('outfitsOpenEditor')}
-          </button>
+        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          {confirmDelete ? (
+            <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--danger)', textAlign: 'center', padding: '2px 0' }}>
+                {language === 'en' ? `Delete "${outfit.name}"?` : `Eliminare "${outfit.name}"?`}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="btn btn-ghost"
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}
+                >
+                  {language === 'en' ? 'Cancel' : 'Annulla'}
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="btn btn-danger"
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}
+                >
+                  {language === 'en' ? 'Delete' : 'Elimina'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="btn btn-ghost"
+                style={{ padding: '9px 14px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.25)', flexShrink: 0 }}
+                title={language === 'en' ? 'Delete outfit' : 'Elimina outfit'}
+              >
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+              <button
+                onClick={onLoad}
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}
+              >
+                {t('outfitsOpenEditor')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
