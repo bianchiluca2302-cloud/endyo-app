@@ -20,7 +20,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import useWardrobeStore from './store/wardrobeStore'
 import useAuthStore from './store/authStore'
 import useSettingsStore, { applyTheme, ACCENT_COLORS, THEMES } from './store/settingsStore'
-import { authRefresh } from './api/client'
+import { authRefresh, authMe } from './api/client'
 import useIsMobile from './hooks/useIsMobile'
 import MobileTabBar from './mobile/MobileTabBar'
 import MobileWardrobe from './mobile/MobileWardrobe'
@@ -90,7 +90,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handler)
   }, [])
 
-  const { refreshToken, rememberMe, setAuth, setAccessToken, logout, accessToken } = useAuthStore()
+  const { refreshToken, rememberMe, setAuth, setAccessToken, updateUser, logout, accessToken } = useAuthStore()
 
   // Tutorial primo accesso
   const [showTutorial, setShowTutorial] = useState(false)
@@ -159,6 +159,8 @@ export default function App() {
     if (accessToken) {
       init()
       prefetchSocialFeed()
+      // Aggiorna user con piano aggiornato dal server (evita flash "free" nelle sezioni premium)
+      authMe().then(me => updateUser(me)).catch(() => {})
     }
   }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -496,7 +496,7 @@ export default function Premium() {
   const isMobile   = useIsMobile()
   const navigate   = useNavigate()
 
-  const [currentPlan,         setCurrentPlan]         = useState(user?.plan || 'free')
+  const [currentPlan,         setCurrentPlan]         = useState(user?.plan ?? null)
   const [billing,              setBilling]              = useState('monthly')
   const [loading,              setLoading]              = useState(false)
   const [toast,                setToast]                = useState(null)

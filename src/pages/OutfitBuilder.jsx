@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import GarmentCard from '../components/GarmentCard'
@@ -745,6 +745,23 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const [resultText,    setResultText]    = useState('')
   const [resultOutfits, setResultOutfits] = useState([])
   const [resultError,   setResultError]   = useState(null)
+  const [warnDismissed, setWarnDismissed] = useState(false)
+
+  // Detect garments whose season_tags conflict with the current real-world season
+  const seasonMismatches = useMemo(() => {
+    if (!hasSelection) return []
+    const month = new Date().getMonth() + 1 // 1-12
+    const currentSeason = month >= 6 && month <= 8 ? 'estate'
+      : month >= 12 || month <= 2 ? 'inverno'
+      : month >= 3 && month <= 5 ? 'primavera'
+      : 'autunno'
+    const opposite = currentSeason === 'estate' ? ['inverno'] : currentSeason === 'inverno' ? ['estate'] : []
+    if (opposite.length === 0) return [] // spring/autumn are transitional — no strong conflicts
+    return selectedGarments.filter(g => {
+      const tags = (g.season_tags || []).map(t => t.toLowerCase())
+      return tags.length > 0 && tags.every(t => opposite.includes(t))
+    })
+  }, [selectedGarments, hasSelection])
 
   const hasSelection = selectedGarments.length > 0
   const occ = Q.find(o => o.id === occasion)
@@ -865,6 +882,17 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 13, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconSparkle size={14} />
           {language === 'en' ? `${selectedGarments.length} garment${selectedGarments.length !== 1 ? 's' : ''} selected` : `${selectedGarments.length} capo/i selezionati`}
+        </div>
+      )}
+      {seasonMismatches.length > 0 && !warnDismissed && (
+        <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.30)', fontSize: 13, color: '#ca8a04', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <span style={{ flexShrink: 0, fontSize: 15 }}>⚠️</span>
+          <div style={{ flex: 1, lineHeight: 1.45 }}>
+            {language === 'en'
+              ? `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'seems' : 'seem'} out of season for the current weather. The stylist will still use it if it fits the occasion.`
+              : `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'sembra fuori stagione' : 'sembrano fuori stagione'} per il meteo attuale. La stylist lo userà comunque se si adatta all'occasione.`}
+          </div>
+          <button onClick={() => setWarnDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ca8a04', fontSize: 16, padding: 0, flexShrink: 0, lineHeight: 1 }}>×</button>
         </div>
       )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>

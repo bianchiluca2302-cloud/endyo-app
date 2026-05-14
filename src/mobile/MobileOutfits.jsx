@@ -26,6 +26,19 @@ const CheckIcon = () => (
   </svg>
 )
 
+const SearchIcon = () => (
+  <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
+    stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round">
+    <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+  </svg>
+)
+
+const ShirtIcon = () => (
+  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={1.3} strokeLinecap="round">
+    <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z"/>
+  </svg>
+)
+
 /* ── Garment mini-chip per il builder ───────────────────────────────────────── */
 function GarmentPickerItem({ g, selected, onToggle }) {
   return (
@@ -34,33 +47,33 @@ function GarmentPickerItem({ g, selected, onToggle }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '10px 16px',
-        background: selected ? 'rgba(124,58,237,0.1)' : 'transparent',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: selected ? 'var(--primary-dim)' : 'transparent',
+        borderBottom: '1px solid var(--border)',
         cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
         transition: 'background 0.15s',
       }}
     >
       <div style={{
         width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-        background: g.bg_color || '#1a1a2e',
-        overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)',
+        background: g.bg_color || 'var(--card)',
+        overflow: 'hidden', border: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {g.front_photo_url
           ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          : <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1.3} strokeLinecap="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z"/></svg>
+          : <ShirtIcon />
         }
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: '#f0f0f8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {g.name}
         </div>
-        {g.brand && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>{g.brand}</div>}
+        {g.brand && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1 }}>{g.brand}</div>}
       </div>
       <div style={{
         width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-        background: selected ? '#7c3aed' : 'rgba(255,255,255,0.07)',
-        border: selected ? 'none' : '1.5px solid rgba(255,255,255,0.15)',
+        background: selected ? 'var(--primary)' : 'var(--card)',
+        border: selected ? 'none' : '1.5px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: 'white', transition: 'background 0.15s',
       }}>
@@ -80,13 +93,13 @@ function OutfitCard({ outfit, language }) {
   return (
     <div style={{
       borderRadius: 18, overflow: 'hidden',
-      background: '#13131f', border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--card)', border: '1px solid var(--border)',
       cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
     }}>
-      <div style={{ aspectRatio: '1/1', position: 'relative', background: '#0d0d14' }}>
+      <div style={{ aspectRatio: '1/1', position: 'relative', background: 'var(--bg)' }}>
         {members.length === 0 ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={1.2} strokeLinecap="round">
+            <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={1.2} strokeLinecap="round" style={{ opacity: 0.4 }}>
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </div>
@@ -96,7 +109,7 @@ function OutfitCard({ outfit, language }) {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', width: '100%', height: '100%', gap: 1 }}>
             {members.slice(0, 4).map(g => (
-              <div key={g.id} style={{ background: g.bg_color || '#1a1a2e', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={g.id} style={{ background: g.bg_color || 'var(--card)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {g.front_photo_url
                   ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   : null}
@@ -106,10 +119,10 @@ function OutfitCard({ outfit, language }) {
         )}
       </div>
       <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {outfit.name || 'Outfit'}
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
           {language === 'en'
             ? `${members.length} item${members.length === 1 ? '' : 's'}`
             : `${members.length} ${members.length === 1 ? 'capo' : 'capi'}`}
@@ -203,14 +216,13 @@ function BuilderSheet({ onClose, language }) {
   return (
     <>
       {/* Backdrop */}
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 600 }} />
-      {/* Sheet — position fixed bottom:0 fa sì che iOS lo tenga sopra la tastiera automaticamente */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 600 }} />
       <div
         ref={sheetRef}
         onClick={e => e.stopPropagation()}
         style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 601,
-          background: '#111118',
+          background: 'var(--card)',
           borderRadius: '24px 24px 0 0',
           maxHeight: `${vpH * 0.92}px`, display: 'flex', flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -226,40 +238,41 @@ function BuilderSheet({ onClose, language }) {
           onTouchEnd={onHandleTouchEnd}
           style={{
             position: 'sticky', top: 0, zIndex: 10,
-            background: '#111118',
-            borderBottom: '2px solid rgba(255,255,255,0.08)',
+            background: 'var(--card)',
+            borderBottom: '1px solid var(--border)',
             touchAction: 'none', cursor: 'grab',
             flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
-            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.18)' }} />
+            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 14px' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f8' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
               {en ? 'Create outfit' : 'Crea outfit'}
             </div>
-            <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f0f0f8' }}>
+            <button onClick={onClose} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
               <CloseIcon />
             </button>
           </div>
         </div>
 
-        <div style={{ padding: '0 20px 12px' }}>
+        <div style={{ padding: '12px 20px 12px' }}>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder={en ? 'Outfit name (e.g. Casual look)' : 'Nome outfit (es. Look casual)'}
             style={{
               width: '100%', padding: '12px 14px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f0f0f8', fontSize: 15, outline: 'none', WebkitAppearance: 'none',
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              color: 'var(--text)', fontSize: 15, outline: 'none', WebkitAppearance: 'none',
+              boxSizing: 'border-box',
             }}
           />
         </div>
 
         {selected.size > 0 && (
-          <div style={{ padding: '0 20px 8px', fontSize: 13, color: '#a78bfa', fontWeight: 600 }}>
+          <div style={{ padding: '0 20px 8px', fontSize: 13, color: 'var(--primary-light)', fontWeight: 600 }}>
             {en
               ? `${selected.size} item${selected.size === 1 ? '' : 's'} selected`
               : `${selected.size} ${selected.size === 1 ? 'capo selezionato' : 'capi selezionati'}`}
@@ -267,16 +280,22 @@ function BuilderSheet({ onClose, language }) {
         )}
 
         <div style={{ padding: '0 20px 8px' }}>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={en ? 'Search items…' : 'Cerca capi…'}
-            style={{
-              width: '100%', padding: '10px 14px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)',
-              color: '#f0f0f8', fontSize: 14, outline: 'none',
-            }}
-          />
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <SearchIcon />
+            </div>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={en ? 'Search items…' : 'Cerca capi…'}
+              style={{
+                width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12,
+                background: 'var(--bg)', border: '1px solid var(--border)',
+                color: 'var(--text)', fontSize: 14, outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
         </div>
 
         {categories.length > 0 && (
@@ -290,8 +309,8 @@ function BuilderSheet({ onClose, language }) {
               style={{
                 padding: '5px 13px', borderRadius: 99, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
-                background: activeCat === '' ? '#7c3aed' : 'rgba(255,255,255,0.08)',
-                color: activeCat === '' ? '#fff' : 'rgba(255,255,255,0.5)',
+                background: activeCat === '' ? 'var(--primary)' : 'var(--bg)',
+                color: activeCat === '' ? '#fff' : 'var(--text-muted)',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >{en ? 'All' : 'Tutti'}</button>
@@ -302,8 +321,8 @@ function BuilderSheet({ onClose, language }) {
                 style={{
                   padding: '5px 13px', borderRadius: 99, border: 'none', cursor: 'pointer',
                   fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
-                  background: activeCat === cat ? '#7c3aed' : 'rgba(255,255,255,0.08)',
-                  color: activeCat === cat ? '#fff' : 'rgba(255,255,255,0.5)',
+                  background: activeCat === cat ? 'var(--primary)' : 'var(--bg)',
+                  color: activeCat === cat ? '#fff' : 'var(--text-muted)',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >{CATEGORY_LABELS[cat] || cat}</button>
@@ -317,14 +336,14 @@ function BuilderSheet({ onClose, language }) {
           ))}
         </div>
 
-        <div style={{ padding: '14px 20px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ padding: '14px 20px 16px', borderTop: '1px solid var(--border)' }}>
           <button
             onClick={handleSave}
             disabled={selected.size === 0 || !name.trim() || saving}
             style={{
               width: '100%', padding: '15px', borderRadius: 14, border: 'none',
-              background: done ? '#10b981' : (selected.size > 0 && name.trim() ? '#7c3aed' : 'rgba(124,58,237,0.25)'),
-              color: (selected.size > 0 && name.trim()) ? 'white' : 'rgba(255,255,255,0.35)',
+              background: done ? '#10b981' : (selected.size > 0 && name.trim() ? 'var(--primary)' : 'var(--primary-dim)'),
+              color: (selected.size > 0 && name.trim()) ? 'white' : 'var(--text-dim)',
               fontSize: 16, fontWeight: 700, cursor: 'pointer',
               transition: 'background 0.2s',
             }}
@@ -385,22 +404,22 @@ export default function MobileOutfits() {
   }, [outfits, garments, search, activeCat])
 
   return (
-    <div style={{ minHeight: '100%', background: '#0a0a0f', animation: 'fadeIn 0.4s ease backwards' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', animation: 'fadeIn 0.4s ease backwards' }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────────── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(10,10,15,0.96)',
+        background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         padding: '16px 20px 0',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingBottom: 12 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', color: '#f0f0f8', lineHeight: 1 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1 }}>
               Outfit
             </h1>
-            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 3 }}>
               {filtered.length} {en ? `look${filtered.length === 1 ? '' : 's'}` : 'look'}
               {search || activeCat
                 ? (en ? ` of ${outfits.length}` : ` su ${outfits.length}`)
@@ -412,9 +431,9 @@ export default function MobileOutfits() {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '9px 16px', borderRadius: 99, border: 'none',
-              background: '#7c3aed', color: 'white',
+              background: 'var(--primary)', color: 'white',
               fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+              boxShadow: '0 4px 16px var(--primary-shadow)',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
@@ -424,22 +443,18 @@ export default function MobileOutfits() {
         </div>
 
         <div style={{ position: 'relative', marginBottom: 10 }}>
-          <svg
-            width={16} height={16} viewBox="0 0 24 24" fill="none"
-            stroke="rgba(255,255,255,0.3)" strokeWidth={2} strokeLinecap="round"
-            style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-          >
-            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
-          </svg>
+          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <SearchIcon />
+          </div>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={en ? 'Search outfits…' : 'Cerca outfit…'}
             style={{
               width: '100%', padding: '11px 36px 11px 38px',
-              borderRadius: 14, border: 'none',
-              background: 'rgba(255,255,255,0.07)',
-              color: '#f0f0f8', fontSize: 14, outline: 'none',
+              borderRadius: 14, border: '1px solid var(--border)',
+              background: 'var(--card)',
+              color: 'var(--text)', fontSize: 14, outline: 'none',
               WebkitAppearance: 'none', boxSizing: 'border-box',
             }}
           />
@@ -448,9 +463,9 @@ export default function MobileOutfits() {
               onClick={() => setSearch('')}
               style={{
                 position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
+                background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%',
                 width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: 0,
+                cursor: 'pointer', color: 'var(--text-muted)', padding: 0,
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
@@ -472,8 +487,8 @@ export default function MobileOutfits() {
               style={{
                 padding: '5px 13px', borderRadius: 99, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
-                background: activeCat === '' ? '#7c3aed' : 'rgba(255,255,255,0.08)',
-                color: activeCat === '' ? '#fff' : 'rgba(255,255,255,0.45)',
+                background: activeCat === '' ? 'var(--primary)' : 'var(--card)',
+                color: activeCat === '' ? '#fff' : 'var(--text-muted)',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >{en ? 'All' : 'Tutti'}</button>
@@ -484,8 +499,8 @@ export default function MobileOutfits() {
                 style={{
                   padding: '5px 13px', borderRadius: 99, border: 'none', cursor: 'pointer',
                   fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
-                  background: activeCat === cat ? '#7c3aed' : 'rgba(255,255,255,0.08)',
-                  color: activeCat === cat ? '#fff' : 'rgba(255,255,255,0.45)',
+                  background: activeCat === cat ? 'var(--primary)' : 'var(--card)',
+                  color: activeCat === cat ? '#fff' : 'var(--text-muted)',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >{CATEGORY_LABELS[cat] || cat}</button>
@@ -500,18 +515,18 @@ export default function MobileOutfits() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 28px', gap: 14 }}>
             <div style={{
               width: 80, height: 80, borderRadius: 24,
-              background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)',
+              background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth={1.5} strokeLinecap="round">
+              <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" strokeWidth={1.5} strokeLinecap="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f8', marginBottom: 6 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
                 {en ? 'No outfits yet' : 'Nessun outfit ancora'}
               </div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 {en ? 'Combine your items and create your first look' : 'Combina i tuoi capi e crea il tuo primo look'}
               </div>
             </div>
@@ -519,16 +534,16 @@ export default function MobileOutfits() {
               onClick={() => setShowBuilder(true)}
               style={{
                 padding: '13px 28px', borderRadius: 14, border: 'none',
-                background: '#7c3aed', color: 'white',
+                background: 'var(--primary)', color: 'white',
                 fontSize: 15, fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
+                boxShadow: '0 4px 20px var(--primary-shadow)',
               }}
             >
               {en ? 'Create first outfit' : 'Crea il primo outfit'}
             </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '52px 24px', color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>
+          <div style={{ textAlign: 'center', padding: '52px 24px', color: 'var(--text-dim)', fontSize: 14 }}>
             {en
               ? `No outfits match "${search || activeCat}"`
               : `Nessun outfit corrisponde a "${search || activeCat}"`}
@@ -536,8 +551,8 @@ export default function MobileOutfits() {
               <button
                 onClick={() => { setSearch(''); setActiveCat('') }}
                 style={{
-                  background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: 10,
-                  color: 'rgba(255,255,255,0.5)', fontSize: 13, padding: '8px 16px',
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
+                  color: 'var(--text-muted)', fontSize: 13, padding: '8px 16px',
                   cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
                 }}
               >{en ? 'Clear filters' : 'Azzera filtri'}</button>
