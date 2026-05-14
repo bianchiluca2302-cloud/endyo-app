@@ -2264,15 +2264,16 @@ export default function OutfitBuilder() {
                     {selected[cat] && <span style={{ color: 'var(--success)', marginLeft: 8 }}>✓</span>}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? (compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)') : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isMobile ? (compactCards ? 6 : 10) : 10 }}>
-                    {byCategory[cat].map(g => (
+                    {byCategory[cat].map((g, gi) => (
+                      <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(gi * 35, 250)}ms backwards`, minWidth: 0 }}>
                       <GarmentCard
-                        key={g.id}
                         garment={g}
                         selectable
                         selected={selected[cat] === g.id}
                         onClick={() => toggleGarment(g)}
                         mobile={isMobile}
                       />
+                      </div>
                     ))}
                   </div>
                 </div>

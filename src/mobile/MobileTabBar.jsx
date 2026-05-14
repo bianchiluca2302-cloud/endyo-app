@@ -103,9 +103,10 @@ export default function MobileTabBar() {
   const navigate   = useNavigate()
   const location   = useLocation()
 
-  const resetTab = (path, sessionKeys = []) => {
+  const goTab = (path, sessionKeys = []) => {
+    // Always clear sub-tab keys so the page resets to its default tab on every navigation
+    sessionKeys.forEach(k => { try { sessionStorage.removeItem(k) } catch {} })
     if (location.pathname === path) {
-      sessionKeys.forEach(k => { try { sessionStorage.removeItem(k) } catch {} })
       navigate(path, { state: { resetAt: Date.now() }, replace: true })
     }
   }
@@ -161,7 +162,7 @@ export default function MobileTabBar() {
         borderTop: '1px solid var(--border)',
       }}>
         <NavLink data-mobiletour="tab-wardrobe" to="/wardrobe"
-          onClick={() => { hapticLight(); resetTab('/wardrobe', ['mw_tab']) }}
+          onClick={() => { hapticLight(); goTab('/wardrobe', ['mw_tab']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
@@ -172,7 +173,7 @@ export default function MobileTabBar() {
         </NavLink>
 
         <NavLink data-mobiletour="tab-outfit" to="/outfits"
-          onClick={() => { hapticLight(); resetTab('/outfits', ['ob_tab', 'ob_selected', 'ob_outfitName']) }}
+          onClick={() => { hapticLight(); goTab('/outfits', ['ob_tab', 'ob_selected', 'ob_outfitName']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>
@@ -231,7 +232,7 @@ export default function MobileTabBar() {
         borderTop: '1px solid var(--border)',
       }}>
         <NavLink data-mobiletour="tab-friends" to="/friends"
-          onClick={() => { hapticLight(); resetTab('/friends', ['mf_tab']) }}
+          onClick={() => { hapticLight(); goTab('/friends', ['mf_tab']) }}
           style={({ isActive }) => ({ ...tabItem, color: isActive ? 'var(--primary-light)' : 'var(--text-dim)' })}>
           {({ isActive }) => (
             <>

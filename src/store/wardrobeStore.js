@@ -133,13 +133,14 @@ const useWardrobeStore = create((set, get) => ({
 
   // ── Social feed cache (preloaded on login, used by MobileFriends) ────────
   socialPosts: [],
-  setSocialPosts: (posts) => set({ socialPosts: posts }),
+  socialFeedLoaded: false,
+  setSocialPosts: (posts) => set({ socialPosts: posts, socialFeedLoaded: true }),
   prefetchSocialFeed: async () => {
-    if (get().socialPosts.length > 0) return
+    if (get().socialFeedLoaded) return
     try {
       const data  = await getSocialFeed(1)
       const items = Array.isArray(data) ? data : (data.posts || data.items || data.feed || [])
-      set({ socialPosts: items })
+      set({ socialPosts: items, socialFeedLoaded: true })
     } catch {}
   },
 

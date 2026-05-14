@@ -1362,7 +1362,7 @@ export default function MobileFriends() {
 
   const [tab,                    setTab]                    = useState(() => { try { return sessionStorage.getItem('mf_tab') || 'feed' } catch { return 'feed' } })   // 'feed' | 'myposts'
   const [posts,                  setPosts]                  = useState(() => useWardrobeStore.getState().socialPosts)
-  const [loading,                setLoading]                = useState(() => useWardrobeStore.getState().socialPosts.length === 0)
+  const [loading,                setLoading]                = useState(() => !useWardrobeStore.getState().socialFeedLoaded)
   const [showSearch,             setShowSearch]             = useState(false)
   const [showCreate,             setShowCreate]             = useState(false)
   const [hasMore,                setHasMore]                = useState(true)
@@ -1441,9 +1441,9 @@ export default function MobileFriends() {
     setTab('feed')
   }, [location.state?.resetAt]) // eslint-disable-line
 
-  // Only fetch on mount/tab-change if no prefetched data is available
+  // Only fetch on mount/tab-change if prefetch hasn't completed yet
   useEffect(() => {
-    if (tab === 'feed' && useWardrobeStore.getState().socialPosts.length === 0) loadFeed(1)
+    if (tab === 'feed' && !useWardrobeStore.getState().socialFeedLoaded) loadFeed(1)
   }, [tab]) // eslint-disable-line
 
   const handlePostCreated = () => { setShowCreate(false); loadFeed(1) }
