@@ -1196,15 +1196,17 @@ export default function MobileWardrobe() {
 
   /* Sort options */
   const SORT_OPTIONS = language === 'en' ? [
-    { id: 'date_desc', label: 'Newest first' },
-    { id: 'date_asc',  label: 'Oldest first' },
-    { id: 'color_asc', label: 'Color'        },
-    { id: 'brand_asc', label: 'Brand A→Z'   },
+    { id: 'date_desc',     label: 'Newest first' },
+    { id: 'date_asc',      label: 'Oldest first' },
+    { id: 'category_asc',  label: 'Category'     },
+    { id: 'color_asc',     label: 'Color'        },
+    { id: 'brand_asc',     label: 'Brand A→Z'   },
   ] : [
-    { id: 'date_desc', label: 'Più recenti'  },
-    { id: 'date_asc',  label: 'Più vecchi'   },
-    { id: 'color_asc', label: 'Colore'       },
-    { id: 'brand_asc', label: 'Brand A→Z'   },
+    { id: 'date_desc',     label: 'Più recenti'  },
+    { id: 'date_asc',      label: 'Più vecchi'   },
+    { id: 'category_asc',  label: 'Categoria'    },
+    { id: 'color_asc',     label: 'Colore'       },
+    { id: 'brand_asc',     label: 'Brand A→Z'   },
   ]
 
   /* Categories derived from actual garments */
@@ -1227,10 +1229,11 @@ export default function MobileWardrobe() {
     }
     list = [...list]
     switch (wardrobeSortOrder) {
-      case 'date_asc':  list.sort((a, b) => (a.id || 0) - (b.id || 0)); break
-      case 'color_asc': list.sort((a, b) => normalizeColor(a.color_primary || '').localeCompare(normalizeColor(b.color_primary || ''))); break
-      case 'brand_asc': list.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break
-      default:          list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
+      case 'date_asc':     list.sort((a, b) => (a.id || 0) - (b.id || 0)); break
+      case 'category_asc': list.sort((a, b) => (a.category || '').localeCompare(b.category || '')); break
+      case 'color_asc':    list.sort((a, b) => normalizeColor(a.color_primary || '').localeCompare(normalizeColor(b.color_primary || ''))); break
+      case 'brand_asc':    list.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break
+      default:             list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
     }
     return list
   }, [garments, activeCat, debouncedSearch, wardrobeSortOrder])
@@ -1493,6 +1496,33 @@ export default function MobileWardrobe() {
                       {group.hex && (
                         <span style={{ width: 13, height: 13, borderRadius: '50%', background: group.hex, border: '1.5px solid rgba(0,0,0,0.12)', flexShrink: 0, display: 'inline-block' }} />
                       )}
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize', letterSpacing: '-0.01em' }}>
+                        {group.label}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>({group.items.length})</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
+                      {group.items.map((g, i) => (
+                        <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
+                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()
+            ) : wardrobeSortOrder === 'category_asc' && activeCat === '' ? (
+              /* ── Category-grouped sections ── */
+              (() => {
+                const catMap = {}
+                filtered.forEach(g => {
+                  const key = (g.category || '').trim() || '__none__'
+                  if (!catMap[key]) catMap[key] = { key, label: CATEGORY_LABELS[key] || key, items: [] }
+                  catMap[key].items.push(g)
+                })
+                return Object.values(catMap).sort((a, b) => a.label.localeCompare(b.label)).map(group => (
+                  <div key={group.key} style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 2px 10px', borderBottom: '1px solid var(--border)', marginBottom: 10 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize', letterSpacing: '-0.01em' }}>
                         {group.label}
                       </span>

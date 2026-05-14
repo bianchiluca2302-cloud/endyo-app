@@ -65,6 +65,10 @@ export default function App() {
   const logoFilter = (shadow) => isDark
     ? `invert(1) hue-rotate(${logoHueRotate - 180}deg) drop-shadow(0 6px 36px ${accentHex}dd) drop-shadow(0 0 ${shadow}px ${accentHex}88)`
     : `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 36px ${accentHex}dd)`
+  // Senza drop-shadow per le schermate di caricamento (evita alone nero transitorio durante rendering)
+  const logoFilterPlain = isDark
+    ? `invert(1) hue-rotate(${logoHueRotate - 180}deg)`
+    : `hue-rotate(${logoHueRotate}deg)`
 
   // Reset sort order to default on every app start (don't persist across restarts)
   useEffect(() => { updateSetting('wardrobeSortOrder', 'date_desc') }, []) // eslint-disable-line
@@ -194,7 +198,7 @@ export default function App() {
         }}>
           <img src={logoUrl} alt="Endyo" style={{
             width: 100, height: 100, borderRadius: 25, objectFit: 'contain',
-            filter: logoFilter(16),
+            filter: logoFilterPlain,
           }} />
           <div style={{
             width: 28, height: 28, borderRadius: '50%',
@@ -250,7 +254,7 @@ export default function App() {
           {/* Logo */}
           <img src={logoUrl} alt="Endyo" style={{
             width: 120, height: 120, borderRadius: 30, objectFit: 'contain',
-            filter: logoFilter(20),
+            filter: logoFilterPlain,
           }} />
 
           {/* Bottom: progress + label */}
