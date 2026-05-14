@@ -93,8 +93,8 @@ function FollowListSheet({ mode, onClose, language, onSelectUser }) {
         style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 701,
           background: 'var(--surface)',
-          borderRadius: '24px 24px 0 0',
-          maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+          borderRadius: '20px 20px 0 0',
+          height: '92vh', display: 'flex', flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           transform: `translateY(${dragY}px)`,
           transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
@@ -134,26 +134,28 @@ function FollowListSheet({ mode, onClose, language, onSelectUser }) {
           </div>
 
           {/* Search */}
-          <div style={{ padding: '0 16px 14px', position: 'relative' }}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round"
-              style={{ position: 'absolute', left: 28, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={en ? 'Search…' : 'Cerca…'}
-              style={{
-                width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12,
-                background: 'var(--card)', border: '1px solid var(--border)',
-                color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
-              }}
-            />
+          <div style={{ padding: '0 16px 14px' }}>
+            <div style={{ position: 'relative' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round"
+                style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={en ? 'Search…' : 'Cerca…'}
+                style={{
+                  width: '100%', padding: '10px 14px 10px 38px', borderRadius: 12,
+                  background: 'var(--card)', border: '1px solid var(--border)',
+                  color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* User list */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
             <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}>
               <div className="spinner" />
