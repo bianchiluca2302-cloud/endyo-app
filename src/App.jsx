@@ -179,32 +179,29 @@ export default function App() {
           background: accentHex, filter: 'blur(80px)',
           opacity: isDark ? 0.22 : 0.13, pointerEvents: 'none',
         }} />
-        {/* Frosted glass card */}
+        {/* Frosted glass — full screen */}
         <div style={{
-          position: 'relative', width: 128, height: 128, borderRadius: 32, flexShrink: 0,
-          backdropFilter: 'blur(48px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(48px) saturate(180%)',
-          background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.55)'}`,
-          boxShadow: isDark
-            ? '0 4px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)'
-            : '0 4px 48px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', inset: 0,
+          backdropFilter: 'blur(60px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(60px) saturate(180%)',
+          background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.60)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 24,
         }}>
           <img src={logoUrl} alt="Endyo" style={{
-            width: 72, height: 72, borderRadius: 18, objectFit: 'contain',
-            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 4px 20px ${accentHex}99)`,
+            width: 100, height: 100, borderRadius: 25, objectFit: 'contain',
+            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 32px ${accentHex}dd)`,
           }} />
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            border: `2.5px solid ${accentHex}28`, borderTopColor: accentHex,
+            animation: 'glassSpinnerSpin 0.8s linear infinite',
+          }} />
+          <span style={{
+            fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
+            color: isDark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.28)', marginTop: -12,
+          }}>endyo</span>
         </div>
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          border: `2.5px solid ${accentHex}28`, borderTopColor: accentHex,
-          animation: 'glassSpinnerSpin 0.8s linear infinite',
-        }} />
-        <span style={{
-          fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
-          color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.28)', marginTop: -8,
-        }}>endyo</span>
       </div>
     )
   }
@@ -236,46 +233,44 @@ export default function App() {
           pointerEvents: 'none',
         }} />
 
-        {/* Frosted glass card */}
+        {/* Frosted glass — full screen */}
         <div style={{
-          position: 'relative', width: 164, height: 164, borderRadius: 40, flexShrink: 0,
-          backdropFilter: 'blur(48px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(48px) saturate(180%)',
-          background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.72)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.55)'}`,
-          boxShadow: isDark
-            ? `0 4px 64px rgba(0,0,0,0.50), 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.12)`
-            : `0 4px 64px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.80)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          animation: 'splashFade 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards',
+          position: 'absolute', inset: 0,
+          backdropFilter: 'blur(60px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(60px) saturate(180%)',
+          background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.60)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          animation: 'splashFade 0.45s ease forwards',
         }}>
+          {/* Logo */}
           <img src={logoUrl} alt="Endyo" style={{
-            width: 104, height: 104, borderRadius: 26, objectFit: 'contain',
-            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 4px 28px ${accentHex}cc)`,
+            width: 120, height: 120, borderRadius: 30, objectFit: 'contain',
+            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 36px ${accentHex}dd)`,
           }} />
-        </div>
 
-        {/* Bottom: progress + label */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          paddingBottom: 'max(56px, env(safe-area-inset-bottom, 56px))',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-        }}>
+          {/* Bottom: progress + label */}
           <div style={{
-            width: 44, height: 3, borderRadius: 2,
-            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-            overflow: 'hidden', position: 'relative',
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            paddingBottom: 'max(56px, env(safe-area-inset-bottom, 56px))',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
           }}>
             <div style={{
-              position: 'absolute', left: 0, top: 0, height: '100%', width: '40%', borderRadius: 2,
-              background: `linear-gradient(90deg, ${accentHex}, ${accentLight})`,
-              animation: 'splashSlide 1s ease-in-out infinite',
-            }} />
+              width: 44, height: 3, borderRadius: 2,
+              background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+              overflow: 'hidden', position: 'relative',
+            }}>
+              <div style={{
+                position: 'absolute', left: 0, top: 0, height: '100%', width: '40%', borderRadius: 2,
+                background: `linear-gradient(90deg, ${accentHex}, ${accentLight})`,
+                animation: 'splashSlide 1s ease-in-out infinite',
+              }} />
+            </div>
+            <span style={{
+              fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
+              color: isDark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.28)',
+            }}>endyo</span>
           </div>
-          <span style={{
-            fontSize: 11, letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase',
-            color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(0,0,0,0.28)',
-          }}>endyo</span>
         </div>
       </div>
     )
