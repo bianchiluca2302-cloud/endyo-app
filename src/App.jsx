@@ -61,6 +61,10 @@ export default function App() {
   const accentLight = accentInfo.light
   // Logo tint: hue-rotate dal arancione base del PNG (~37°) al colore accent scelto
   const logoHueRotate = Math.round(hexToHue(accentHex) - 37)
+  // Su dark theme: invert(1) fa bianco→nero; hue-rotate(logoHueRotate-180) riporta la tinta accent
+  const logoFilter = (shadow) => isDark
+    ? `invert(1) hue-rotate(${logoHueRotate - 180}deg) drop-shadow(0 6px 36px ${accentHex}dd) drop-shadow(0 0 ${shadow}px ${accentHex}88)`
+    : `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 36px ${accentHex}dd)`
 
   // Reset sort order to default on every app start (don't persist across restarts)
   useEffect(() => { updateSetting('wardrobeSortOrder', 'date_desc') }, []) // eslint-disable-line
@@ -190,7 +194,7 @@ export default function App() {
         }}>
           <img src={logoUrl} alt="Endyo" style={{
             width: 100, height: 100, borderRadius: 25, objectFit: 'contain',
-            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 32px ${accentHex}dd)`,
+            filter: logoFilter(16),
           }} />
           <div style={{
             width: 28, height: 28, borderRadius: '50%',
@@ -246,7 +250,7 @@ export default function App() {
           {/* Logo */}
           <img src={logoUrl} alt="Endyo" style={{
             width: 120, height: 120, borderRadius: 30, objectFit: 'contain',
-            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 6px 36px ${accentHex}dd)`,
+            filter: logoFilter(20),
           }} />
 
           {/* Bottom: progress + label */}

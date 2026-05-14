@@ -1162,6 +1162,17 @@ export default function MobileWardrobe() {
   )
 
   useEffect(() => { init() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Skeleton count: use last known garment count from localStorage (saved after each load)
+  const skeletonCount = useMemo(() => {
+    try { return Math.max(parseInt(localStorage.getItem('endyo_last_count') || '8', 10), 4) } catch { return 8 }
+  }, [])
+  useEffect(() => {
+    if (!loading && garments.length > 0) {
+      try { localStorage.setItem('endyo_last_count', String(garments.length)) } catch {}
+    }
+  }, [loading, garments.length])
+
   // Animate cards only when returning to page with cached data; suppress on first load to avoid
   // misalignment between skeleton placeholders and real cards appearing below them.
   const animateCards = useRef(garments.length > 0)
@@ -1454,7 +1465,7 @@ export default function MobileWardrobe() {
           <div style={{ flex: 1, padding: '4px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {loading && garments.length === 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
-                {Array.from({ length: 6 }).map((_, i) => (
+                {Array.from({ length: skeletonCount }).map((_, i) => (
                   <div key={i} className="skeleton-card">
                     <div className="skeleton" style={{ height: 158, borderRadius: 0 }} />
                     <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
