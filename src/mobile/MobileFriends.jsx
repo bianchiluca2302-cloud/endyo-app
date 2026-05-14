@@ -1260,12 +1260,21 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
     if (!query.trim()) { setResults([]); setLoading(false); return }
     setLoading(true)
     const timer = setTimeout(async () => {
-      try { setResults(await searchUsers(query)) }
+      try {
+        const q = query.toLowerCase()
+        const [apiResults] = await Promise.all([searchUsers(query)])
+        // merge with followingList (already loaded) so followed users always appear
+        const fromFollowing = followingList.filter(u =>
+          u.username?.toLowerCase().includes(q) &&
+          !apiResults.some(r => r.id === u.id)
+        )
+        setResults([...fromFollowing, ...apiResults])
+      }
       catch { setResults([]) }
       finally { setLoading(false) }
     }, 150)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, followingList])
 
   const toggleFollow = async (u) => {
     const isF = following.has(u.username)
