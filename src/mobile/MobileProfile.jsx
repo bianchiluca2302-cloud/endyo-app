@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
-import { imgUrl } from '../api/client'
+import { imgUrl, fetchFollowers, fetchFollowing } from '../api/client'
 
 /* ── Avatar ──────────────────────────────────────────────────────────────────── */
 function Avatar({ src, username, size = 72 }) {
@@ -16,23 +16,203 @@ function Avatar({ src, username, size = 72 }) {
       background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontWeight: 800, fontSize: size * 0.38,
-      border: '3px solid var(--primary-border)',
+      border: '2px solid var(--primary-border)',
       flexShrink: 0,
     }}>{initial}</div>
   )
   if (picSrc && !imgError) {
     return <img src={picSrc} alt={username} onError={() => setImgError(true)} style={{
       width: size, height: size, borderRadius: '50%', objectFit: 'cover',
-      border: '3px solid var(--primary-border)', flexShrink: 0,
+      border: '2px solid var(--primary-border)', flexShrink: 0,
     }} />
   }
   return fallback
 }
 
-/* ── Stat bubble ─────────────────────────────────────────────────────────────── */
-function Stat({ value, label, color }) {
+/* ── PlanBadge ───────────────────────────────────────────────────────────────── */
+function PlanBadge({ plan }) {
+  if (!plan || plan === 'free') return null
+  const isPlus = plan === 'premium_plus'
   return (
-    <div style={{ textAlign: 'center', flex: 1, padding: '14px 6px' }}>
+    <span style={{
+      fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
+      padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
+      background: isPlus ? 'rgba(245,158,11,0.14)' : 'rgba(139,92,246,0.14)',
+      color: isPlus ? '#f59e0b' : 'var(--primary-light)',
+      border: `1px solid ${isPlus ? 'rgba(245,158,11,0.28)' : 'var(--primary-border)'}`,
+    }}>
+      {isPlus ? 'Plus' : 'Premium'}
+    </span>
+  )
+}
+
+/* ── FollowListSheet ─────────────────────────────────────────────────────────── */
+function FollowListSheet({ mode, onClose, language, onSelectUser }) {
+  const [users,    setUsers]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState('')
+  const [dragY,    setDragY]    = useState(0)
+  const startYRef  = useRef(0)
+  const draggingRef = useRef(false)
+  const sheetRef   = useRef(null)
+
+  const en = language === 'en'
+
+  useEffect(() => {
+    setLoading(true)
+    const fn = mode === 'followers' ? fetchFollowers : fetchFollowing
+    fn().then(list => setUsers(list || [])).catch(() => setUsers([])).finally(() => setLoading(false))
+  }, [mode])
+
+  const onHandleTouchStart = (e) => { startYRef.current = e.touches[0].clientY; draggingRef.current = true }
+  const onHandleTouchMove  = (e) => {
+    if (!draggingRef.current) return
+    const delta = e.touches[0].clientY - startYRef.current
+    if (delta > 0) { setDragY(delta); e.preventDefault() }
+  }
+  const onHandleTouchEnd   = () => {
+    draggingRef.current = false
+    const sheetH = sheetRef.current?.offsetHeight || 400
+    if (dragY > sheetH * 0.35) { setDragY(0); onClose() }
+    else setDragY(0)
+  }
+
+  const q = search.toLowerCase().trim()
+  const filtered = q ? users.filter(u => u.username?.toLowerCase().includes(q)) : users
+
+  const title = mode === 'followers'
+    ? (en ? 'Followers' : 'Follower')
+    : (en ? 'Following' : 'Seguiti')
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 700 }} />
+      <div
+        ref={sheetRef}
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 701,
+          background: 'var(--surface)',
+          borderRadius: '24px 24px 0 0',
+          maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: `translateY(${dragY}px)`,
+          transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
+        }}
+      >
+        {/* Handle + header */}
+        <div
+          onTouchStart={onHandleTouchStart}
+          onTouchMove={onHandleTouchMove}
+          onTouchEnd={onHandleTouchEnd}
+          style={{
+            flexShrink: 0, touchAction: 'none', cursor: 'grab',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 14px' }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+              {title}
+              {!loading && (
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-dim)', marginLeft: 8 }}>
+                  {users.length}
+                </span>
+              )}
+            </div>
+            <button onClick={onClose} style={{
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '50%',
+              width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'var(--text)',
+            }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Search */}
+          <div style={{ padding: '0 16px 14px', position: 'relative' }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round"
+              style={{ position: 'absolute', left: 28, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={en ? 'Search…' : 'Cerca…'}
+              style={{
+                width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12,
+                background: 'var(--card)', border: '1px solid var(--border)',
+                color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* User list */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}>
+              <div className="spinner" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 14 }}>
+              {search
+                ? (en ? 'No results' : 'Nessun risultato')
+                : (en ? `No ${title.toLowerCase()} yet` : `Nessun ${mode === 'followers' ? 'follower' : 'utente seguito'} ancora`)}
+            </div>
+          ) : (
+            filtered.map(u => (
+              <button
+                key={u.id}
+                onClick={() => onSelectUser(u.username)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '11px 20px', background: 'transparent', border: 'none',
+                  cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                  borderBottom: '1px solid var(--border)', textAlign: 'left',
+                }}
+              >
+                <Avatar src={u.profile_picture} username={u.username} size={44} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      @{u.username}
+                    </span>
+                    <PlanBadge plan={u.plan} />
+                  </div>
+                  {u.bio && (
+                    <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.bio}
+                    </div>
+                  )}
+                </div>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ── Stat bubble ─────────────────────────────────────────────────────────────── */
+function Stat({ value, label, color, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        textAlign: 'center', flex: 1, padding: '14px 6px',
+        cursor: onClick ? 'pointer' : 'default',
+        WebkitTapHighlightColor: onClick ? 'rgba(0,0,0,0.04)' : 'transparent',
+      }}
+    >
       <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.04em', color: color || 'var(--text)' }}>
         {value ?? '—'}
       </div>
@@ -110,13 +290,6 @@ const PersonIcon = () => (
     <circle cx="12" cy="7" r="4"/>
   </svg>
 )
-const ShoppingIcon = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <path d="M16 10a4 4 0 01-8 0"/>
-  </svg>
-)
 const LogoutIcon = () => (
   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
@@ -133,12 +306,20 @@ export default function MobileProfile() {
   const outfits   = useWardrobeStore(s => s.outfits)
   const language  = useSettingsStore(s => s.language) || 'it'
 
+  const [followSheet, setFollowSheet] = useState(null)   // null | 'followers' | 'following'
+
   const isPremium = user?.plan && user.plan !== 'free'
   const isPlus    = user?.plan?.startsWith('premium_plus')
+  const en        = language === 'en'
 
   const handleLogout = () => {
     logout()
     navigate('/auth', { replace: true })
+  }
+
+  const openUserProfile = (username) => {
+    setFollowSheet(null)
+    navigate('/friends', { state: { openProfile: username } })
   }
 
   return (
@@ -159,7 +340,7 @@ export default function MobileProfile() {
               fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em',
               color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              {user?.username || (language === 'en' ? 'User' : 'Utente')}
+              {user?.username || (en ? 'User' : 'Utente')}
             </div>
             {user?.email && (
               <div style={{
@@ -194,18 +375,28 @@ export default function MobileProfile() {
           </div>
         </div>
 
-        {/* Stats — capi, outfit, follower */}
+        {/* Stats */}
         <div style={{
           display: 'flex', marginTop: 18,
           background: 'var(--card)',
           borderRadius: 14, border: '1px solid var(--border)',
           overflow: 'hidden',
         }}>
-          <Stat value={garments.length} label={language === 'en' ? 'items' : 'capi'} />
+          <Stat value={garments.length} label={en ? 'items' : 'capi'} />
           <div style={{ width: 1, background: 'var(--border)', margin: '10px 0' }} />
           <Stat value={outfits.length} label="outfit" />
           <div style={{ width: 1, background: 'var(--border)', margin: '10px 0' }} />
-          <Stat value={profile?.followers_count || 0} label={language === 'en' ? 'followers' : 'follower'} />
+          <Stat
+            value={profile?.following_count ?? 0}
+            label={en ? 'following' : 'seguiti'}
+            onClick={() => setFollowSheet('following')}
+          />
+          <div style={{ width: 1, background: 'var(--border)', margin: '10px 0' }} />
+          <Stat
+            value={profile?.followers_count ?? 0}
+            label={en ? 'followers' : 'follower'}
+            onClick={() => setFollowSheet('followers')}
+          />
         </div>
       </div>
 
@@ -221,20 +412,20 @@ export default function MobileProfile() {
           }}>
             <MenuRow
               icon={<PersonIcon />}
-              label={language === 'en' ? 'Edit profile' : 'Modifica profilo'}
-              sublabel={language === 'en' ? 'Photo, username, bio' : 'Foto, username, bio'}
+              label={en ? 'Edit profile' : 'Modifica profilo'}
+              sublabel={en ? 'Photo, username, bio' : 'Foto, username, bio'}
               onPress={() => navigate('/edit-profile')}
             />
             <MenuRow
               icon={<CrownIcon />}
               label={isPremium
-                ? (language === 'en' ? 'My plan' : 'Il mio piano')
-                : (language === 'en' ? 'Upgrade to Premium' : 'Passa a Premium')}
+                ? (en ? 'My plan' : 'Il mio piano')
+                : (en ? 'Upgrade to Premium' : 'Passa a Premium')}
               sublabel={isPremium
                 ? (isPlus
-                    ? (language === 'en' ? 'Plus plan active' : 'Piano Plus attivo')
-                    : (language === 'en' ? 'Pro plan active' : 'Piano Pro attivo'))
-                : (language === 'en' ? 'Unlock all features' : 'Sblocca tutte le funzioni')}
+                    ? (en ? 'Plus plan active' : 'Piano Plus attivo')
+                    : (en ? 'Pro plan active' : 'Piano Pro attivo'))
+                : (en ? 'Unlock all features' : 'Sblocca tutte le funzioni')}
               onPress={() => navigate('/premium')}
               accent
             />
@@ -250,8 +441,8 @@ export default function MobileProfile() {
           }}>
             <MenuRow
               icon={<SettingsIcon />}
-              label={language === 'en' ? 'Settings' : 'Impostazioni'}
-              sublabel={language === 'en' ? 'Language, theme, notifications' : 'Lingua, tema, notifiche'}
+              label={en ? 'Settings' : 'Impostazioni'}
+              sublabel={en ? 'Language, theme, notifications' : 'Lingua, tema, notifiche'}
               onPress={() => navigate('/settings')}
             />
           </div>
@@ -262,7 +453,7 @@ export default function MobileProfile() {
           <div style={{ background: 'var(--surface)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
             <MenuRow
               icon={<LogoutIcon />}
-              label={language === 'en' ? 'Log out' : "Esci dall'account"}
+              label={en ? 'Log out' : "Esci dall'account"}
               onPress={handleLogout}
               danger
             />
@@ -270,6 +461,15 @@ export default function MobileProfile() {
         </div>
       </div>
 
+      {/* ── Follow sheet ─────────────────────────────────────────────────────── */}
+      {followSheet && (
+        <FollowListSheet
+          mode={followSheet}
+          language={language}
+          onClose={() => setFollowSheet(null)}
+          onSelectUser={openUserProfile}
+        />
+      )}
     </div>
   )
 }

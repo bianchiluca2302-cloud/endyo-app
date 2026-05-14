@@ -2724,10 +2724,21 @@ async def get_profile(
     profile = result.scalar_one_or_none()
     if not profile:
         return {}
+    followers_res = await db.execute(
+        select(Friendship).where(Friendship.addressee_id == current_user.id, Friendship.status == "following")
+    )
+    following_res = await db.execute(
+        select(Friendship).where(Friendship.requester_id == current_user.id, Friendship.status == "following")
+    )
+    followers_count = len(followers_res.scalars().all())
+    following_count = len(following_res.scalars().all())
     return {
         "id": profile.id,
         "name": profile.name,
         "gender": profile.gender,
+        "bio": getattr(profile, 'bio', None),
+        "followers_count": followers_count,
+        "following_count": following_count,
         # misure corporee
         "height_cm": profile.height_cm,
         "weight_kg": profile.weight_kg,
@@ -3260,8 +3271,15 @@ async def list_following(
         if other:
             prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == other.id))
             prof = prof_res.scalar_one_or_none()
-            out.append({"friendship_id": f.id, "id": other.id, "username": other.username,
-                        "profile_picture": prof.profile_picture if prof else None})
+            plan = other.plan or "free"
+            if plan == "premium_annual":      plan = "premium"
+            if plan == "premium_plus_annual": plan = "premium_plus"
+            out.append({
+                "friendship_id": f.id, "id": other.id, "username": other.username,
+                "profile_picture": prof.profile_picture if prof else None,
+                "plan": plan,
+                "bio": getattr(prof, 'bio', None) if prof else None,
+            })
     return out
 
 
@@ -3284,8 +3302,15 @@ async def list_followers(
         if other:
             prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == other.id))
             prof = prof_res.scalar_one_or_none()
-            out.append({"friendship_id": f.id, "id": other.id, "username": other.username,
-                        "profile_picture": prof.profile_picture if prof else None})
+            plan = other.plan or "free"
+            if plan == "premium_annual":      plan = "premium"
+            if plan == "premium_plus_annual": plan = "premium_plus"
+            out.append({
+                "friendship_id": f.id, "id": other.id, "username": other.username,
+                "profile_picture": prof.profile_picture if prof else None,
+                "plan": plan,
+                "bio": getattr(prof, 'bio', None) if prof else None,
+            })
     return out
 
 

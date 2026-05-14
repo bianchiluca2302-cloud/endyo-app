@@ -1434,6 +1434,12 @@ export default function MobileFriends() {
     loadNotifications()
   }, [loadNotifications])
 
+  useEffect(() => {
+    if (location.state?.openProfile) {
+      setProfileUser(location.state.openProfile)
+    }
+  }, [location.state?.openProfile])
+
   const handleTabNotifiche = () => {
     setTab('notifiche')
     // Segna come viste dopo 800ms (dà tempo all'utente di vedere il badge)

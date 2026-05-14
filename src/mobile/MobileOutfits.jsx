@@ -3,6 +3,7 @@ import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import { imgUrl } from '../api/client'
 import { useCategoryLabels } from '../i18n'
+import OutfitCanvasShared from '../components/OutfitCanvas'
 
 /* ── Icons ───────────────────────────────────────────────────────────────────── */
 const PlusIcon = () => (
@@ -87,7 +88,7 @@ function GarmentPickerItem({ g, selected, onToggle }) {
 function OutfitCard({ outfit, language }) {
   const garments = useWardrobeStore(s => s.garments)
   const members  = outfit.garment_ids
-    ? garments.filter(g => outfit.garment_ids.includes(g.id)).slice(0, 4)
+    ? garments.filter(g => outfit.garment_ids.includes(g.id))
     : []
   const total = outfit.garment_ids?.length || 0
 
@@ -98,33 +99,20 @@ function OutfitCard({ outfit, language }) {
       cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
-      {/* Thumbnail */}
-      <div style={{ aspectRatio: '4/3', position: 'relative', background: 'var(--bg)' }}>
+      {/* Canvas outfit */}
+      <div style={{ height: 180, overflow: 'hidden', background: 'var(--bg)' }}>
         {members.length === 0 ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={1.5} strokeLinecap="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </div>
-        ) : members.length === 1 ? (
-          <img src={imgUrl(members[0].front_photo_url)} alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', width: '100%', height: '100%', gap: 1 }}>
-            {members.slice(0, 4).map(g => (
-              <div key={g.id} style={{ background: g.bg_color || 'var(--bg)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {g.front_photo_url
-                  ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  : null}
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Capi extra badge */}
-        {total > 4 && (
-          <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '2px 7px', fontSize: 10, fontWeight: 700, color: 'var(--text-dim)' }}>
-            +{total - 4}
-          </div>
+          <OutfitCanvasShared
+            garmentItems={members}
+            transforms={outfit.transforms || {}}
+            height={180}
+          />
         )}
       </div>
       {/* Info */}
