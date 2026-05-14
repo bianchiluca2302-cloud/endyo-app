@@ -998,13 +998,39 @@ function TravelTab() {
   const [numOutfits,   setNumOutfits]   = useState(null)   // null = AI decides
   const [travelStyle,  setTravelStyle]  = useState('')
   const [tripType,     setTripType]     = useState('')
-  const [showPicker,   setShowPicker]   = useState(false)
-  const [result,       setResult]       = useState(null)
-  const [error,        setError]        = useState(null)
+  const [showPicker,     setShowPicker]     = useState(false)
+  const [result,         setResult]         = useState(null)
+  const [error,          setError]          = useState(null)
+  const [geoSuggestions, setGeoSuggestions] = useState([])
+  const [geoLoading,     setGeoLoading]     = useState(false)
+  const geoTimer = useRef(null)
   const en = language === 'en'
 
   const togglePreferred = id => setPreferredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   const getById = id => garments.find(g => g.id === id)
+
+  const fetchGeoSuggestions = (query) => {
+    clearTimeout(geoTimer.current)
+    if (!query || query.length < 2) { setGeoSuggestions([]); return }
+    setGeoLoading(true)
+    geoTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=${language}&format=json`)
+        const data = await res.json()
+        setGeoSuggestions(data.results || [])
+      } catch {
+        setGeoSuggestions([])
+      } finally {
+        setGeoLoading(false)
+      }
+    }, 320)
+  }
+
+  const selectGeoSuggestion = (item) => {
+    const label = [item.name, item.admin1, item.country].filter(Boolean).join(', ')
+    setDestination(label)
+    setGeoSuggestions([])
+  }
 
   const generate = async (overrides = {}) => {
     setStep(6); setError(null); setResult(null)
@@ -1071,16 +1097,50 @@ function TravelTab() {
       <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
         {en ? 'I\'ll plan the perfect wardrobe for your trip.' : 'Pianificherò l\'armadio perfetto per il tuo viaggio.'}
       </div>
-      <input
-        value={destination}
-        onChange={e => setDestination(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && destination.trim() && setStep(1)}
-        placeholder={en ? 'e.g. Tokyo, Barcelona, New York…' : 'es. Parigi, Tokyo, New York…'}
-        autoFocus
-        style={inputStyle}
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          value={destination}
+          onChange={e => { setDestination(e.target.value); fetchGeoSuggestions(e.target.value) }}
+          onKeyDown={e => { if (e.key === 'Enter' && destination.trim()) { setGeoSuggestions([]); setStep(1) } }}
+          placeholder={en ? 'e.g. Tokyo, Barcelona, New York…' : 'es. Parigi, Tokyo, New York…'}
+          autoFocus
+          autoComplete="off"
+          style={inputStyle}
+        />
+        {geoLoading && (
+          <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
+        )}
+        {geoSuggestions.length > 0 && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', zIndex: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            {geoSuggestions.map((item, i) => {
+              const city    = item.name
+              const region  = item.admin1
+              const country = item.country
+              const sub     = [region, country].filter(Boolean).join(', ')
+              return (
+                <button
+                  key={i}
+                  onMouseDown={e => { e.preventDefault(); selectGeoSuggestion(item); setStep(1) }}
+                  style={{
+                    width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                    borderBottom: i < geoSuggestions.length - 1 ? '1px solid var(--border)' : 'none',
+                    WebkitTapHighlightColor: 'transparent', textAlign: 'left',
+                  }}
+                >
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>📍</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{city}</div>
+                    {sub && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1 }}>{sub}</div>}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
       <button
-        onClick={() => setStep(1)}
+        onClick={() => { setGeoSuggestions([]); setStep(1) }}
         disabled={!destination.trim()}
         style={{
           marginTop: 16, width: '100%', padding: '15px', borderRadius: 14, border: 'none',
