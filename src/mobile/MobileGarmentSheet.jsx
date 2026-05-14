@@ -133,16 +133,26 @@ export default function MobileGarmentSheet({ garment, onClose }) {
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
-  // Lock main scroll while sheet is open — save and restore position to prevent jump to top
+  // Lock scroll while sheet is open — targets inner scroll area when available (wardrobe layout)
+  // or falls back to <main> (friends page)
   useEffect(() => {
-    const main = document.querySelector('main')
-    const savedTop = main ? main.scrollTop : 0
-    if (main) main.style.overflow = 'hidden'
+    const inner = document.querySelector('.wardrobe-scroll-area')
+    const main  = document.querySelector('main')
+    const el    = inner || main
+    const savedTop = el ? el.scrollTop : 0
     document.body.style.overflow = 'hidden'
+    if (inner) {
+      inner.style.overflowY = 'hidden'
+    } else if (main) {
+      main.style.overflow = 'hidden'
+    }
     return () => {
       document.body.style.overflow = ''
-      if (main) {
-        main.style.overflow = 'auto'   // explicit restore — empty string leaves it unstyled
+      if (inner) {
+        inner.style.overflowY = 'auto'
+        requestAnimationFrame(() => { inner.scrollTop = savedTop })
+      } else if (main) {
+        main.style.overflow = 'auto'
         requestAnimationFrame(() => { main.scrollTop = savedTop })
       }
     }

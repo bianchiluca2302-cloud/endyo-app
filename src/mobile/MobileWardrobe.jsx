@@ -1140,15 +1140,13 @@ export default function MobileWardrobe() {
   const SORT_OPTIONS = language === 'en' ? [
     { id: 'date_desc', label: 'Newest first' },
     { id: 'date_asc',  label: 'Oldest first' },
-    { id: 'name_asc',  label: 'Name A→Z'     },
-    { id: 'color_asc', label: 'Color'         },
-    { id: 'brand_asc', label: 'Brand A→Z'    },
+    { id: 'color_asc', label: 'Color'        },
+    { id: 'brand_asc', label: 'Brand A→Z'   },
   ] : [
-    { id: 'date_desc', label: 'Più recenti'   },
-    { id: 'date_asc',  label: 'Più vecchi'    },
-    { id: 'name_asc',  label: 'Nome A→Z'      },
-    { id: 'color_asc', label: 'Colore'        },
-    { id: 'brand_asc', label: 'Brand A→Z'     },
+    { id: 'date_desc', label: 'Più recenti'  },
+    { id: 'date_asc',  label: 'Più vecchi'   },
+    { id: 'color_asc', label: 'Colore'       },
+    { id: 'brand_asc', label: 'Brand A→Z'   },
   ]
 
   /* Categories derived from actual garments */
@@ -1172,7 +1170,6 @@ export default function MobileWardrobe() {
     list = [...list]
     switch (wardrobeSortOrder) {
       case 'date_asc':  list.sort((a, b) => (a.id || 0) - (b.id || 0)); break
-      case 'name_asc':  list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break
       case 'color_asc': list.sort((a, b) => (a.color_primary || '').localeCompare(b.color_primary || '')); break
       case 'brand_asc': list.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break
       default:          list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
@@ -1203,7 +1200,7 @@ export default function MobileWardrobe() {
   })
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Sort popover backdrop */}
       {showSort && (
@@ -1213,9 +1210,9 @@ export default function MobileWardrobe() {
         />
       )}
 
-      {/* ── Sticky header ──────────────────────────────────────────────────────── */}
+      {/* ── Fixed header (flexShrink so it never scrolls) ───────────────────────── */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 160,
+        flexShrink: 0, position: 'relative', zIndex: 160,
         background: 'var(--bg)',
         backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
         paddingTop: 16,
@@ -1279,6 +1276,7 @@ export default function MobileWardrobe() {
                             background: active ? 'var(--primary-dim)' : 'transparent',
                             color: active ? 'var(--primary-light)' : 'var(--text)',
                             fontSize: 14, fontWeight: active ? 700 : 400,
+                            border: 'none',
                             borderBottom: i < SORT_OPTIONS.length - 1 ? '1px solid var(--border)' : 'none',
                             cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
                             transition: 'background 0.12s',
@@ -1350,6 +1348,9 @@ export default function MobileWardrobe() {
           </button>
         </div>
       </div>
+
+      {/* ── Scrollable content area ─────────────────────────────────────────────── */}
+      <div className="wardrobe-scroll-area" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
 
       {/* ── Armadio tab ────────────────────────────────────────────────────────── */}
       {activeTab === 'armadio' && (
@@ -1493,6 +1494,8 @@ export default function MobileWardrobe() {
           <AnalisiTab />
         </div>
       )}
+
+      </div>{/* end wardrobe-scroll-area */}
 
       {/* ── Garment detail modal ────────────────────────────────────────────────── */}
       {selected && (
