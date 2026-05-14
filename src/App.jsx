@@ -34,6 +34,17 @@ const ROUTER_FUTURE = {
   v7_relativeSplatPath: true,
 }
 
+// Converte hex → hue (0-360) per il filtro hue-rotate sul logo
+function hexToHue(hex) {
+  const r = parseInt(hex.slice(1,3), 16) / 255
+  const g = parseInt(hex.slice(3,5), 16) / 255
+  const b = parseInt(hex.slice(5,7), 16) / 255
+  const max = Math.max(r,g,b), d = max - Math.min(r,g,b)
+  if (d === 0) return 0
+  let h = max === r ? ((g-b)/d % 6) * 60 : max === g ? ((b-r)/d + 2) * 60 : ((r-g)/d + 4) * 60
+  return h < 0 ? h + 360 : h
+}
+
 export default function App() {
   const init                = useWardrobeStore(s => s.init)
   const prefetchSocialFeed  = useWardrobeStore(s => s.prefetchSocialFeed)
@@ -43,11 +54,13 @@ export default function App() {
   const updateSetting = useSettingsStore(s => s.updateSetting)
   const isMobile     = useIsMobile()
 
-  const accentInfo = ACCENT_COLORS.find(c => c.id === settings.accentColor) || ACCENT_COLORS[0]
-  const themeObj   = THEMES.find(t => t.id === settings.theme) || THEMES[0]
-  const isDark     = themeObj.dark || (themeObj.auto && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  const accentHex  = accentInfo.hex
+  const accentInfo  = ACCENT_COLORS.find(c => c.id === settings.accentColor) || ACCENT_COLORS[0]
+  const themeObj    = THEMES.find(t => t.id === settings.theme) || THEMES[0]
+  const isDark      = themeObj.dark || (themeObj.auto && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const accentHex   = accentInfo.hex
   const accentLight = accentInfo.light
+  // Logo tint: hue-rotate dal arancione base del PNG (~37°) al colore accent scelto
+  const logoHueRotate = Math.round(hexToHue(accentHex) - 37)
 
   // Reset sort order to default on every app start (don't persist across restarts)
   useEffect(() => { updateSetting('wardrobeSortOrder', 'date_desc') }, []) // eslint-disable-line
@@ -180,7 +193,7 @@ export default function App() {
         }}>
           <img src={logoUrl} alt="Endyo" style={{
             width: 72, height: 72, borderRadius: 18, objectFit: 'contain',
-            filter: `drop-shadow(0 4px 20px ${accentHex}99)`,
+            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 4px 20px ${accentHex}99)`,
           }} />
         </div>
         <div style={{
@@ -238,7 +251,7 @@ export default function App() {
         }}>
           <img src={logoUrl} alt="Endyo" style={{
             width: 104, height: 104, borderRadius: 26, objectFit: 'contain',
-            filter: `drop-shadow(0 4px 28px ${accentHex}cc)`,
+            filter: `hue-rotate(${logoHueRotate}deg) drop-shadow(0 4px 28px ${accentHex}cc)`,
           }} />
         </div>
 
