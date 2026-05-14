@@ -80,9 +80,11 @@ export function applyTheme(settings) {
     theme.dark ? 'rgba(168,85,247,0.06)' : 'rgba(100,100,120,0.05)'
   )
 
-  // Aggiorna anche il background del body
   document.body.style.background = theme.bg
   document.body.style.color      = theme.text
+
+  const zoomMap = { sm: 0.9, md: 1.0, lg: 1.12 }
+  document.documentElement.style.zoom = zoomMap[settings.textScale] ?? 1.0
 }
 
 // ── Valute ────────────────────────────────────────────────────────────────────
@@ -134,7 +136,8 @@ function detectSystemLanguage() {
 // ── Default settings ──────────────────────────────────────────────────────────
 const DEFAULTS = {
   accentColor:        'amber',
-  theme:              'light',   // default: tema chiaro
+  theme:              'light',
+  textScale:          'md',      // 'sm' | 'md' | 'lg'
   language:           detectSystemLanguage(),
   shoeSizeSystem:     'eu',
   clothingSizeSystem: 'eu',
@@ -143,7 +146,7 @@ const DEFAULTS = {
   showPrices:         true,
   compactCards:       false,
   autoRemoveBg:       true,
-  wardrobeSortOrder:  'date_desc', // date_desc | date_asc | name_asc | color_asc | brand_asc
+  wardrobeSortOrder:  'date_desc',
 }
 
 const useSettingsStore = create(
@@ -153,7 +156,7 @@ const useSettingsStore = create(
 
       updateSetting: (key, value) => {
         set({ [key]: value })
-        if (key === 'accentColor' || key === 'theme') {
+        if (key === 'accentColor' || key === 'theme' || key === 'textScale') {
           applyTheme({ ...get(), [key]: value })
         }
       },

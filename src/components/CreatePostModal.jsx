@@ -7,10 +7,9 @@ import { useT } from '../i18n'
 import { IconSparkle } from './Icons'
 import OutfitCanvasShared from './OutfitCanvas'
 
-// Wrapper che adatta le props di CreatePostModal al componente condiviso
-function OutfitCanvas({ garmentItems, bgMode, bgColor, height = 420 }) {
+function OutfitCanvas({ garmentItems, transforms, bgMode, bgColor, height = 420 }) {
   const effectiveBg = bgMode === 'color' ? bgColor : null
-  return <OutfitCanvasShared garmentItems={garmentItems} bgColor={effectiveBg} height={height} />
+  return <OutfitCanvasShared garmentItems={garmentItems} transforms={transforms} bgColor={effectiveBg} height={height} />
 }
 
 export default function CreatePostModal({ onClose, onCreated }) {
@@ -200,36 +199,26 @@ export default function CreatePostModal({ onClose, onCreated }) {
                       </div>
                     )
                     return filtered.map(o => {
-                      const cover = (o.garment_ids || [])
-                        .map(id => garments.find(g => g.id === id))
-                        .find(g => g?.photo_front)
+                      const oGarments = (o.garment_ids || [])
+                        .map(id => garments.find(g => g.id === id)).filter(Boolean)
                       return (
                         <button
                           key={o.id}
                           onClick={() => setSelected(o.id)}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '8px 14px',
                             borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                             border: `1.5px solid ${selected === o.id ? 'var(--primary)' : 'var(--border)'}`,
                             background: selected === o.id ? 'var(--primary-dim)' : 'var(--card)',
                             transition: 'var(--transition)',
                           }}
                         >
-                          {cover ? (
-                            <img
-                              src={imgUrl(cover.photo_front)}
-                              alt=""
-                              style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border)' }}
-                            />
-                          ) : (
-                            <div style={{
-                              width: 44, height: 44, borderRadius: 8, flexShrink: 0,
-                              background: 'var(--surface)', border: '1px solid var(--border)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)',
-                            }}>
-                              <IconSparkle size={20} />
-                            </div>
-                          )}
+                          <div style={{ width: 72, height: 72, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                            {oGarments.length > 0
+                              ? <OutfitCanvasShared garmentItems={oGarments} transforms={o.transforms || {}} height={72} />
+                              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}><IconSparkle size={20} /></div>
+                            }
+                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}>
                               {o.name}
@@ -309,6 +298,7 @@ export default function CreatePostModal({ onClose, onCreated }) {
                 <div style={{ width: '100%' }}>
                   <OutfitCanvas
                     garmentItems={outfitGarments}
+                    transforms={selectedItem?.transforms || {}}
                     bgMode={bgMode}
                     bgColor={bgColor}
                     height={400}

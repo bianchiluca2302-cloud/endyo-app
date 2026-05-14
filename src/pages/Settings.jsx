@@ -1074,6 +1074,40 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Dimensione testo */}
+        <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>
+            {language === 'en' ? 'Text size' : 'Dimensione testo'}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { id: 'sm', label: 'A', size: 13 },
+              { id: 'md', label: 'A', size: 16 },
+              { id: 'lg', label: 'A', size: 20 },
+            ].map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => updateSetting('textScale', opt.id)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, cursor: 'pointer',
+                  border: `1.5px solid ${settings.textScale === opt.id ? 'var(--primary)' : 'var(--border)'}`,
+                  background: settings.textScale === opt.id ? 'var(--primary-dim)' : 'transparent',
+                  color: settings.textScale === opt.id ? 'var(--primary-light)' : 'var(--text-dim)',
+                  fontWeight: 700, fontSize: opt.size, lineHeight: 1,
+                  transition: 'all 0.15s',
+                }}
+              >
+                A
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 8 }}>
+            {language === 'en'
+              ? 'Applies to the entire interface'
+              : 'Si applica a tutta l\'interfaccia'}
+          </div>
+        </div>
+
         <Row label={t('compactCards')} desc={t('compactCardsDesc')}>
           <Toggle value={settings.compactCards} onChange={v => updateSetting('compactCards', v)} />
         </Row>
