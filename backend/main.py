@@ -3211,7 +3211,7 @@ async def search_users(
         out.append({
             "id": u.id,
             "username": u.username,
-            "profile_picture": prof.profile_picture if prof else None,
+            "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
             "bio": prof.bio if prof else None,
             "plan": plan,
         })
@@ -3276,7 +3276,7 @@ async def list_following(
             if plan == "premium_plus_annual": plan = "premium_plus"
             out.append({
                 "friendship_id": f.id, "id": other.id, "username": other.username,
-                "profile_picture": prof.profile_picture if prof else None,
+                "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
                 "plan": plan,
                 "bio": getattr(prof, 'bio', None) if prof else None,
             })
@@ -3307,7 +3307,7 @@ async def list_followers(
             if plan == "premium_plus_annual": plan = "premium_plus"
             out.append({
                 "friendship_id": f.id, "id": other.id, "username": other.username,
-                "profile_picture": prof.profile_picture if prof else None,
+                "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
                 "plan": plan,
                 "bio": getattr(prof, 'bio', None) if prof else None,
             })
@@ -4020,7 +4020,7 @@ async def _build_post(post: SocialPost, current_user_id: int, db: AsyncSession) 
         base["author"] = {
             "id":              author.id if author else None,
             "username":        author.username if author else "?",
-            "profile_picture": prof.profile_picture if prof else None,
+            "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
         }
 
         if post.post_type == "outfit" and post.outfit_id:
@@ -4143,7 +4143,7 @@ async def get_notifications(
                 "id":       f"like_{like.id}",
                 "type":     "like",
                 "actor":    liker.username,
-                "actor_pic": prof.profile_picture if prof else None,
+                "actor_pic": (prof.profile_picture_data or prof.profile_picture) if prof else None,
                 "post_id":  like.post_id,
                 "post_thumb": post.photo_url if post else None,
                 "created_at": like.created_at.isoformat() if like.created_at else None,
@@ -4167,7 +4167,7 @@ async def get_notifications(
             "id":       f"follow_{f.id}",
             "type":     "follow",
             "actor":    follower.username,
-            "actor_pic": prof.profile_picture if prof else None,
+            "actor_pic": (prof.profile_picture_data or prof.profile_picture) if prof else None,
             "created_at": f.created_at.isoformat() if f.created_at else None,
             "is_new":   (seen_at is None or f.created_at > seen_at) if f.created_at else False,
         })
@@ -4307,7 +4307,7 @@ async def get_user_posts(
     return {
         "user": {
             "username":        target.username,
-            "profile_picture": prof.profile_picture if prof else None,
+            "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
             "bio":             None,
             "followers_count": followers_count,
             "following_count": following_count,
@@ -4340,7 +4340,7 @@ async def get_user_followers(
             prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == u.id))
             prof = prof_res.scalar_one_or_none()
             out.append({"id": u.id, "username": u.username,
-                        "profile_picture": prof.profile_picture if prof else None})
+                        "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None})
     return out
 
 
@@ -4367,7 +4367,7 @@ async def get_user_following(
             prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == u.id))
             prof = prof_res.scalar_one_or_none()
             out.append({"id": u.id, "username": u.username,
-                        "profile_picture": prof.profile_picture if prof else None})
+                        "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None})
     return out
 
 
@@ -4438,7 +4438,7 @@ async def get_comments(
             "is_mine":    c.user_id == current_user.id,
             "author": {
                 "username":        author.username if author else "?",
-                "profile_picture": prof.profile_picture if prof else None,
+                "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
             },
         })
     return out
@@ -4473,7 +4473,7 @@ async def add_comment(
         "is_mine":    True,
         "author": {
             "username":        current_user.username,
-            "profile_picture": prof.profile_picture if prof else None,
+            "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
         },
     }
 
