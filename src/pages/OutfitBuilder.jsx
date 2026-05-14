@@ -46,6 +46,12 @@ import {
 } from '../components/Icons'
 
 const CATEGORIES_ORDER = ['cappello', 'maglietta', 'felpa', 'giacchetto', 'pantaloni', 'scarpe', 'occhiali', 'cintura', 'borsa', 'orologio', 'altro']
+const OUTFIT_DISPLAY_ORDER = ['cappello', 'giacchetto', 'felpa', 'maglietta', 'pantaloni', 'scarpe', 'occhiali', 'cintura', 'borsa', 'orologio', 'altro']
+const sortByOutfitOrder = (arr) => [...arr].sort((a, b) => {
+  const ai = OUTFIT_DISPLAY_ORDER.indexOf(a.category)
+  const bi = OUTFIT_DISPLAY_ORDER.indexOf(b.category)
+  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+})
 
 // Layout del mixer: posizione verticale e dimensione per ogni categoria
 // zIndex: giacchetto (5) > felpa (4) > maglietta (3) — come nella realtà
@@ -686,6 +692,13 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const outfits  = useWardrobeStore(s => s.outfits)
   const language = useSettingsStore(s => s.language) || 'it'
   const shownIdsRef = useRef([])
+  const [quota, setQuota] = useState(null) // null=loading, -1=unlimited, number=remaining
+
+  useEffect(() => {
+    fetchChatQuota().then(q => {
+      setQuota(q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null))
+    }).catch(() => {})
+  }, [])
 
   const MIN_GARMENTS = 12
   const MIN_OUTFITS  = 3
@@ -780,6 +793,9 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         setResultText(acc.replace(/<OUTFIT>[\s\S]*?<\/OUTFIT>/g, '').replace(/<BRAND_PRODUCTS>[\s\S]*?<\/BRAND_PRODUCTS>/g, '').trim())
         setResultOutfits(outfits)
         setStep(4)
+        fetchChatQuota().then(q => {
+          setQuota(q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null))
+        }).catch(() => {})
       },
       onError: err => { setResultError(err); setStep(4) },
     })
@@ -850,8 +866,15 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
           {language === 'en' ? `${selectedGarments.length} garment${selectedGarments.length !== 1 ? 's' : ''} selected` : `${selectedGarments.length} capo/i selezionati`}
         </div>
       )}
-      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>
-        {language === 'en' ? 'What\'s the occasion?' : 'Per quale occasione?'}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+          {language === 'en' ? 'What\'s the occasion?' : 'Per quale occasione?'}
+        </div>
+        {quota !== null && quota !== -1 && quota < 999 && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: quota === 0 ? 'var(--danger)' : 'var(--text-dim)', background: quota === 0 ? 'rgba(239,68,68,0.1)' : 'var(--card)', border: `1px solid ${quota === 0 ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`, borderRadius: 10, padding: '2px 8px', flexShrink: 0 }}>
+            {language === 'en' ? `${quota} left today` : `${quota} rimaste oggi`}
+          </span>
+        )}
       </div>
       <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16 }}>
         {language === 'en' ? 'I\'ll find the perfect outfit for you.' : 'Troverò l\'outfit perfetto per te.'}
@@ -1835,6 +1858,7 @@ export default function OutfitBuilder() {
   const defaultTransformsRef  = useRef(null) // transforms da applicare al prossimo load
   const [outfitName, setOutfitName] = useState(() => { try { return sessionStorage.getItem('ob_outfitName') || '' } catch { return '' } })
   const [saveMsg,   setSaveMsg]   = useState(null)
+  const [saving,    setSaving]    = useState(false)
   const [completing, setCompleting] = useState(false)
   const [completeNotes, setCompleteNotes] = useState(null)
   // Meteo — condiviso tra StylistSlider (desktop) e tab Stylist (mobile)
@@ -1907,18 +1931,23 @@ export default function OutfitBuilder() {
   }
 
   const handleSave = async () => {
-    if (selectedGarments.length === 0 || !outfitName.trim()) return
-    await saveOutfit({
-      name: outfitName.trim(),
-      garment_ids: selectedGarments.map(g => g.id),
-      transforms: mixerTransformsRef.current || {},
-      ai_generated: 0,
-    })
-    setSaveMsg(t('outfitsSaveMsg'))
-    setOutfitName('')
-    setSelected({})
-    setMixerActiveId(null)
-    setTimeout(() => setSaveMsg(null), 2500)
+    if (saving || selectedGarments.length === 0 || !outfitName.trim()) return
+    setSaving(true)
+    try {
+      await saveOutfit({
+        name: outfitName.trim(),
+        garment_ids: selectedGarments.map(g => g.id),
+        transforms: mixerTransformsRef.current || {},
+        ai_generated: 0,
+      })
+      setSaveMsg(t('outfitsSaveMsg'))
+      setOutfitName('')
+      setSelected({})
+      setMixerActiveId(null)
+      setTimeout(() => setSaveMsg(null), 2500)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleComplete = async () => {
@@ -2173,11 +2202,11 @@ export default function OutfitBuilder() {
                       </button>
                       <button
                         onClick={handleSave}
-                        disabled={selectedGarments.length === 0 || !outfitName.trim()}
+                        disabled={saving || selectedGarments.length === 0 || !outfitName.trim()}
                         className="btn btn-primary"
-                        style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: !outfitName.trim() ? 0.4 : 1 }}
+                        style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: (saving || !outfitName.trim()) ? 0.4 : 1 }}
                       >
-                        {t('outfitsSaveCta')}
+                        {saving ? '…' : t('outfitsSaveCta')}
                       </button>
                     </div>
                   </div>
@@ -2366,11 +2395,11 @@ export default function OutfitBuilder() {
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={selectedGarments.length === 0 || !outfitName.trim()}
+                  disabled={saving || selectedGarments.length === 0 || !outfitName.trim()}
                   className="btn btn-primary"
-                  style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: !outfitName.trim() ? 0.4 : 1 }}
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 12, padding: '8px 6px', opacity: (saving || !outfitName.trim()) ? 0.4 : 1 }}
                 >
-                  {t('outfitsSaveCta')}
+                  {saving ? '…' : t('outfitsSaveCta')}
                 </button>
               </div>
             </div>
@@ -2798,7 +2827,7 @@ function MiniMixer({ garments, transforms = {} }) {
 function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
   const [hovered, setHovered] = useState(false)
   const [wornAnim, setWornAnim] = useState(false)
-  const garments = (outfit.garment_ids || []).map(id => getById(id)).filter(Boolean)
+  const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
   const t = useT()
   const language = useSettingsStore(s => s.language) || 'it'
   const preview  = garments.slice(0, 4)
@@ -2907,7 +2936,7 @@ function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
 
 // ── OutfitDetailModal ─────────────────────────────────────────────────────────
 function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete }) {
-  const garments = (outfit.garment_ids || []).map(id => getById(id)).filter(Boolean)
+  const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
   const t = useT()
   const CATEGORY_LABELS = useCategoryLabels()
 

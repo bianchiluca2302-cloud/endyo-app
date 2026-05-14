@@ -40,6 +40,14 @@ const translateColor = (color, from, to) => {
   const map = COLOR_TRANS[`${from}_to_${to}`]
   return (map && map[color.toLowerCase()]) || color
 }
+const COLOR_NORMALIZE_SHEET = { nera:'nero',nere:'nero',neri:'nero',bianca:'bianco',bianche:'bianco',bianchi:'bianco',rossa:'rosso',rosse:'rosso',rossi:'rosso',grigia:'grigio',grigie:'grigio',grigi:'grigio',gialla:'giallo',gialle:'giallo',gialli:'giallo',azzurra:'azzurro',azzurre:'azzurro',azzurri:'azzurro',dorata:'dorato',dorate:'dorato',dorati:'dorato',argentata:'argento',argentate:'argento',argentati:'argento',bronzata:'bronzo',bronzate:'bronzo',bronzati:'bronzo',marrone:'marrone',marroni:'marrone',verde:'verde',verdi:'verde',arancione:'arancione',arancioni:'arancione',celeste:'celeste',celesti:'celeste',turchese:'turchese',turchesi:'turchese',rosa:'rosa',lilla:'lilla',kaki:'kaki',khaki:'kaki' }
+const normalizeColorDisplay = (raw) => {
+  if (!raw) return raw
+  const lower = raw.trim().toLowerCase()
+  const canon = COLOR_NORMALIZE_SHEET[lower]
+  if (canon) return canon.charAt(0).toUpperCase() + canon.slice(1)
+  return raw.trim()
+}
 
 /* ── ConfirmActionSheet — iOS-style destructive action sheet ─────────────────── */
 function ConfirmActionSheet({ message, confirmLabel, onConfirm, onCancel, language = 'it' }) {
@@ -564,7 +572,7 @@ export default function MobileGarmentSheet({ garment, onClose }) {
                 {liveGarment.color_hex && (
                   <span style={{ width: 9, height: 9, borderRadius: '50%', background: liveGarment.color_hex, flexShrink: 0, display: 'inline-block', border: '1px solid rgba(0,0,0,0.1)' }} />
                 )}
-                {liveGarment.color_primary}
+                {normalizeColorDisplay(liveGarment.color_primary)}
               </span>
             )}
             {liveGarment.price && (

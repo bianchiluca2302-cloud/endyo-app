@@ -99,8 +99,8 @@ const useWardrobeStore = create((set, get) => ({
   },
 
   removeOutfit: async (id) => {
-    await apiDeleteOutfit(id)
     set(state => ({ outfits: state.outfits.filter(o => o.id !== id) }))
+    try { await apiDeleteOutfit(id) } catch {}
   },
 
   markOutfitUsual: async (id, isUsual) => {

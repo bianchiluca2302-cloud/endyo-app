@@ -36,6 +36,36 @@ const CameraIcon = () => (
 
 const CATEGORIES_ORDER = ['cappello','maglietta','felpa','giacchetto','pantaloni','scarpe','occhiali','cintura','borsa','orologio','altro']
 
+const COLOR_NORMALIZE = {
+  nera:'nero', nere:'nero', neri:'nero',
+  bianca:'bianco', bianche:'bianco', bianchi:'bianco',
+  rossa:'rosso', rosse:'rosso', rossi:'rosso',
+  grigia:'grigio', grigie:'grigio', grigi:'grigio',
+  gialla:'giallo', gialle:'giallo', gialli:'giallo',
+  azzurra:'azzurro', azzurre:'azzurro', azzurri:'azzurro',
+  dorata:'dorato', dorate:'dorato', dorati:'dorato',
+  argentata:'argento', argentate:'argento', argentati:'argento',
+  bronzata:'bronzo', bronzate:'bronzo', bronzati:'bronzo',
+  viola:'viola', viole:'viola',
+  marrone:'marrone', marroni:'marrone',
+  verde:'verde', verdi:'verde',
+  arancione:'arancione', arancioni:'arancione',
+  celeste:'celeste', celesti:'celeste',
+  turchese:'turchese', turchesi:'turchese',
+  rosa:'rosa', rose:'rosa',
+  lilla:'lilla',
+  creme:'crema', crème:'crema',
+  kaki:'kaki', khaki:'kaki',
+  camel:'cammello', cammella:'cammello',
+}
+const normalizeColor = (raw) => {
+  if (!raw) return raw
+  const lower = raw.trim().toLowerCase()
+  const canon = COLOR_NORMALIZE[lower]
+  if (canon) return canon.charAt(0).toUpperCase() + canon.slice(1)
+  return raw.trim()
+}
+
 /* ── Garment card ────────────────────────────────────────────────────────────── */
 function GarmentCard({ g, onClick }) {
   const translateTag    = useTagTranslator()
@@ -405,7 +435,7 @@ function ShoppingTab({ busyRef }) {
           <div style={{ fontSize: 16, fontWeight: 800, color: verdict.color, marginBottom: 4 }}>{verdict.label}</div>
           <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
             {analysis.category ? (CATEGORY_LABELS[analysis.category] || analysis.category) : ''}
-            {analysis.color_primary ? ` · ${analysis.color_primary}` : ''}
+            {analysis.color_primary ? ` · ${normalizeColor(analysis.color_primary)}` : ''}
             {analysis.brand ? ` · ${analysis.brand}` : ''}
           </div>
         </div>
@@ -611,10 +641,10 @@ function AnalisiTab() {
     const byColor = {}   // colorName → count
     const colorHex = {}  // colorName → hex
     garments.forEach(g => {
-      const name = g.color_primary
+      const norm = normalizeColor(g.color_primary)
       const hex  = g.color_hex
-      if (!name) return
-      const c = name.toLowerCase()
+      if (!norm) return
+      const c = norm.toLowerCase()
       byColor[c] = (byColor[c] || 0) + 1
       if (hex && !colorHex[c]) colorHex[c] = hex
     })
@@ -1170,7 +1200,7 @@ export default function MobileWardrobe() {
     list = [...list]
     switch (wardrobeSortOrder) {
       case 'date_asc':  list.sort((a, b) => (a.id || 0) - (b.id || 0)); break
-      case 'color_asc': list.sort((a, b) => (a.color_primary || '').localeCompare(b.color_primary || '')); break
+      case 'color_asc': list.sort((a, b) => normalizeColor(a.color_primary || '').localeCompare(normalizeColor(b.color_primary || ''))); break
       case 'brand_asc': list.sort((a, b) => (a.brand || '').localeCompare(b.brand || '')); break
       default:          list.sort((a, b) => (b.id || 0) - (a.id || 0)); break // date_desc
     }
@@ -1408,8 +1438,9 @@ export default function MobileWardrobe() {
               (() => {
                 const colorMap = {}
                 filtered.forEach(g => {
-                  const key = (g.color_primary || '').trim().toLowerCase() || '—'
-                  if (!colorMap[key]) colorMap[key] = { label: g.color_primary || '—', hex: g.color_hex || g.color_palette?.[0]?.hex || null, items: [] }
+                  const norm = normalizeColor(g.color_primary) || '—'
+                  const key = norm.toLowerCase()
+                  if (!colorMap[key]) colorMap[key] = { label: norm, hex: g.color_hex || g.color_palette?.[0]?.hex || null, items: [] }
                   colorMap[key].items.push(g)
                 })
                 return Object.values(colorMap).sort((a, b) => b.items.length - a.items.length).map(group => (
