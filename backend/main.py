@@ -4034,6 +4034,7 @@ async def _build_post(post: SocialPost, current_user_id: int, db: AsyncSession) 
                     gr = await db.execute(select(Garment).where(Garment.id == gid))
                     g = gr.scalar_one_or_none()
                     if g:
+                        photo = g.photo_front_data or (f"/uploads/{g.photo_front}" if g.photo_front else None)
                         garments_data.append({
                             "id":           g.id,
                             "category":     g.category,
@@ -4048,11 +4049,11 @@ async def _build_post(post: SocialPost, current_user_id: int, db: AsyncSession) 
                             "style_tags":   g.style_tags   or [],
                             "season_tags":  g.season_tags  or [],
                             "occasion_tags": g.occasion_tags or [],
-                            "photo_front":  f"/uploads/{g.photo_front}" if g.photo_front else None,
-                            "photo_bg":     None,  # bg removal overwrites photo_front in-place
+                            "photo_front":  photo,
+                            "photo_bg":     None,
                         })
-                        if cover_url is None and g.photo_front:
-                            cover_url = f"/uploads/{g.photo_front}"
+                        if cover_url is None and photo:
+                            cover_url = photo
                 base["content"] = {
                     "outfit_id":   outfit.id,
                     "name":        outfit.name,
@@ -4070,7 +4071,7 @@ async def _build_post(post: SocialPost, current_user_id: int, db: AsyncSession) 
                     "name":       garment.name,
                     "category":   garment.category,
                     "brand":      garment.brand,
-                    "photo_url":  f"/uploads/{garment.photo_front}" if garment.photo_front else None,
+                    "photo_url":  garment.photo_front_data or (f"/uploads/{garment.photo_front}" if garment.photo_front else None),
                 }
 
     # ── Post brand sponsorizzato ─────────────────────────────────────────────
@@ -4308,7 +4309,7 @@ async def get_user_posts(
         "user": {
             "username":        target.username,
             "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
-            "bio":             None,
+            "bio":             prof.bio if prof else None,
             "followers_count": followers_count,
             "following_count": following_count,
             "posts_count":     len(built_posts),

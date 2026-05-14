@@ -88,7 +88,7 @@ function GarmentPickerItem({ g, selected, onToggle }) {
 function OutfitCard({ outfit, language }) {
   const garments = useWardrobeStore(s => s.garments)
   const members  = outfit.garment_ids
-    ? garments.filter(g => outfit.garment_ids.includes(g.id))
+    ? garments.filter(g => outfit.garment_ids.some(id => Number(id) === Number(g.id)))
     : []
   const total = outfit.garment_ids?.length || 0
 

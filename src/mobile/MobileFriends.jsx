@@ -1265,14 +1265,21 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
     const timer = setTimeout(async () => {
       try {
         const q = query.toLowerCase()
-        const apiResults = await searchUsers(query)
         const fromFollowing = followingListRef.current.filter(u =>
-          u.username?.toLowerCase().includes(q) &&
-          !apiResults.some(r => r.id === u.id)
+          u.username?.toLowerCase().includes(q)
         )
-        setResults([...fromFollowing, ...apiResults])
+        const followingIds = new Set(fromFollowing.map(u => u.id))
+        const apiResults = await searchUsers(query)
+        const filteredApi = apiResults.filter(r => !followingIds.has(r.id))
+        setResults([...fromFollowing, ...filteredApi])
       }
-      catch { setResults([]) }
+      catch (e) {
+        const q = query.toLowerCase()
+        const fromFollowing = followingListRef.current.filter(u =>
+          u.username?.toLowerCase().includes(q)
+        )
+        setResults(fromFollowing)
+      }
       finally { setLoading(false) }
     }, 150)
     return () => clearTimeout(timer)
@@ -1345,7 +1352,7 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
               </div>
             )}
 
-            {results.slice(0, 5).map((u, i) => (
+            {results.slice(0, 15).map((u, i) => (
               <div key={u.id} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
                 borderBottom: '1px solid var(--border)',
