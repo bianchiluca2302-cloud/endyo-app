@@ -909,12 +909,13 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
       <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 601,
         background: 'var(--card)', borderRadius: '24px 24px 0 0',
-        maxHeight: `${vpH * 0.88}px`, display: 'flex', flexDirection: 'column',
+        maxHeight: `${vpH * 0.92}px`, display: 'flex', flexDirection: 'column',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         transform: `translateY(${dragY}px)`,
         transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
+        willChange: 'transform',
       }}>
-        {/* Handle */}
+        {/* Drag handle + header */}
         <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
           style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--card)', borderBottom: '1px solid var(--border)', touchAction: 'none', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
@@ -923,18 +924,27 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 12px' }}>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
               {en ? 'Items to bring' : 'Capi da portare'}
-              {selectedIds.length > 0 && <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--primary-light)', fontWeight: 600 }}>({selectedIds.length})</span>}
+              {selectedIds.length > 0 && (
+                <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--primary-light)', fontWeight: 600 }}>({selectedIds.length})</span>
+              )}
             </div>
             <button onClick={onClose} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              <CloseIcon />
             </button>
           </div>
-          <div style={{ padding: '0 20px 8px' }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={en ? 'Search…' : 'Cerca…'}
-              style={{ width: '100%', padding: '9px 14px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+          {/* Search */}
+          <div style={{ padding: '0 16px 8px' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-dim)' }}>
+                <SearchIcon />
+              </div>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={en ? 'Search…' : 'Cerca…'}
+                style={{ width: '100%', padding: '9px 14px 9px 34px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
           </div>
+          {/* Category chips */}
           {categories.length > 0 && (
-            <div style={{ display: 'flex', gap: 6, padding: '0 20px 10px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+            <div style={{ display: 'flex', gap: 6, padding: '0 16px 10px', overflowX: 'auto', scrollbarWidth: 'none' }}>
               {[null, ...categories].map(cat => (
                 <button key={cat || '__all'} onClick={() => setActiveCat(cat || '')} style={{
                   padding: '4px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
@@ -946,32 +956,56 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
             </div>
           )}
         </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {filtered.map(g => {
-            const sel = selectedIds.includes(g.id)
-            return (
-              <div key={g.id} onClick={() => onToggle(g.id)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
-                background: sel ? 'var(--primary-dim)' : 'transparent',
-                borderBottom: '1px solid var(--border)', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', transition: 'background 0.15s',
-              }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0, background: g.bg_color || 'var(--card)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {g.front_photo_url ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: 18 }}>👕</span>}
+
+        {/* Card grid */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {filtered.map(g => {
+              const sel = selectedIds.includes(g.id)
+              return (
+                <div key={g.id} onClick={() => onToggle(g.id)} style={{
+                  borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+                  border: sel ? '2.5px solid var(--primary)' : '1.5px solid var(--border)',
+                  background: 'var(--bg)',
+                  position: 'relative',
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'border-color 0.15s',
+                  boxShadow: sel ? '0 0 0 3px var(--primary-dim)' : 'none',
+                }}>
+                  {/* Image */}
+                  <div style={{ aspectRatio: '1 / 1', background: g.bg_color || 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {g.front_photo_url
+                      ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      : <ShirtPlaceholder />}
+                  </div>
+                  {/* Label */}
+                  <div style={{ padding: '8px 10px 10px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</div>
+                    {g.brand && <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.brand}</div>}
+                  </div>
+                  {/* Checkmark badge */}
+                  {sel && (
+                    <div style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                  )}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</div>
-                  {g.brand && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1 }}>{g.brand}</div>}
-                </div>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: sel ? 'var(--primary)' : 'var(--card)', border: sel ? 'none' : '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'background 0.15s' }}>
-                  {sel && <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+          {filtered.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-dim)', fontSize: 14 }}>
+              {en ? 'No items found' : 'Nessun capo trovato'}
+            </div>
+          )}
         </div>
-        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--border)' }}>
+
+        {/* Confirm button */}
+        <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-            {en ? `Confirm (${selectedIds.length} items)` : `Conferma (${selectedIds.length} capi)`}
+            {selectedIds.length > 0
+              ? (en ? `Confirm — ${selectedIds.length} item${selectedIds.length === 1 ? '' : 's'}` : `Conferma — ${selectedIds.length} ${selectedIds.length === 1 ? 'capo' : 'capi'}`)
+              : (en ? 'Done' : 'Fatto')}
           </button>
         </div>
       </div>
