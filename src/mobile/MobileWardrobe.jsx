@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import useAuthStore from '../store/authStore'
-import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus, fetchTravelPlan } from '../api/client'
+import { imgUrl, analyzeGarment, confirmGarment, fetchBgStatus, fetchTravelPlan, fetchSavedTravels, deleteSavedTravel } from '../api/client'
 import { useCategoryLabels, useT, useTagTranslator } from '../i18n'
 import MobileGarmentSheet from './MobileGarmentSheet'
 import useDebounce from '../hooks/useDebounce'
@@ -974,8 +974,8 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
                 }}>
                   {/* Image */}
                   <div style={{ aspectRatio: '1 / 1', background: g.bg_color || 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {g.front_photo_url
-                      ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    {g.photo_front
+                      ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       : <ShirtPlaceholder />}
                   </div>
                   {/* Label */}
@@ -1024,24 +1024,51 @@ function TravelTab() {
   const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
 
   // steps: 0=dest 1=dates 2=items 3=numOutfits 4=style 5=tripType 6=loading 7=results
+  const [travelView,   setTravelView]   = useState('new') // 'new' | 'saved'
   const [step,         setStep]         = useState(0)
   const [destination,  setDestination]  = useState('')
   const [startDate,    setStartDate]    = useState(today)
   const [endDate,      setEndDate]      = useState(nextWeek)
   const [preferredIds, setPreferredIds] = useState([])
-  const [numOutfits,   setNumOutfits]   = useState(null)   // null = AI decides
+  const [outfitsPerDay,setOutfitsPerDay]= useState(null)  // null=AI, 1/2/3
   const [travelStyle,  setTravelStyle]  = useState('')
   const [tripType,     setTripType]     = useState('')
+  const [autoTripType, setAutoTripType] = useState('')    // detected from geocoding
   const [showPicker,     setShowPicker]     = useState(false)
   const [result,         setResult]         = useState(null)
   const [error,          setError]          = useState(null)
   const [geoSuggestions, setGeoSuggestions] = useState([])
   const [geoLoading,     setGeoLoading]     = useState(false)
+  const [savedTravels,   setSavedTravels]   = useState([])
+  const [savedLoading,   setSavedLoading]   = useState(false)
+  const [viewingTravel,  setViewingTravel]  = useState(null) // full saved travel object
+  const [loadingPhase,   setLoadingPhase]   = useState(0)
+  const loadingTimer = useRef(null)
   const geoTimer = useRef(null)
   const en = language === 'en'
 
+  const travelDays = useMemo(() => {
+    try {
+      const ms = new Date(endDate) - new Date(startDate)
+      return Math.max(1, Math.round(ms / 86400000) + 1)
+    } catch { return 7 }
+  }, [startDate, endDate])
+
+  const computedNumOutfits = outfitsPerDay !== null ? outfitsPerDay * travelDays : null
+
   const togglePreferred = id => setPreferredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   const getById = id => garments.find(g => g.id === id)
+
+  // Detect trip type from geocoding elevation/feature_code
+  const detectTripType = (item) => {
+    if (!item) return ''
+    const elev = item.elevation || 0
+    const fc   = (item.feature_code || '').toUpperCase()
+    if (elev > 600 || fc.startsWith('MT') || fc === 'PK' || fc === 'PKLT' || fc === 'HLL' || fc === 'HLLS') {
+      return en ? 'mountain' : 'montagna'
+    }
+    return en ? 'city' : 'città'
+  }
 
   const fetchGeoSuggestions = (query) => {
     clearTimeout(geoTimer.current)
@@ -1064,25 +1091,67 @@ function TravelTab() {
     const label = [item.name, item.admin1, item.country].filter(Boolean).join(', ')
     setDestination(label)
     setGeoSuggestions([])
+    const detected = detectTripType(item)
+    setAutoTripType(detected)
+    setTripType(detected)
   }
+
+  const LOADING_MESSAGES_IT = [
+    'Cerco le previsioni meteo…',
+    'Analizzo il tuo guardaroba…',
+    'Abbino i capi al clima…',
+    'Creo gli outfit perfetti…',
+    'Scrivo i consigli di stile…',
+    'Finalizzo il piano viaggio…',
+  ]
+  const LOADING_MESSAGES_EN = [
+    'Fetching weather forecast…',
+    'Scanning your wardrobe…',
+    'Matching clothes to the climate…',
+    'Creating perfect outfits…',
+    'Writing styling tips…',
+    'Finalizing your travel plan…',
+  ]
+  const loadingMessages = en ? LOADING_MESSAGES_EN : LOADING_MESSAGES_IT
+
+  useEffect(() => {
+    if (step === 6) {
+      setLoadingPhase(0)
+      loadingTimer.current = setInterval(() => {
+        setLoadingPhase(p => (p + 1) % loadingMessages.length)
+      }, 1800)
+    } else {
+      clearInterval(loadingTimer.current)
+    }
+    return () => clearInterval(loadingTimer.current)
+  }, [step])
+
+  useEffect(() => {
+    if (isPremium) {
+      setSavedLoading(true)
+      fetchSavedTravels().then(data => setSavedTravels(data || [])).catch(() => {}).finally(() => setSavedLoading(false))
+    }
+  }, [isPremium])
 
   const generate = async (overrides = {}) => {
     setStep(6); setError(null); setResult(null)
     try {
       const data = await fetchTravelPlan({
         destination: destination.trim(), startDate, endDate, preferredIds, language,
-        numOutfits: (overrides.numOutfits ?? numOutfits) ?? 4,
+        numOutfits: (overrides.numOutfits ?? computedNumOutfits) ?? 4,
         travelStyle: overrides.travelStyle ?? travelStyle,
         tripType:    overrides.tripType    ?? tripType,
       })
       setResult(data); setStep(7)
+      // Refresh saved travels list
+      fetchSavedTravels().then(d => setSavedTravels(d || [])).catch(() => {})
     } catch (e) {
       const msg = e.response?.data?.detail || (en ? 'Error generating travel plan.' : 'Errore nella generazione del piano viaggio.')
       setError(msg); setStep(7)
     }
   }
 
-  const reset = () => { setStep(0); setDestination(''); setPreferredIds([]); setNumOutfits(null); setTravelStyle(''); setTripType(''); setResult(null); setError(null) }
+  const reset = () => { setStep(0); setDestination(''); setPreferredIds([]); setOutfitsPerDay(null); setTravelStyle(''); setTripType(''); setAutoTripType(''); setResult(null); setError(null) }
 
   const inputStyle = {
     width: '100%', padding: '13px 16px', borderRadius: 14,
@@ -1096,6 +1165,29 @@ function TravelTab() {
       {[0, 1, 2, 3, 4, 5].map(i => (
         <div key={i} style={{ height: 3, borderRadius: 99, width: i === current ? 20 : 8, background: i <= current ? 'var(--primary)' : 'var(--border)', transition: 'width 0.25s, background 0.25s' }} />
       ))}
+    </div>
+  )
+
+  const TravelHeader = () => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 0' }}>
+      <div style={{ display: 'flex', gap: 4, padding: 3, borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)' }}>
+        {[
+          { id: 'new', label: en ? '✈️ New trip' : '✈️ Nuovo' },
+          { id: 'saved', label: en ? `🗂 Saved${savedTravels.length > 0 ? ` (${savedTravels.length})` : ''}` : `🗂 Salvati${savedTravels.length > 0 ? ` (${savedTravels.length})` : ''}` },
+        ].map(t => (
+          <button key={t.id} onClick={() => { setTravelView(t.id); setViewingTravel(null) }} style={{
+            padding: '6px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
+            background: travelView === t.id ? 'var(--primary)' : 'transparent',
+            color: travelView === t.id ? '#fff' : 'var(--text-muted)',
+            fontSize: 13, fontWeight: 700, WebkitTapHighlightColor: 'transparent', transition: 'background 0.15s',
+          }}>{t.label}</button>
+        ))}
+      </div>
+      {travelView === 'new' && step > 0 && step < 6 && (
+        <button onClick={reset} style={{ fontSize: 12, color: 'var(--text-dim)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+          {en ? '↺ Restart' : '↺ Ricomincia'}
+        </button>
+      )}
     </div>
   )
 
@@ -1121,9 +1213,104 @@ function TravelTab() {
     )
   }
 
+  /* Saved travels view */
+  if (travelView === 'saved') {
+    if (viewingTravel) {
+      const t = viewingTravel
+      return (
+        <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+          <TravelHeader />
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <button onClick={() => setViewingTravel(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, padding: 0, alignSelf: 'flex-start' }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              {en ? 'Back to saved trips' : 'Viaggi salvati'}
+            </button>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>{t.destination}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 3 }}>{t.start_date} → {t.end_date} · {t.days} {en ? 'days' : 'giorni'}</div>
+              {(t.trip_type || t.travel_style) && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  {t.trip_type && <span style={{ padding: '3px 10px', borderRadius: 99, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 11, fontWeight: 700, color: 'var(--primary-light)' }}>{t.trip_type}</span>}
+                  {t.travel_style && <span style={{ padding: '3px 10px', borderRadius: 99, background: 'var(--card)', border: '1px solid var(--border)', fontSize: 11, fontWeight: 600, color: 'var(--text-dim)' }}>{t.travel_style}</span>}
+                </div>
+              )}
+            </div>
+            {t.weather && (
+              <div style={{ padding: '10px 14px', borderRadius: 14, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', fontSize: 13, color: 'var(--text-muted)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span>🌡️</span><span>{t.weather}</span>
+              </div>
+            )}
+            {t.description && <div style={{ fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.65 }}>{t.description}</div>}
+            {(t.outfits || []).map((outfit, i) => (
+              <div key={i} style={{ padding: '14px', borderRadius: 18, background: 'var(--card)', border: '1px solid var(--border)', animation: `slideUp 0.35s ease ${i * 70}ms backwards` }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 2 }}>{outfit.name}</div>
+                {outfit.occasion && <div style={{ fontSize: 12, color: 'var(--primary-light)', marginBottom: 10, fontWeight: 600 }}>{outfit.occasion}</div>}
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, marginBottom: outfit.notes ? 10 : 0 }}>
+                  {(outfit.ids || []).map(id => {
+                    const g = garments.find(x => x.id === id)
+                    if (!g) return null
+                    return (
+                      <div key={id} style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {g.photo_front ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <ShirtPlaceholder />}
+                      </div>
+                    )
+                  })}
+                </div>
+                {outfit.notes && <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.55, padding: '8px 10px', background: 'var(--bg)', borderRadius: 10 }}>{outfit.notes}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+        <TravelHeader />
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {savedLoading && (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-dim)', fontSize: 14 }}>
+              {en ? 'Loading…' : 'Caricamento…'}
+            </div>
+          )}
+          {!savedLoading && savedTravels.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 40 }}>✈️</span>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{en ? 'No saved trips yet' : 'Nessun viaggio salvato'}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>{en ? 'Generated plans are saved automatically.' : 'I piani generati vengono salvati automaticamente.'}</div>
+              <button onClick={() => setTravelView('new')} style={{ marginTop: 4, padding: '12px 24px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                {en ? 'Plan a trip →' : 'Pianifica un viaggio →'}
+              </button>
+            </div>
+          )}
+          {savedTravels.map(t => {
+            const typeEmoji = { mare: '🏖️', beach: '🏖️', montagna: '🏔️', mountain: '🏔️', città: '🏙️', city: '🏙️', lavoro: '💼', business: '💼' }[t.trip_type] || '✈️'
+            return (
+              <div key={t.id} onClick={() => setViewingTravel(t)} style={{ padding: '14px 16px', borderRadius: 18, background: 'var(--card)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, WebkitTapHighlightColor: 'transparent' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{typeEmoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.destination}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>{t.start_date} → {t.end_date} · {t.num_outfits} outfit</div>
+                </div>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2.5} strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+              </div>
+            )
+          })}
+          {savedTravels.length > 0 && (
+            <button onClick={() => setTravelView('new')} style={{ marginTop: 4, padding: '14px', borderRadius: 14, border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              + {en ? 'Plan a new trip' : 'Pianifica un nuovo viaggio'}
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   /* Step 0 — Destination */
   if (step === 0) return (
-    <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+    <div style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+      <TravelHeader />
+    <div style={{ padding: '20px 20px' }}>
       <StepDots current={0} />
       <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
         {en ? 'Where are you going?' : 'Dove vai?'}
@@ -1187,6 +1374,7 @@ function TravelTab() {
         {en ? 'Next →' : 'Avanti →'}
       </button>
     </div>
+    </div>
   )
 
   /* Step 1 — Dates */
@@ -1242,7 +1430,7 @@ function TravelTab() {
             return g ? (
               <div key={id} onClick={() => togglePreferred(id)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px 4px 6px', borderRadius: 99, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', cursor: 'pointer' }}>
                 <div style={{ width: 22, height: 22, borderRadius: 6, overflow: 'hidden', background: g.bg_color || 'var(--card)', flexShrink: 0 }}>
-                  {g.front_photo_url ? <img src={imgUrl(g.front_photo_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
+                  {g.photo_front ? <img src={imgUrl(g.photo_front)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
                 <span style={{ fontSize: 14, color: 'var(--primary-light)', lineHeight: 1 }}>×</span>
@@ -1276,13 +1464,13 @@ function TravelTab() {
     </div>
   )
 
-  /* Step 3 — How many outfits? */
+  /* Step 3 — Outfits per day */
   if (step === 3) {
     const opts = [
-      { val: 3, label: en ? '3 outfits' : '3 outfit', emoji: '👌' },
-      { val: 5, label: en ? '5 outfits' : '5 outfit', emoji: '✌️' },
-      { val: 7, label: en ? '7 outfits' : '7 outfit', emoji: '🔥' },
-      { val: null, label: en ? 'AI decides' : 'Decide l\'AI', emoji: '✨' },
+      { val: 1, emoji: '👌', labelFn: d => en ? `1/day · ${d} total` : `1/giorno · ${d} totali` },
+      { val: 2, emoji: '✌️', labelFn: d => en ? `2/day · ${d * 2} total` : `2/giorno · ${d * 2} totali` },
+      { val: 3, emoji: '🔥', labelFn: d => en ? `3/day · ${d * 3} total` : `3/giorno · ${d * 3} totali` },
+      { val: null, emoji: '✨', labelFn: () => en ? 'AI decides' : 'Decide l\'AI' },
     ]
     return (
       <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
@@ -1292,23 +1480,30 @@ function TravelTab() {
           {en ? 'Luggage' : 'Bagagli'}
         </button>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
-          {en ? 'How many outfits?' : 'Quanti outfit?'}
+          {en ? 'How many outfits per day?' : 'Quanti outfit al giorno?'}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
-          {en ? 'I\'ll plan exactly that many complete looks.' : 'Pianificherò esattamente quel numero di look completi.'}
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 4 }}>
+          {en ? 'Based on your trip duration:' : 'In base alla durata del viaggio:'}
+          <span style={{ fontWeight: 700, color: 'var(--primary-light)', marginLeft: 5 }}>
+            {travelDays} {en ? (travelDays === 1 ? 'day' : 'days') : (travelDays === 1 ? 'giorno' : 'giorni')}
+          </span>
         </div>
+        <div style={{ marginBottom: 20 }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {opts.map(o => (
-            <button key={String(o.val)} onClick={() => { setNumOutfits(o.val); setStep(4) }} style={{
-              padding: '18px 12px', borderRadius: 16, border: `2px solid ${numOutfits === o.val ? 'var(--primary)' : 'var(--border)'}`,
-              background: numOutfits === o.val ? 'var(--primary-dim)' : 'var(--card)',
-              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              WebkitTapHighlightColor: 'transparent', transition: 'border-color 0.15s',
-            }}>
-              <span style={{ fontSize: 28 }}>{o.emoji}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: numOutfits === o.val ? 'var(--primary-light)' : 'var(--text)' }}>{o.label}</span>
-            </button>
-          ))}
+          {opts.map(o => {
+            const sel = outfitsPerDay === o.val
+            return (
+              <button key={String(o.val)} onClick={() => { setOutfitsPerDay(o.val); setStep(4) }} style={{
+                padding: '18px 12px', borderRadius: 16, border: `2px solid ${sel ? 'var(--primary)' : 'var(--border)'}`,
+                background: sel ? 'var(--primary-dim)' : 'var(--card)',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                WebkitTapHighlightColor: 'transparent', transition: 'border-color 0.15s',
+              }}>
+                <span style={{ fontSize: 28 }}>{o.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: sel ? 'var(--primary-light)' : 'var(--text)', textAlign: 'center', lineHeight: 1.3 }}>{o.labelFn(travelDays)}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
     )
@@ -1322,12 +1517,15 @@ function TravelTab() {
       { val: en ? 'sport' : 'sport',     label: en ? 'Sport'    : 'Sport',    emoji: '🏃' },
       { val: en ? 'mixed' : 'misto',     label: en ? 'Mixed'    : 'Misto',    emoji: '✨' },
     ]
+    const outfitSummary = outfitsPerDay !== null
+      ? (en ? `${outfitsPerDay}/day · ${computedNumOutfits} total` : `${outfitsPerDay}/giorno · ${computedNumOutfits} totali`)
+      : (en ? 'AI decides' : 'Decide l\'AI')
     return (
       <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
         <StepDots current={4} />
         <button onClick={() => setStep(3)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          {numOutfits ? (en ? `${numOutfits} outfits` : `${numOutfits} outfit`) : (en ? 'AI decides' : 'Decide l\'AI')}
+          {outfitSummary}
         </button>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
           {en ? 'What\'s your style?' : 'Che stile preferisci?'}
@@ -1355,13 +1553,13 @@ function TravelTab() {
     )
   }
 
-  /* Step 5 — Trip type */
+  /* Step 5 — Trip type (pre-populated from geocoding) */
   if (step === 5) {
     const types = [
-      { val: en ? 'beach' : 'mare',      label: en ? 'Beach'    : 'Mare',     emoji: '🏖️' },
-      { val: en ? 'city' : 'città',      label: en ? 'City'     : 'Città',    emoji: '🏙️' },
+      { val: en ? 'beach' : 'mare',        label: en ? 'Beach'    : 'Mare',     emoji: '🏖️' },
+      { val: en ? 'city' : 'città',        label: en ? 'City'     : 'Città',    emoji: '🏙️' },
       { val: en ? 'mountain' : 'montagna', label: en ? 'Mountain' : 'Montagna', emoji: '🏔️' },
-      { val: en ? 'business' : 'lavoro', label: en ? 'Business' : 'Lavoro',   emoji: '💼' },
+      { val: en ? 'business' : 'lavoro',   label: en ? 'Business' : 'Lavoro',   emoji: '💼' },
     ]
     return (
       <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
@@ -1373,9 +1571,14 @@ function TravelTab() {
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
           {en ? 'What kind of trip?' : 'Che tipo di viaggio?'}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: autoTripType ? 8 : 24 }}>
           {en ? 'The destination activities will shape your wardrobe.' : 'Le attività influenzeranno la scelta dei capi.'}
         </div>
+        {autoTripType && (
+          <div style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 10, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 12, color: 'var(--primary-light)', fontWeight: 600 }}>
+            ✦ {en ? `Detected: ${autoTripType}` : `Rilevato: ${autoTripType}`}
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {types.map(t => (
             <button key={t.val} onClick={() => { setTripType(t.val); generate({ tripType: t.val }) }} style={{
@@ -1398,17 +1601,24 @@ function TravelTab() {
 
   /* Step 6 — Loading */
   if (step === 6) return (
-    <div style={{ flex: 1, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: '32px 24px' }}>
+    <div style={{ flex: 1, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '32px 24px' }}>
       <div style={{ position: 'relative' }}>
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #f59e0b, #fb923c)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px rgba(245,158,11,0.35)', fontSize: 32 }}>✈️</div>
-        <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid rgba(245,158,11,0.3)', animation: 'splashGlow 1.8s ease-in-out infinite' }} />
+        <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, #f59e0b, #fb923c)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px rgba(245,158,11,0.35)', fontSize: 34 }}>✈️</div>
+        {/* Animated ring */}
+        <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '3px solid rgba(245,158,11,0.0)', borderTopColor: '#f59e0b', animation: 'spin 1.1s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: -14, borderRadius: '50%', border: '2px solid rgba(245,158,11,0.2)', borderBottomColor: '#fb923c', animation: 'spin 1.7s linear infinite reverse' }} />
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-          {en ? `Planning your trip to ${destination}…` : `Pianifico il viaggio a ${destination}…`}
+      <div style={{ textAlign: 'center', maxWidth: 240 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: 10 }}>
+          {destination}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6 }}>
-          {en ? 'Checking forecasts and browsing your wardrobe' : 'Controllo le previsioni e sfoglio il tuo armadio'}
+        <div key={loadingPhase} style={{ fontSize: 14, color: 'var(--primary-light)', fontWeight: 600, animation: 'fadeIn 0.4s ease' }}>
+          {loadingMessages[loadingPhase]}
+        </div>
+        <div style={{ marginTop: 20, display: 'flex', gap: 5, justifyContent: 'center' }}>
+          {loadingMessages.map((_, i) => (
+            <div key={i} style={{ width: i === loadingPhase ? 16 : 5, height: 5, borderRadius: 99, background: i === loadingPhase ? 'var(--primary)' : 'var(--border)', transition: 'width 0.3s, background 0.3s' }} />
+          ))}
         </div>
       </div>
     </div>

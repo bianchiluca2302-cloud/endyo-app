@@ -42,7 +42,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone, date, timedelta
 
 from database import get_db, init_db
-from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, Brand, BrandProduct, BrandProductImpression, BrandProductFeedback, WearLog, SocialPost, PostLike, PostComment
+from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, Brand, BrandProduct, BrandProductImpression, BrandProductFeedback, WearLog, SocialPost, PostLike, PostComment, SavedTravel
 from ai_service import analyze_garment, reenrich_garment, generate_outfit_recommendations, chat_with_stylist, complete_outfit, stream_chat_with_stylist
 from tryon_service import generate_tryon, generate_outfit_tryon, fashn_supported, get_fashn_key
 from bg_service import remove_background, remove_background_batch, preload_model_sync
@@ -5022,9 +5022,26 @@ async def create_travel_plan(
             pass
     description = _re.sub(r"<OUTFIT>[\s\S]*?</OUTFIT>", "", full_text).strip()
 
+    # Auto-save the plan
+    saved = SavedTravel(
+        user_id      = current_user.id,
+        destination  = body.destination,
+        start_date   = body.start_date,
+        end_date     = body.end_date,
+        days         = days,
+        trip_type    = body.trip_type or None,
+        travel_style = body.travel_style or None,
+        num_outfits  = n_outfits,
+        weather      = weather_summary,
+        description  = description,
+        outfits      = outfits,
+    )
+    db.add(saved)
     await db.commit()
+    await db.refresh(saved)
 
     return {
+        "id":          saved.id,
         "destination": body.destination,
         "start_date":  body.start_date,
         "end_date":    body.end_date,
@@ -5033,3 +5050,51 @@ async def create_travel_plan(
         "description": description,
         "outfits":     outfits,
     }
+
+
+@app.get("/api/travel/saved")
+async def list_saved_travels(
+    db:           AsyncSession = Depends(get_db),
+    current_user: User         = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(SavedTravel)
+        .where(SavedTravel.user_id == current_user.id)
+        .order_by(SavedTravel.created_at.desc())
+        .limit(50)
+    )
+    travels = result.scalars().all()
+    return [
+        {
+            "id":          t.id,
+            "destination": t.destination,
+            "start_date":  t.start_date,
+            "end_date":    t.end_date,
+            "days":        t.days,
+            "trip_type":   t.trip_type,
+            "travel_style":t.travel_style,
+            "num_outfits": t.num_outfits,
+            "weather":     t.weather,
+            "description": t.description,
+            "outfits":     t.outfits or [],
+            "created_at":  t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in travels
+    ]
+
+
+@app.delete("/api/travel/saved/{travel_id}")
+async def delete_saved_travel(
+    travel_id:    int,
+    db:           AsyncSession = Depends(get_db),
+    current_user: User         = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(SavedTravel).where(SavedTravel.id == travel_id, SavedTravel.user_id == current_user.id)
+    )
+    t = result.scalar_one_or_none()
+    if not t:
+        raise HTTPException(404, "Not found")
+    await db.delete(t)
+    await db.commit()
+    return {"ok": True}

@@ -717,7 +717,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     { id: 'sport',   label: 'Sport',   emoji: '🏃',
       sub: 'What activity?',        subs: ['Gym / CrossFit', 'Running / outdoor', 'Yoga / pilates', 'Team sport'],
       style: 'Your priority?',      styles: ['Performance (technical)', 'Athleisure (street-sport)', 'Comfort above all'] },
-    { id: 'travel',  label: 'Travel',  emoji: '✈️',
+    { id: 'travel',  label: 'Short trip',  emoji: '✈️',
       sub: 'What climate?',         subs: ['Hot (beach / tropical)', 'Mild / spring', 'Cold / autumn', 'Freezing / mountain'],
       style: 'Travel style?',       styles: ['Comfortable and practical', 'Smart and versatile', 'Adventurous / outdoor'] },
   ] : [
@@ -733,7 +733,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     { id: 'sport',   label: 'Sport',   emoji: '🏃',
       sub: 'Che attività?',         subs: ['Palestra / CrossFit', 'Running / outdoor', 'Yoga / pilates', 'Sport di squadra'],
       style: 'Che priorità hai?',   styles: ['Performance (tecnico)', 'Athleisure (street-sport)', 'Comodo sopra tutto'] },
-    { id: 'viaggio', label: 'Viaggio', emoji: '✈️',
+    { id: 'viaggio', label: 'Viaggio breve', emoji: '✈️',
       sub: 'Che clima prevedi?',    subs: ['Caldo (spiaggia / tropicale)', 'Mite / primaverile', 'Freddo / autunnale', 'Freddo intenso / montagna'],
       style: 'Stile di viaggio?',   styles: ['Comodo e pratico', 'Smart e versatile', 'Avventuroso / outdoor'] },
   ]
@@ -746,6 +746,8 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const [resultOutfits, setResultOutfits] = useState([])
   const [resultError,   setResultError]   = useState(null)
   const [warnDismissed, setWarnDismissed] = useState(false)
+  const [loadingPhase,  setLoadingPhase]  = useState(0)
+  const loadingTimerRef = useRef(null)
 
   const hasSelection = selectedGarments.length > 0
 
@@ -780,6 +782,36 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     }
     return ` Meteo attuale: ${weather.temp}°C, percepita ${weather.feels}°C, ${weather.label}, umidità ${weather.humidity}%, vento ${weather.wind} km/h.${hourlyStr ? ` Prossime 5 ore: ${hourlyStr}.` : ''} Scegli capi adatti a queste condizioni reali.`
   }
+
+  const STYLIST_LOADING_IT = [
+    'Analizzo il tuo armadio…',
+    'Studio gli abbinamenti…',
+    'Controllo i colori e le texture…',
+    'Seleziono i capi perfetti…',
+    'Compongo il look…',
+    'Aggiungo i dettagli finali…',
+  ]
+  const STYLIST_LOADING_EN = [
+    'Scanning your wardrobe…',
+    'Studying combinations…',
+    'Checking colours and textures…',
+    'Selecting the perfect pieces…',
+    'Composing the look…',
+    'Adding the finishing touches…',
+  ]
+  const stylistLoadingMsgs = language === 'en' ? STYLIST_LOADING_EN : STYLIST_LOADING_IT
+
+  useEffect(() => {
+    if (step === 3) {
+      setLoadingPhase(0)
+      loadingTimerRef.current = setInterval(() => {
+        setLoadingPhase(p => (p + 1) % stylistLoadingMsgs.length)
+      }, 1600)
+    } else {
+      clearInterval(loadingTimerRef.current)
+    }
+    return () => clearInterval(loadingTimerRef.current)
+  }, [step])
 
   const generate = async (occLabel, subLabel, styleLabel) => {
     setStep(3); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
@@ -993,26 +1025,28 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
 
   /* ── Step 3: Loading ── */
   if (step === 3) return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 24 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 28 }}>
       <div style={{ position: 'relative' }}>
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px var(--primary-shadow)' }}>
-          <IconSparkle size={28} style={{ color: '#fff' }} />
+        <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px var(--primary-shadow)' }}>
+          <IconSparkle size={30} style={{ color: '#fff' }} />
         </div>
-        <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid var(--primary)', opacity: 0.3, animation: 'splashGlow 1.8s ease-in-out infinite' }} />
+        {/* Animated rings */}
+        <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '3px solid transparent', borderTopColor: 'var(--primary)', animation: 'spin 1.1s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: -14, borderRadius: '50%', border: '2px solid var(--primary-dim)', borderBottomColor: '#c084fc', animation: 'spin 1.7s linear infinite reverse' }} />
       </div>
-      <div style={{ textAlign: 'center', maxWidth: 220 }}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+      <div style={{ textAlign: 'center', maxWidth: 240 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: 12 }}>
           {language === 'en' ? 'Building your look…' : 'Sto creando il tuo look…'}
         </div>
-        <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 6, lineHeight: 1.5 }}>
-          {language === 'en' ? 'The AI is browsing your entire wardrobe' : 'L\'AI sta sfogliando tutto il tuo armadio'}
+        <div key={loadingPhase} style={{ fontSize: 14, color: 'var(--primary-light)', fontWeight: 600, animation: 'fadeIn 0.4s ease' }}>
+          {stylistLoadingMsgs[loadingPhase]}
+        </div>
+        <div style={{ marginTop: 20, display: 'flex', gap: 5, justifyContent: 'center' }}>
+          {stylistLoadingMsgs.map((_, i) => (
+            <div key={i} style={{ width: i === loadingPhase ? 16 : 5, height: 5, borderRadius: 99, background: i === loadingPhase ? 'var(--primary)' : 'var(--border)', transition: 'width 0.3s, background 0.3s' }} />
+          ))}
         </div>
       </div>
-      {streamText && (
-        <div style={{ width: '100%', maxHeight: 120, overflow: 'hidden', padding: '12px 14px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.55, maskImage: 'linear-gradient(to bottom, black 60%, transparent)' }}>
-          {streamText.slice(-300)}
-        </div>
-      )}
     </div>
   )
 

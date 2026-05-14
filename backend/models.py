@@ -310,3 +310,22 @@ class WearLog(Base):
     outfit_name = Column(String(200), nullable=True)        # snapshot del nome al momento dell'uso
     worn_on    = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     note       = Column(String(300), nullable=True)         # nota opzionale dell'utente
+
+
+# ── Viaggi salvati ──────────────────────────────────────────────────────────────
+class SavedTravel(Base):
+    __tablename__ = "saved_travels"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    user_id      = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    destination  = Column(String(300), nullable=False)
+    start_date   = Column(String(20),  nullable=False)
+    end_date     = Column(String(20),  nullable=False)
+    days         = Column(Integer,     nullable=True)
+    trip_type    = Column(String(50),  nullable=True)
+    travel_style = Column(String(50),  nullable=True)
+    num_outfits  = Column(Integer,     nullable=True)
+    weather      = Column(String(1000),nullable=True)
+    description  = Column(Text,        nullable=True)
+    outfits      = Column(JSON,        default=list)
+    created_at   = Column(DateTime(timezone=True), server_default=func.now())

@@ -419,3 +419,9 @@ export const fetchTravelPlan = ({ destination, startDate, endDate, preferredIds 
     travel_style:  travelStyle,
     trip_type:     tripType,
   }).then(r => r.data)
+
+export const fetchSavedTravels = () =>
+  api.get('/api/travel/saved').then(r => r.data)
+
+export const deleteSavedTravel = (id) =>
+  api.delete(`/api/travel/saved/${id}`).then(r => r.data)
