@@ -13,6 +13,9 @@ import { useT } from '../i18n'
 import CreatePostModal from '../components/CreatePostModal'
 import OutfitCanvas from '../components/OutfitCanvas'
 import MobileGarmentSheet from './MobileGarmentSheet'
+import { useToast } from '../components/Toast'
+import usePullToRefresh from '../hooks/usePullToRefresh'
+import { hapticLight } from '../hooks/useHaptic'
 
 
 /* ── SuggestedUsers — consiglia utenti basandosi sui tag stile dell'armadio ───── */
@@ -1352,6 +1355,9 @@ export default function MobileFriends() {
   const language = useSettingsStore(s => s.language) || 'it'
   const location = useLocation()
 
+  const toast = useToast()
+  const feedScrollRef = useRef(null)
+
   const [tab,                    setTab]                    = useState(() => { try { return sessionStorage.getItem('mf_tab') || 'feed' } catch { return 'feed' } })   // 'feed' | 'myposts'
   const [posts,                  setPosts]                  = useState([])
   const [loading,                setLoading]                = useState(true)
@@ -1402,6 +1408,8 @@ export default function MobileFriends() {
     } catch { /* ignore */ }
     finally { setLoading(false) }
   }, [])
+
+  const { pullY, refreshing } = usePullToRefresh(feedScrollRef, () => loadFeed(1))
 
   useEffect(() => { try { sessionStorage.setItem('mf_tab', tab) } catch {} }, [tab])
 
@@ -1512,14 +1520,37 @@ export default function MobileFriends() {
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div ref={feedScrollRef} style={{ flex: 1, overflow: 'auto' }}>
+
+        {/* ── Pull-to-refresh indicator ── */}
+        <div className="ptr-indicator" style={{ height: pullY > 0 ? Math.min(pullY, 44) : 0 }}>
+          {refreshing
+            ? <div className="spinner spinner-sm" />
+            : <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>}
+        </div>
 
         {/* ── FEED ── */}
         {tab === 'feed' && (
           <div style={{ padding: '12px 12px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
             {loading && posts.length === 0 ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+              /* skeleton cards while loading */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="skeleton-card" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
+                      <div className="skeleton" style={{ width: 36, height: 36, borderRadius: '50%' }} />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div className="skeleton" style={{ height: 12, width: '40%', borderRadius: 6 }} />
+                        <div className="skeleton" style={{ height: 10, width: '25%', borderRadius: 6 }} />
+                      </div>
+                    </div>
+                    <div className="skeleton" style={{ height: 220, borderRadius: 0 }} />
+                    <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div className="skeleton" style={{ height: 10, width: '70%', borderRadius: 6 }} />
+                      <div className="skeleton" style={{ height: 10, width: '45%', borderRadius: 6 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : posts.length === 0 ? (
               /* ── Feed vuoto: suggerisci persone + 1 annuncio ── */

@@ -1161,6 +1161,7 @@ export default function MobileWardrobe() {
     scrollAreaRef
   )
 
+  useEffect(() => { init() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => setNavLocked(false), [setNavLocked]) // clear lock on unmount
   useEffect(() => { try { sessionStorage.setItem('mw_tab', activeTab) } catch {} }, [activeTab])
 

@@ -71,6 +71,7 @@ function PhotoSlot({ label, preview, onChange, required, small, style: extraStyl
     >
       {preview ? (
         <img src={preview} alt={label}
+          onError={e => { e.target.style.display = 'none' }}
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
       ) : (
@@ -440,7 +441,7 @@ export default function MobileUpload() {
             onClick={() => setFullscreenUrl(previews.front)}
             style={{ width: 100, flexShrink: 0, borderRadius: 14, overflow: 'hidden', background: 'var(--card)', aspectRatio: '3/4', cursor: 'zoom-in' }}
           >
-            <img src={previews.front} alt="fronte" style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
+            <img src={previews.front} alt="fronte" onError={e => { e.target.style.display = 'none' }} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>

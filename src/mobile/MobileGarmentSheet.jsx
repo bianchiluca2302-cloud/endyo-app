@@ -680,7 +680,7 @@ export default function MobileGarmentSheet({ garment, onClose }) {
         )}
 
         {/* ── Dettagli ───────────────────────────────────────────────────────── */}
-        <div style={{ padding: '18px 20px 8px' }}>
+        <div style={{ padding: '18px 20px 84px' }}>
 
           {/* Descrizione */}
           {liveGarment.description && (

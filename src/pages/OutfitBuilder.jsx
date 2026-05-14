@@ -5,6 +5,7 @@ import GarmentCard from '../components/GarmentCard'
 import useWardrobeStore from '../store/wardrobeStore'
 import useSettingsStore from '../store/settingsStore'
 import PageTutorial from '../components/PageTutorial'
+import { useToast } from '../components/Toast'
 
 const getOutfitTour = (lang) => lang === 'en' ? [
   {
@@ -1725,6 +1726,7 @@ function MobileSelectionStrip({ garments: selectedList, onRemove }) {
             }}>
               {g.photo_front ? (
                 <img src={imgUrl(g.photo_front)} alt={g.name}
+                  onError={e => { e.target.style.display = 'none' }}
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
                 <span style={{ fontSize: 14 }}>👕</span>
@@ -1799,6 +1801,7 @@ function MobileSelectionStrip({ garments: selectedList, onRemove }) {
                 }}>
                   {g.photo_front ? (
                     <img src={imgUrl(g.photo_front)} alt={g.name}
+                      onError={e => { e.target.style.display = 'none' }}
                       style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   ) : (
                     <span style={{ fontSize: 22 }}>👕</span>
@@ -1846,6 +1849,7 @@ export default function OutfitBuilder() {
   const getById     = useWardrobeStore(s => s.getGarmentById)
   const t = useT()
   const CATEGORY_LABELS = useCategoryLabels()
+  const toast = useToast()
 
   const language     = useSettingsStore(s => s.language) || 'it'
   const compactCards = useSettingsStore(s => s.compactCards)
@@ -1945,6 +1949,8 @@ export default function OutfitBuilder() {
       setSelected({})
       setMixerActiveId(null)
       setTimeout(() => setSaveMsg(null), 2500)
+    } catch {
+      toast.show(language === 'en' ? 'Failed to save outfit' : 'Salvataggio fallito', 'error')
     } finally {
       setSaving(false)
     }
