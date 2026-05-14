@@ -104,11 +104,12 @@ export default function MobileTabBar() {
   const location   = useLocation()
 
   const goTab = (path, sessionKeys = []) => {
-    // Always clear sub-tab keys so the page resets to its default tab on every navigation
-    sessionKeys.forEach(k => { try { sessionStorage.removeItem(k) } catch {} })
     if (location.pathname === path) {
+      // Tapping the same tab again: reset section to its root view
+      sessionKeys.forEach(k => { try { sessionStorage.removeItem(k) } catch {} })
       navigate(path, { state: { resetAt: Date.now() }, replace: true })
     }
+    // Otherwise NavLink handles navigation; session state is preserved so sub-pages survive round-trips
   }
 
   const handleLockedTap = () => {
