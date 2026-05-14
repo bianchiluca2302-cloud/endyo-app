@@ -1212,10 +1212,11 @@ function PostDetailSheet({ post, onClose, onDelete, currentUser, showDelete = fa
 
 /* ── Cerca utenti (sheet) ────────────────────────────────────────────────────── */
 function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garments = [] }) {
-  const [query,     setQuery]     = useState('')
-  const [results,   setResults]   = useState([])
-  const [following, setFollowing] = useState(new Set())
-  const [loading,   setLoading]   = useState(false)
+  const [query,          setQuery]          = useState('')
+  const [results,        setResults]        = useState([])
+  const [following,      setFollowing]      = useState(new Set())
+  const [followingList,  setFollowingList]  = useState([])
+  const [loading,        setLoading]        = useState(false)
   const [visible,   setVisible]   = useState(false)
   const [dragY,     setDragY]     = useState(0)
   const startYRef   = useRef(0)
@@ -1247,7 +1248,12 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
   }
 
   useEffect(() => {
-    fetchFollowing().then(list => setFollowing(new Set(list.map(u => u.username)))).catch(() => {})
+    fetchFollowing()
+      .then(list => {
+        setFollowingList(list || [])
+        setFollowing(new Set((list || []).map(u => u.username)))
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -1379,14 +1385,50 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
           </>
         )}
 
-        {/* Suggeriti basati sullo stile — quando la barra è vuota */}
+        {/* Seguiti + suggeriti — quando la barra è vuota */}
         {!query.trim() && (
-          <div style={{ padding: '12px 16px 4px' }}>
-            <SuggestedUsers
-              language={language}
-              garments={garments}
-              onSelectUser={username => { onSelectUser(username); handleClose() }}
-            />
+          <div style={{ padding: '4px 0' }}>
+
+            {/* Persone già seguite */}
+            {followingList.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '12px 16px 6px' }}>
+                  {language === 'en' ? 'Following' : 'Già seguiti'}
+                </div>
+                {followingList.map(u => {
+                  const picSrc = u.profile_picture ? imgUrl(u.profile_picture) : null
+                  return (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <button
+                        onClick={() => { onSelectUser(u.username); handleClose() }}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flex: 1, textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        {picSrc
+                          ? <img src={picSrc} alt={u.username} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary),var(--primary-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>{(u.username || '?')[0].toUpperCase()}</div>
+                        }
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</span>
+                            <PlanBadge plan={u.plan} />
+                          </div>
+                          {u.bio && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio}</div>}
+                        </div>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Suggeriti basati sullo stile */}
+            <div style={{ padding: '4px 16px' }}>
+              <SuggestedUsers
+                language={language}
+                garments={garments}
+                onSelectUser={username => { onSelectUser(username); handleClose() }}
+              />
+            </div>
           </div>
         )}
       </div>
