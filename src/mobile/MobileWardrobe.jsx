@@ -1324,7 +1324,6 @@ function TravelTab() {
           onChange={e => { setDestination(e.target.value); fetchGeoSuggestions(e.target.value) }}
           onKeyDown={e => { if (e.key === 'Enter' && destination.trim()) { setGeoSuggestions([]); setStep(1) } }}
           placeholder={en ? 'e.g. Tokyo, Barcelona, New York…' : 'es. Parigi, Tokyo, New York…'}
-          autoFocus
           autoComplete="off"
           style={inputStyle}
         />
