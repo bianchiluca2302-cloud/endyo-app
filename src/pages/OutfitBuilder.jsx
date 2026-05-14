@@ -693,11 +693,15 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const outfits  = useWardrobeStore(s => s.outfits)
   const language = useSettingsStore(s => s.language) || 'it'
   const shownIdsRef = useRef([])
-  const [quota, setQuota] = useState(null) // null=loading, -1=unlimited, number=remaining
+  const [quota, setQuota] = useState(() => {
+    try { const c = sessionStorage.getItem('stylist-quota'); return c !== null ? Number(c) : null } catch { return null }
+  })
 
   useEffect(() => {
     fetchChatQuota().then(q => {
-      setQuota(q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null))
+      const val = q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null)
+      setQuota(val)
+      try { if (val !== null) sessionStorage.setItem('stylist-quota', String(val)) } catch {}
     }).catch(() => {})
   }, [])
 
@@ -844,7 +848,9 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         setResultOutfits(outfits)
         setStep(4)
         fetchChatQuota().then(q => {
-          setQuota(q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null))
+          const val = q.plan === 'premium' ? -1 : (q.remaining_day ?? q.remaining ?? null)
+          setQuota(val)
+          try { if (val !== null) sessionStorage.setItem('stylist-quota', String(val)) } catch {}
         }).catch(() => {})
       },
       onError: err => { setResultError(err); setStep(4) },
