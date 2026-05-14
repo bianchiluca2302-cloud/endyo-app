@@ -1,11 +1,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Disable text selection on tap (mobile double-tap copy) */
-body { -webkit-user-select: none; user-select: none; }
+/* Disable text selection and long-press callout globally */
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
 
-/* Disable image saving (long-press iOS context menu, right-click, drag-to-save) */
-img { -webkit-touch-callout: none; pointer-events: none; }
+/* Disable image saving: no callout, no drag */
+img { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 
 :root {
   --bg:        #0d0d14;

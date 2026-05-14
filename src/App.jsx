@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 const logoUrl = './Endyoapp.png?v=4'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import TutorialOverlay, { shouldShowTutorial } from './components/TutorialOverlay'
 import MobileTutorial from './mobile/MobileTutorial'
@@ -327,22 +327,7 @@ export default function App() {
               /* ── Layout MOBILE: tab bar + pagine ridisegnate da zero ─────────── */
               <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
                 {showTutorial && <MobileTutorial onDone={() => setShowTutorial(false)} />}
-                <main style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
-                  {showBackendError && <BackendErrorBanner />}
-                  <Routes>
-                    <Route path="/"          element={<Navigate to={showTutorial ? "/upload" : "/wardrobe"} replace />} />
-                    <Route path="/wardrobe"     element={<MobileWardrobe />} />
-                    <Route path="/upload"       element={<MobileUpload />} />
-                    <Route path="/outfits"      element={<OutfitBuilder />} />
-                    <Route path="/friends"      element={<MobileFriends />} />
-                    <Route path="/profile"      element={<MobileProfile />} />
-                    <Route path="/edit-profile" element={<Profile />} />
-                    <Route path="/settings"     element={<Settings />} />
-                    <Route path="/premium"      element={<Premium />} />
-                    <Route path="/shopping"     element={<Shopping />} />
-                    <Route path="*"             element={<Navigate to="/wardrobe" replace />} />
-                  </Routes>
-                </main>
+                <MobileTabLayout showBackendError={showBackendError} showTutorial={showTutorial} />
                 <MobileTabBar />
               </div>
             ) : (
@@ -375,6 +360,55 @@ export default function App() {
     </HashRouter>
     </>
     </ToastProvider>
+  )
+}
+
+const MOBILE_TABS = [
+  { p: '/wardrobe', C: MobileWardrobe },
+  { p: '/upload',   C: MobileUpload   },
+  { p: '/outfits',  C: OutfitBuilder  },
+  { p: '/friends',  C: MobileFriends  },
+  { p: '/profile',  C: MobileProfile  },
+]
+
+function MobileTabLayout({ showBackendError, showTutorial }) {
+  const location = useLocation()
+  const path     = location.pathname
+  const isTab    = MOBILE_TABS.some(t => t.p === path)
+
+  return (
+    <>
+      {showBackendError && <BackendErrorBanner />}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        {/* All main tabs stay mounted; only display toggles */}
+        {MOBILE_TABS.map(({ p, C }) => (
+          <div key={p} style={{
+            position: 'absolute', inset: 0,
+            overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+            display: path === p ? 'flex' : 'none',
+            flexDirection: 'column',
+          }}>
+            <C />
+          </div>
+        ))}
+        {/* Sub-pages (settings, premium, shopping…) render as overlay */}
+        {!isTab && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 50,
+            background: 'var(--bg)', overflowY: 'auto',
+          }}>
+            <Routes>
+              <Route path="/"             element={<Navigate to={showTutorial ? '/upload' : '/wardrobe'} replace />} />
+              <Route path="/edit-profile" element={<Profile />} />
+              <Route path="/settings"     element={<Settings />} />
+              <Route path="/premium"      element={<Premium />} />
+              <Route path="/shopping"     element={<Shopping />} />
+              <Route path="*"             element={<Navigate to="/wardrobe" replace />} />
+            </Routes>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
