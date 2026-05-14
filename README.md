@@ -1,104 +1,173 @@
-# Endyo — AI Wardrobe App
+# Endyo — AI Wardrobe
 
-PWA per la gestione intelligente dell'armadio con Stylist AI, rimozione sfondo automatica e shopping advisor.
+> Your wardrobe, made intelligent. Endyo analyzes your clothes with AI, builds outfits, and helps you dress better every day.
 
----
-
-## Stack
-
-| Layer | Tecnologie |
-|-------|-----------|
-| Frontend | React 18 + Vite, Zustand, React Router, PWA (manifest + service worker) |
-| Backend | FastAPI + SQLAlchemy async, PostgreSQL, Railway |
-| AI | GPT-4 Vision (analisi capi), Claude (stylist chat, outfit generation) |
-| BG Removal | u2netp via `bg_service.py` (subprocess isolato) |
-| Auth | JWT + Google OAuth |
-| i18n | `useT()` hook — supporto `it` / `en` |
+**Endyo** is a full-stack PWA installable on iOS, Android, and Desktop. Upload a photo of any garment and the AI identifies category, colors, materials, style tags, and season — instantly. Build outfits visually, chat with an AI stylist, discover what to buy next, and share looks with friends.
 
 ---
 
-## Avvio rapido
+## Features
+
+### Wardrobe
+- Upload garment photos (front / back / label) — AI fills in all details automatically
+- Automatic background removal (u2netp model, runs locally)
+- Filter and sort by category, color, brand, season, or date
+- Pull-to-refresh, skeleton loading, haptic feedback
+- Compact or standard card layout
+
+### Outfit Builder
+- Visual drag-and-drop **Mixer** — layer garments as they'd look when worn
+- Save outfits, track how often you wear them
+- **AI Stylist** (Claude) — describe an occasion and get a full outfit suggestion
+- Weather-aware recommendations via live forecast
+- AI auto-complete: have the AI fill in the missing pieces for a selected base
+
+### Color Analysis (Armocromia)
+- Upload a face photo — AI identifies your seasonal color palette
+- Recommendations for which colors in your wardrobe suit you best
+
+### Travel Planner
+- Enter a destination and dates — AI builds a packing list from your actual wardrobe
+
+### Social
+- Follow friends, post outfits and garments
+- Social feed with infinite scroll (preloaded on login)
+- Likes, notifications, user discovery based on style tags
+
+### Shopping Advisor
+- AI scans your wardrobe for gaps and suggests real brand products
+
+### Account
+- Email + password or **Google OAuth**
+- Free plan with daily/weekly AI quotas
+- **Premium** via Stripe — unlimited AI requests
+- Profile with measurements, style preferences, profile picture
+- Full Italian and English support
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18 + Vite, Zustand, React Router, PWA |
+| **Mobile UI** | Dedicated `Mobile*` components detected via `useIsMobile()` |
+| **Backend** | FastAPI + SQLAlchemy (async), PostgreSQL, deployed on Railway |
+| **AI — Analysis** | GPT-4 Vision — garment recognition, color analysis, armocromia |
+| **AI — Stylist** | Claude (Anthropic) — chat, outfit generation, travel planner |
+| **BG Removal** | `rembg` / u2netp via isolated Python subprocess |
+| **Auth** | JWT (access + refresh tokens), Google OAuth 2.0 |
+| **Payments** | Stripe |
+| **i18n** | `useT()` hook — `it` / `en` |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.10+
+- PostgreSQL database (or use Railway)
+
+### Frontend
 
 ```bash
-# Frontend
 npm install
 npm run dev
+```
 
-# Backend
+App runs at `http://localhost:5173`.
+
+### Backend
+
+```bash
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Configura `backend/.env`:
-```
-DATABASE_URL=postgresql+asyncpg://...
+API runs at `http://localhost:8000`.
+
+### Environment variables
+
+Create `backend/.env`:
+
+```env
+DATABASE_URL=postgresql+asyncpg://user:password@host/dbname
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
-SECRET_KEY=...
+SECRET_KEY=your-random-secret-key
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+SMTP_HOST=...
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASS=...
 ```
 
 ---
 
-## Struttura
+## Project Structure
 
 ```
 wardrobe-ai-app/
 ├── src/
-│   ├── pages/          # Wardrobe, Upload, OutfitBuilder, Profile, Friends, …
-│   ├── mobile/         # Componenti mobile (prefisso Mobile*)
-│   ├── components/     # Navbar, Modali, UI condivisa
-│   ├── store/          # wardrobeStore, authStore, settingsStore (Zustand)
-│   ├── api/            # client.ts — chiamate API + helpers
-│   └── i18n/           # Traduzioni it/en
+│   ├── pages/          # Wardrobe, Upload, OutfitBuilder, Profile, Friends, Shopping, Premium
+│   ├── mobile/         # Mobile-first components (MobileWardrobe, MobileUpload, …)
+│   ├── components/     # Shared UI — Navbar, Modals, Toast, GarmentCard, OutfitCanvas
+│   ├── store/          # Zustand stores — wardrobeStore, authStore, settingsStore
+│   ├── hooks/          # useIsMobile, usePullToRefresh, useHaptic, useDebounce, useWeather
+│   ├── api/            # API client, brand client
+│   └── i18n/           # Translations it/en
 ├── backend/
-│   ├── main.py         # FastAPI — tutti gli endpoint
+│   ├── main.py         # All FastAPI endpoints
 │   ├── models.py       # SQLAlchemy models
-│   ├── ai_service.py   # GPT-4 Vision + Claude
-│   └── bg_service.py   # Rimozione sfondo (u2netp)
+│   ├── ai_service.py   # GPT-4 Vision + Claude integrations
+│   └── bg_service.py   # Background removal subprocess (u2netp)
 ├── public/
-│   ├── Endyoapp.png    # Logo / icona app
+│   ├── Endyoapp.png    # App icon
 │   └── manifest.json   # PWA manifest
 └── index.html
 ```
 
 ---
 
-## Funzionalità principali
+## API Overview
 
-- Upload foto capo (fronte/retro/etichetta) con analisi AI automatica
-- Rimozione sfondo automatica (u2netp)
-- Builder outfit drag & select + Mixer visuale
-- Stylist AI chat (Claude) — suggerisce abbinamenti
-- Shopping Advisor — raccomanda prodotti brand in base al guardaroba
-- Analisi Armocromia (foto viso → stagione colore)
-- Profilo utente con misure, stile, foto persistente
-- Sistema amicizie e feed social (post outfit/capi)
-- Piano Free / Premium con quote giornaliere/settimanali
-- PWA installabile su iOS/Android/Desktop
+| Endpoint | Method | Description |
+|---|---|---|
+| `/garments` | GET / POST | List all garments / create new |
+| `/garments/analyze` | POST | AI analysis without saving |
+| `/garments/confirm` | POST | Save garment after analysis |
+| `/garments/{id}` | PATCH / DELETE | Update / delete a garment |
+| `/garments/{id}/remove-bg` | POST | Trigger background removal |
+| `/outfits` | GET / POST | List / create outfits |
+| `/outfits/{id}/wear` | POST | Record a wear event |
+| `/ai/chat` | POST | Stylist chat (streaming) |
+| `/ai/complete-outfit` | POST | AI auto-complete outfit |
+| `/ai/generate-outfits` | POST | Generate outfit suggestions |
+| `/profile` | GET / POST | User profile |
+| `/auth/register` | POST | Register with email |
+| `/auth/login` | POST | Login with email |
+| `/auth/google` | POST | Google OAuth login |
+| `/auth/refresh` | POST | Refresh access token |
+| `/shopping/advisor` | POST | AI shopping recommendations |
+| `/social/feed` | GET | Social feed |
+| `/social/posts` | GET / POST | Posts |
+| `/social/follow/{username}` | POST | Follow a user |
+| `/premium/checkout` | POST | Stripe checkout session |
 
 ---
 
-## Persistenza immagini
+## Image Storage
 
-Le foto dei capi (fronte, retro, etichetta) e la foto profilo vengono salvate come base64 in colonne `TEXT` su PostgreSQL (`photo_front_data`, `photo_back_data`, `photo_label_data`, `profile_picture_data`). Questo garantisce che le immagini sopravvivano ai restart del server senza dipendere dal filesystem.
+Garment photos (front, back, label) and profile pictures are stored as base64 in `TEXT` columns on PostgreSQL. This keeps images available across server restarts without relying on a filesystem or external object storage.
 
 ---
 
-## API principali
+## License
 
-| Endpoint | Metodo | Descrizione |
-|----------|--------|-------------|
-| `/garments` | GET/POST | Lista / crea capi |
-| `/garments/analyze` | POST | Analisi AI senza creare record |
-| `/garments/confirm` | POST | Conferma capo dopo analisi |
-| `/garments/{id}` | PATCH/DELETE | Modifica / elimina |
-| `/outfits` | GET/POST | Lista / crea outfit |
-| `/ai/chat` | POST | Chat stylist AI |
-| `/ai/generate-outfits` | POST | Genera outfit con AI |
-| `/profile` | GET/POST | Profilo utente |
-| `/auth/login` | POST | Login email+password |
-| `/auth/google` | POST | Login Google OAuth |
-| `/shopping/advisor` | POST | Raccomandazioni prodotti |
+Private — all rights reserved.
