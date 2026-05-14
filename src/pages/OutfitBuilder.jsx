@@ -968,13 +968,25 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {Q.map(o => (
-          <button key={o.id} onClick={() => { setOccasion(o.id); setStep(1) }}
-            style={{ ...cardBtn, padding: '18px 12px 16px', borderRadius: 18, border: '1.5px solid var(--border)', background: OCC_COLORS[o.id] || 'var(--card)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, position: 'relative', overflow: 'hidden' }}>
-            <span style={{ fontSize: 32, lineHeight: 1 }}>{o.emoji}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>{o.label}</span>
-          </button>
-        ))}
+        {Q.map((o, idx) => {
+          const isOrphan = Q.length % 2 !== 0 && idx === Q.length - 1
+          return (
+            <button key={o.id} onClick={() => { setOccasion(o.id); setStep(1) }}
+              style={{
+                ...cardBtn,
+                padding: '18px 12px 16px', borderRadius: 18,
+                border: '1.5px solid var(--border)',
+                background: OCC_COLORS[o.id] || 'var(--card)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: 10,
+                position: 'relative', overflow: 'hidden',
+                ...(isOrphan ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 5px)', width: '100%', margin: '0 auto' } : {}),
+              }}>
+              <span style={{ fontSize: 32, lineHeight: 1 }}>{o.emoji}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>{o.label}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -992,8 +1004,8 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {occ.subs.map(s => (
           <button key={s} onClick={() => { setSelectedSub(s); setStep(2) }}
-            style={{ ...cardBtn, padding: '14px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {s}
+            style={{ ...cardBtn, minHeight: 54, padding: '12px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ flex: 1 }}>{s}</span>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         ))}

@@ -4,6 +4,9 @@
 body { -webkit-user-select: none; user-select: none; }
 input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
 
+/* Disable image saving (long-press iOS context menu, right-click, drag-to-save) */
+img { -webkit-touch-callout: none; pointer-events: none; }
+
 :root {
   --bg:        #0d0d14;
   --surface:   #13131e;
