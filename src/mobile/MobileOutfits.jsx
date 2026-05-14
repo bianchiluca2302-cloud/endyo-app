@@ -89,17 +89,20 @@ function OutfitCard({ outfit, language }) {
   const members  = outfit.garment_ids
     ? garments.filter(g => outfit.garment_ids.includes(g.id)).slice(0, 4)
     : []
+  const total = outfit.garment_ids?.length || 0
 
   return (
     <div style={{
-      borderRadius: 18, overflow: 'hidden',
+      borderRadius: 20, overflow: 'hidden',
       background: 'var(--card)', border: '1px solid var(--border)',
       cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
-      <div style={{ aspectRatio: '1/1', position: 'relative', background: 'var(--bg)' }}>
+      {/* Thumbnail */}
+      <div style={{ aspectRatio: '4/3', position: 'relative', background: 'var(--bg)' }}>
         {members.length === 0 ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={1.2} strokeLinecap="round" style={{ opacity: 0.4 }}>
+            <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={1.5} strokeLinecap="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </div>
@@ -107,9 +110,9 @@ function OutfitCard({ outfit, language }) {
           <img src={imgUrl(members[0].front_photo_url)} alt=""
             style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', width: '100%', height: '100%', gap: 1 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', width: '100%', height: '100%', gap: 1 }}>
             {members.slice(0, 4).map(g => (
-              <div key={g.id} style={{ background: g.bg_color || 'var(--card)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={g.id} style={{ background: g.bg_color || 'var(--bg)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {g.front_photo_url
                   ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   : null}
@@ -117,15 +120,22 @@ function OutfitCard({ outfit, language }) {
             ))}
           </div>
         )}
+        {/* Capi extra badge */}
+        {total > 4 && (
+          <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '2px 7px', fontSize: 10, fontWeight: 700, color: 'var(--text-dim)' }}>
+            +{total - 4}
+          </div>
+        )}
       </div>
-      <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {/* Info */}
+      <div style={{ padding: '9px 12px 11px' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
           {outfit.name || 'Outfit'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
           {language === 'en'
-            ? `${members.length} item${members.length === 1 ? '' : 's'}`
-            : `${members.length} ${members.length === 1 ? 'capo' : 'capi'}`}
+            ? `${total} item${total === 1 ? '' : 's'}`
+            : `${total} ${total === 1 ? 'capo' : 'capi'}`}
         </div>
       </div>
     </div>

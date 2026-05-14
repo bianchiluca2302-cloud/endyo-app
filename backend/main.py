@@ -4822,6 +4822,9 @@ class TravelPlanRequest(BaseModel):
     end_date:      str            # YYYY-MM-DD
     preferred_ids: list[int] = []
     language:      str = 'it'
+    num_outfits:   int = 4        # how many outfits the user wants
+    travel_style:  str = ''       # casual / elegant / sport / mixed
+    trip_type:     str = ''       # beach / city / mountain / business / cruise
 
 
 def _check_and_increment_travel_quota(user: User) -> None:
@@ -4954,38 +4957,46 @@ async def create_travel_plan(
     days = (
         (datetime.strptime(body.end_date, "%Y-%m-%d") - datetime.strptime(body.start_date, "%Y-%m-%d")).days + 1
     )
+    n_outfits = max(1, min(body.num_outfits, 10))
+
+    style_note_en = f"Style preference: {body.travel_style}." if body.travel_style else ""
+    style_note_it = f"Stile preferito: {body.travel_style}." if body.travel_style else ""
+    type_note_en  = f"Trip type: {body.trip_type}." if body.trip_type else ""
+    type_note_it  = f"Tipo di viaggio: {body.trip_type}." if body.trip_type else ""
 
     if body.language == 'en':
+        pref_context = "\n".join(filter(None, [style_note_en, type_note_en]))
         prompt = (
             f"You are a professional stylist creating a travel packing plan.\n"
             f"Destination: {body.destination}\n"
             f"Dates: {body.start_date} to {body.end_date} ({days} days)\n"
-            f"Weather: {weather_summary}\n\n"
-            f"User wardrobe:\n{all_garments_str}\n\n"
+            f"Weather: {weather_summary}\n"
+            + (f"User preferences: {pref_context}\n" if pref_context else "")
+            + f"\nUser wardrobe:\n{all_garments_str}\n\n"
             f"User's preferred items:\n{preferred_str}\n\n"
-            f"Create a complete travel plan:\n"
+            f"Create a complete travel plan with exactly {n_outfits} outfit combinations using ONLY garment IDs from the wardrobe list above.\n"
             f"1. Brief intro (2-3 sentences on destination and weather)\n"
-            f"2. 3-4 outfit combinations using ONLY garment IDs from the wardrobe list above. "
-            f"Format each outfit exactly as:\n"
+            f"2. Exactly {n_outfits} outfits formatted exactly as:\n"
             f"<OUTFIT>{{\"ids\":[id1,id2,...],\"name\":\"outfit name\","
             f"\"occasion\":\"when to wear it\",\"notes\":\"styling tip\"}}</OUTFIT>\n"
-            f"Use exact integer IDs. Each outfit must be appropriate for the weather."
+            f"Use exact integer IDs. Each outfit must be appropriate for the weather and user's style preferences."
         )
     else:
+        pref_context = "\n".join(filter(None, [style_note_it, type_note_it]))
         prompt = (
             f"Sei uno stylist professionista che crea un piano valigia per un viaggio.\n"
             f"Destinazione: {body.destination}\n"
             f"Date: dal {body.start_date} al {body.end_date} ({days} giorni)\n"
-            f"Meteo previsto: {weather_summary}\n\n"
-            f"Guardaroba dell'utente:\n{all_garments_str}\n\n"
+            f"Meteo previsto: {weather_summary}\n"
+            + (f"Preferenze utente: {pref_context}\n" if pref_context else "")
+            + f"\nGuardaroba dell'utente:\n{all_garments_str}\n\n"
             f"Capi preferiti da portare:\n{preferred_str}\n\n"
-            f"Crea un piano viaggio completo:\n"
+            f"Crea un piano viaggio completo con esattamente {n_outfits} outfit usando SOLO ID capi dal guardaroba sopra.\n"
             f"1. Breve introduzione (2-3 frasi sulla destinazione e il meteo)\n"
-            f"2. 3-4 outfit usando SOLO ID capi dal guardaroba sopra. "
-            f"Formatta ogni outfit esattamente così:\n"
+            f"2. Esattamente {n_outfits} outfit formattati esattamente così:\n"
             f"<OUTFIT>{{\"ids\":[id1,id2,...],\"name\":\"nome outfit\","
             f"\"occasion\":\"quando indossarlo\",\"notes\":\"consiglio styling\"}}</OUTFIT>\n"
-            f"Usa gli ID interi esatti. Ogni outfit deve essere adatto al meteo."
+            f"Usa gli ID interi esatti. Ogni outfit deve essere adatto al meteo e alle preferenze di stile dell'utente."
         )
 
     # Chiamata AI
@@ -4994,7 +5005,7 @@ async def create_travel_plan(
         response = await client_stylist.chat.completions.create(
             model=TEXT_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=900,
+            max_tokens=1200,
             temperature=0.7,
         )
         full_text = response.choices[0].message.content or ""

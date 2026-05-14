@@ -862,269 +862,519 @@ function AnalisiTab() {
   )
 }
 
+/* ── Travel garment picker sheet ─────────────────────────────────────────────── */
+function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
+  const garments = useWardrobeStore(s => s.garments)
+  const CATEGORY_LABELS = useCategoryLabels()
+  const [search,    setSearch]    = useState('')
+  const [activeCat, setActiveCat] = useState('')
+  const [dragY,     setDragY]     = useState(0)
+  const [vpH,       setVpH]       = useState(() => window.visualViewport?.height ?? window.innerHeight)
+  const startYRef  = useRef(0)
+  const dragging   = useRef(false)
+  const sheetRef   = useRef(null)
+  const en = language === 'en'
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const fn = () => setVpH(vv.height)
+    vv.addEventListener('resize', fn)
+    return () => vv.removeEventListener('resize', fn)
+  }, [])
+
+  const onTouchStart = e => { startYRef.current = e.touches[0].clientY; dragging.current = true }
+  const onTouchMove  = e => {
+    if (!dragging.current) return
+    const d = e.touches[0].clientY - startYRef.current
+    if (d > 0) { setDragY(d); e.preventDefault() }
+  }
+  const onTouchEnd = () => {
+    dragging.current = false
+    if (dragY > (sheetRef.current?.offsetHeight || 400) * 0.35) { setDragY(0); setTimeout(onClose, 0) }
+    else setDragY(0)
+  }
+
+  const categories = useMemo(() => [...new Set(garments.map(g => g.category).filter(Boolean))].sort(), [garments])
+  const filtered = useMemo(() => {
+    let list = garments
+    if (activeCat) list = list.filter(g => g.category === activeCat)
+    if (search.trim()) { const q = search.toLowerCase(); list = list.filter(g => (g.name || '').toLowerCase().includes(q) || (g.brand || '').toLowerCase().includes(q)) }
+    return list
+  }, [garments, search, activeCat])
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 600 }} />
+      <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 601,
+        background: 'var(--card)', borderRadius: '24px 24px 0 0',
+        maxHeight: `${vpH * 0.88}px`, display: 'flex', flexDirection: 'column',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        transform: `translateY(${dragY}px)`,
+        transition: dragY > 0 ? 'none' : 'transform 0.35s cubic-bezier(0.32,0.72,0,1)',
+      }}>
+        {/* Handle */}
+        <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+          style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--card)', borderBottom: '1px solid var(--border)', touchAction: 'none', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 12px' }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+              {en ? 'Items to bring' : 'Capi da portare'}
+              {selectedIds.length > 0 && <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--primary-light)', fontWeight: 600 }}>({selectedIds.length})</span>}
+            </div>
+            <button onClick={onClose} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50%', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div style={{ padding: '0 20px 8px' }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={en ? 'Search…' : 'Cerca…'}
+              style={{ width: '100%', padding: '9px 14px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          {categories.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, padding: '0 20px 10px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+              {[null, ...categories].map(cat => (
+                <button key={cat || '__all'} onClick={() => setActiveCat(cat || '')} style={{
+                  padding: '4px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
+                  background: activeCat === (cat || '') ? 'var(--primary)' : 'var(--bg)',
+                  color: activeCat === (cat || '') ? '#fff' : 'var(--text-muted)',
+                  WebkitTapHighlightColor: 'transparent',
+                }}>{cat ? (CATEGORY_LABELS[cat] || cat) : (en ? 'All' : 'Tutti')}</button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {filtered.map(g => {
+            const sel = selectedIds.includes(g.id)
+            return (
+              <div key={g.id} onClick={() => onToggle(g.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
+                background: sel ? 'var(--primary-dim)' : 'transparent',
+                borderBottom: '1px solid var(--border)', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', transition: 'background 0.15s',
+              }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0, background: g.bg_color || 'var(--card)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {g.front_photo_url ? <img src={imgUrl(g.front_photo_url)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: 18 }}>👕</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</div>
+                  {g.brand && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1 }}>{g.brand}</div>}
+                </div>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: sel ? 'var(--primary)' : 'var(--card)', border: sel ? 'none' : '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'background 0.15s' }}>
+                  {sel && <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--border)' }}>
+          <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            {en ? `Confirm (${selectedIds.length} items)` : `Conferma (${selectedIds.length} capi)`}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 /* ── Travel Tab ──────────────────────────────────────────────────────────────── */
 function TravelTab() {
   const garments  = useWardrobeStore(s => s.garments)
   const language  = useSettingsStore(s => s.language) || 'it'
   const user      = useAuthStore(s => s.user)
-  const plan      = user?.plan || 'free'
-  const isPremium = plan !== 'free'
+  const isPremium = user?.plan && user.plan !== 'free'
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today    = new Date().toISOString().slice(0, 10)
   const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
 
+  // steps: 0=dest 1=dates 2=items 3=numOutfits 4=style 5=tripType 6=loading 7=results
+  const [step,         setStep]         = useState(0)
   const [destination,  setDestination]  = useState('')
   const [startDate,    setStartDate]    = useState(today)
   const [endDate,      setEndDate]      = useState(nextWeek)
   const [preferredIds, setPreferredIds] = useState([])
+  const [numOutfits,   setNumOutfits]   = useState(null)   // null = AI decides
+  const [travelStyle,  setTravelStyle]  = useState('')
+  const [tripType,     setTripType]     = useState('')
   const [showPicker,   setShowPicker]   = useState(false)
-  const [loading,      setLoading]      = useState(false)
   const [result,       setResult]       = useState(null)
   const [error,        setError]        = useState(null)
+  const en = language === 'en'
 
-  const il = language === 'en'
+  const togglePreferred = id => setPreferredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const getById = id => garments.find(g => g.id === id)
 
-  const togglePreferred = (id) =>
-    setPreferredIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-
-  const generate = async () => {
-    if (!destination.trim()) return
-    setLoading(true); setError(null); setResult(null)
+  const generate = async (overrides = {}) => {
+    setStep(6); setError(null); setResult(null)
     try {
-      const data = await fetchTravelPlan({ destination: destination.trim(), startDate, endDate, preferredIds, language })
-      setResult(data)
+      const data = await fetchTravelPlan({
+        destination: destination.trim(), startDate, endDate, preferredIds, language,
+        numOutfits: (overrides.numOutfits ?? numOutfits) ?? 4,
+        travelStyle: overrides.travelStyle ?? travelStyle,
+        tripType:    overrides.tripType    ?? tripType,
+      })
+      setResult(data); setStep(7)
     } catch (e) {
-      const msg = e.response?.data?.detail || (il ? 'Error generating travel plan.' : 'Errore nella generazione del piano viaggio.')
-      setError(msg)
-    } finally {
-      setLoading(false)
+      const msg = e.response?.data?.detail || (en ? 'Error generating travel plan.' : 'Errore nella generazione del piano viaggio.')
+      setError(msg); setStep(7)
     }
   }
 
-  const getById = (id) => garments.find(g => g.id === id)
+  const reset = () => { setStep(0); setDestination(''); setPreferredIds([]); setNumOutfits(null); setTravelStyle(''); setTripType(''); setResult(null); setError(null) }
 
   const inputStyle = {
-    width: '100%', padding: '12px 14px', borderRadius: 12,
+    width: '100%', padding: '13px 16px', borderRadius: 14,
     background: 'var(--card)', border: '1px solid var(--border)',
     color: 'var(--text)', fontSize: 15, outline: 'none',
     WebkitAppearance: 'none', boxSizing: 'border-box',
   }
 
+  const StepDots = ({ current }) => (
+    <div style={{ display: 'flex', gap: 5, marginBottom: 24 }}>
+      {[0, 1, 2, 3, 4, 5].map(i => (
+        <div key={i} style={{ height: 3, borderRadius: 99, width: i === current ? 20 : 8, background: i <= current ? 'var(--primary)' : 'var(--border)', transition: 'width 0.25s, background 0.25s' }} />
+      ))}
+    </div>
+  )
+
   if (!isPremium) {
     return (
-      <div style={{ padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-        <div style={{ fontSize: 48 }}>✈️</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-          {il ? 'Travel Planner' : 'Piano Viaggio'}
+      <div style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, borderRadius: 24, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>✈️</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>
+          {en ? 'Travel Planner' : 'Piano Viaggio'}
         </div>
-        <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 280 }}>
-          {il
-            ? 'Get AI-generated packing lists and outfit plans based on real weather forecasts for your destination.'
-            : 'Ottieni liste valigia e piani outfit generati dall\'AI basati sulle previsioni meteo reali per la tua destinazione.'}
+        <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, maxWidth: 280 }}>
+          {en
+            ? 'AI-generated packing lists and outfit plans based on real weather at your destination.'
+            : 'Liste valigia e piani outfit generati dall\'AI con le previsioni meteo reali della tua destinazione.'}
         </div>
-        <div style={{
-          padding: '12px 16px', borderRadius: 12,
-          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
-          fontSize: 13, color: 'var(--text-muted)',
-        }}>
-          {il ? '🔒 Available for Premium and Premium Plus subscribers.' : '🔒 Disponibile per gli abbonati Premium e Premium Plus.'}
+        <div style={{ padding: '11px 16px', borderRadius: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', fontSize: 13, color: 'var(--text-muted)' }}>
+          {en ? '🔒 Premium & Premium Plus' : '🔒 Disponibile per Premium e Premium Plus'}
         </div>
-        <a href="#/premium" style={{
-          display: 'inline-block', padding: '12px 28px', borderRadius: 14,
-          background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 15,
-          textDecoration: 'none',
-        }}>
-          {il ? 'Upgrade to Premium' : 'Passa a Premium'}
+        <a href="#/premium" style={{ display: 'inline-block', padding: '13px 28px', borderRadius: 14, background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
+          {en ? 'Upgrade to Premium' : 'Passa a Premium'}
         </a>
       </div>
     )
   }
 
-  return (
-    <div style={{ padding: '16px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+  /* Step 0 — Destination */
+  if (step === 0) return (
+    <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+      <StepDots current={0} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+        {en ? 'Where are you going?' : 'Dove vai?'}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+        {en ? 'I\'ll plan the perfect wardrobe for your trip.' : 'Pianificherò l\'armadio perfetto per il tuo viaggio.'}
+      </div>
+      <input
+        value={destination}
+        onChange={e => setDestination(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && destination.trim() && setStep(1)}
+        placeholder={en ? 'e.g. Tokyo, Barcelona, New York…' : 'es. Parigi, Tokyo, New York…'}
+        autoFocus
+        style={inputStyle}
+      />
+      <button
+        onClick={() => setStep(1)}
+        disabled={!destination.trim()}
+        style={{
+          marginTop: 16, width: '100%', padding: '15px', borderRadius: 14, border: 'none',
+          background: destination.trim() ? 'var(--primary)' : 'var(--card)',
+          color: destination.trim() ? '#fff' : 'var(--text-dim)',
+          fontSize: 16, fontWeight: 700, cursor: destination.trim() ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        {en ? 'Next →' : 'Avanti →'}
+      </button>
+    </div>
+  )
 
-      {/* Form */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  /* Step 1 — Dates */
+  if (step === 1) return (
+    <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+      <StepDots current={1} />
+      <button onClick={() => setStep(0)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        {destination}
+      </button>
+      <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+        {en ? 'When are you travelling?' : 'Quando partirai?'}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+        {en ? 'I\'ll check the weather forecast for the exact days.' : 'Controllerò le previsioni meteo per quei giorni.'}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-            {il ? 'Destination' : 'Destinazione'}
-          </label>
-          <input
-            value={destination}
-            onChange={e => setDestination(e.target.value)}
-            placeholder={il ? 'e.g. Paris, Tokyo, Barcelona…' : 'es. Parigi, Tokyo, Barcelona…'}
-            style={inputStyle}
-          />
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>{en ? 'Departure' : 'Partenza'}</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inputStyle} />
         </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>{en ? 'Return' : 'Ritorno'}</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inputStyle} />
+        </div>
+      </div>
+      <button onClick={() => setStep(2)} style={{ marginTop: 20, width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+        {en ? 'Next →' : 'Avanti →'}
+      </button>
+    </div>
+  )
 
+  /* Step 2 — Preferred items */
+  if (step === 2) return (
+    <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+      <StepDots current={2} />
+      <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        {startDate} → {endDate}
+      </button>
+      <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+        {en ? 'Any must-haves?' : 'Capi che vuoi portare?'}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 20 }}>
+        {en ? 'Optional — pick items you definitely want to include.' : 'Opzionale — seleziona capi che vuoi assolutamente portare.'}
+      </div>
+
+      {/* Selected chips preview */}
+      {preferredIds.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+          {preferredIds.map(id => {
+            const g = getById(id)
+            return g ? (
+              <div key={id} onClick={() => togglePreferred(id)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px 4px 6px', borderRadius: 99, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', cursor: 'pointer' }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, overflow: 'hidden', background: g.bg_color || 'var(--card)', flexShrink: 0 }}>
+                  {g.front_photo_url ? <img src={imgUrl(g.front_photo_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
+                <span style={{ fontSize: 14, color: 'var(--primary-light)', lineHeight: 1 }}>×</span>
+              </div>
+            ) : null
+          })}
+        </div>
+      )}
+
+      <button onClick={() => setShowPicker(true)} style={{
+        width: '100%', padding: '13px 16px', borderRadius: 14, border: '1.5px dashed var(--border)', background: 'var(--card)',
+        color: 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, WebkitTapHighlightColor: 'transparent',
+      }}>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        {preferredIds.length > 0
+          ? (en ? `${preferredIds.length} items selected — change` : `${preferredIds.length} capi selezionati — modifica`)
+          : (en ? 'Select items from wardrobe' : 'Scegli capi dal guardaroba')}
+      </button>
+
+      <button onClick={() => setStep(3)} style={{ marginTop: 14, width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {en ? 'Next →' : 'Avanti →'}
+      </button>
+      <button onClick={() => setStep(3)} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
+        {en ? 'Skip — let AI decide' : 'Salta'}
+      </button>
+
+      {showPicker && (
+        <TravelGarmentSheet selectedIds={preferredIds} onToggle={togglePreferred} onClose={() => setShowPicker(false)} language={language} />
+      )}
+    </div>
+  )
+
+  /* Step 3 — How many outfits? */
+  if (step === 3) {
+    const opts = [
+      { val: 3, label: en ? '3 outfits' : '3 outfit', emoji: '👌' },
+      { val: 5, label: en ? '5 outfits' : '5 outfit', emoji: '✌️' },
+      { val: 7, label: en ? '7 outfits' : '7 outfit', emoji: '🔥' },
+      { val: null, label: en ? 'AI decides' : 'Decide l\'AI', emoji: '✨' },
+    ]
+    return (
+      <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+        <StepDots current={3} />
+        <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          {en ? 'Luggage' : 'Bagagli'}
+        </button>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+          {en ? 'How many outfits?' : 'Quanti outfit?'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+          {en ? 'I\'ll plan exactly that many complete looks.' : 'Pianificherò esattamente quel numero di look completi.'}
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-              {il ? 'From' : 'Dal'}
-            </label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-              style={{ ...inputStyle, fontSize: 14 }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-              {il ? 'To' : 'Al'}
-            </label>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-              style={{ ...inputStyle, fontSize: 14 }} />
-          </div>
-        </div>
-
-        {/* Optional garment picker */}
-        <div>
-          <button
-            onClick={() => setShowPicker(p => !p)}
-            style={{
-              background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 12, padding: '10px 14px', width: '100%',
-              textAlign: 'left', cursor: 'pointer', color: 'var(--text-muted)',
-              fontSize: 13, fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <span>
-              {il ? 'Preferred items' : 'Capi preferiti'}
-              {preferredIds.length > 0 && <span style={{ color: 'var(--primary)', marginLeft: 6 }}>({preferredIds.length})</span>}
-            </span>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
-              <path d={showPicker ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}/>
-            </svg>
-          </button>
-          {showPicker && (
-            <div style={{
-              marginTop: 8, padding: 10, background: 'var(--card)', borderRadius: 12,
-              border: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto',
+          {opts.map(o => (
+            <button key={String(o.val)} onClick={() => { setNumOutfits(o.val); setStep(4) }} style={{
+              padding: '18px 12px', borderRadius: 16, border: `2px solid ${numOutfits === o.val ? 'var(--primary)' : 'var(--border)'}`,
+              background: numOutfits === o.val ? 'var(--primary-dim)' : 'var(--card)',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              WebkitTapHighlightColor: 'transparent', transition: 'border-color 0.15s',
             }}>
-              {garments.length === 0
-                ? <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{il ? 'No garments in wardrobe.' : 'Nessun capo nel guardaroba.'}</span>
-                : garments.map(g => {
-                  const sel = preferredIds.includes(g.id)
-                  return (
-                    <button key={g.id} onClick={() => togglePreferred(g.id)} style={{
-                      padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600,
-                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                      background: sel ? 'var(--primary)' : 'var(--bg)',
-                      color: sel ? '#fff' : 'var(--text-muted)',
-                      border: `1px solid ${sel ? 'transparent' : 'var(--border)'}`,
-                    }}>
-                      {g.name || g.category}
-                    </button>
-                  )
-                })
-              }
-            </div>
-          )}
+              <span style={{ fontSize: 28 }}>{o.emoji}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: numOutfits === o.val ? 'var(--primary-light)' : 'var(--text)' }}>{o.label}</span>
+            </button>
+          ))}
         </div>
+      </div>
+    )
+  }
 
-        <button
-          onClick={generate}
-          disabled={loading || !destination.trim()}
-          style={{
-            padding: '14px', borderRadius: 14, fontWeight: 700, fontSize: 15,
-            background: destination.trim() ? 'var(--primary)' : 'var(--card)',
-            color: destination.trim() ? '#fff' : 'var(--text-dim)',
-            border: 'none', cursor: destination.trim() ? 'pointer' : 'not-allowed',
-            WebkitTapHighlightColor: 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
-          {loading
-            ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'glassSpinnerSpin 0.8s linear infinite' }} />{il ? 'Generating…' : 'Generazione…'}</>
-            : <>{il ? '✈️ Generate plan' : '✈️ Genera piano'}</>
-          }
+  /* Step 4 — Style preference */
+  if (step === 4) {
+    const styles = [
+      { val: en ? 'casual' : 'casual',   label: en ? 'Casual'   : 'Casual',   emoji: '👟' },
+      { val: en ? 'elegant' : 'elegante', label: en ? 'Elegant'  : 'Elegante', emoji: '🌙' },
+      { val: en ? 'sport' : 'sport',     label: en ? 'Sport'    : 'Sport',    emoji: '🏃' },
+      { val: en ? 'mixed' : 'misto',     label: en ? 'Mixed'    : 'Misto',    emoji: '✨' },
+    ]
+    return (
+      <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+        <StepDots current={4} />
+        <button onClick={() => setStep(3)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          {numOutfits ? (en ? `${numOutfits} outfits` : `${numOutfits} outfit`) : (en ? 'AI decides' : 'Decide l\'AI')}
+        </button>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+          {en ? 'What\'s your style?' : 'Che stile preferisci?'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+          {en ? 'I\'ll tailor the outfits to your vibe.' : 'Adatterò gli outfit al tuo stile.'}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {styles.map(s => (
+            <button key={s.val} onClick={() => { setTravelStyle(s.val); setStep(5) }} style={{
+              padding: '18px 12px', borderRadius: 16, border: `2px solid ${travelStyle === s.val ? 'var(--primary)' : 'var(--border)'}`,
+              background: travelStyle === s.val ? 'var(--primary-dim)' : 'var(--card)',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              WebkitTapHighlightColor: 'transparent', transition: 'border-color 0.15s',
+            }}>
+              <span style={{ fontSize: 28 }}>{s.emoji}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: travelStyle === s.val ? 'var(--primary-light)' : 'var(--text)' }}>{s.label}</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => { setTravelStyle(''); setStep(5) }} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
+          {en ? 'Skip' : 'Salta'}
+        </button>
+      </div>
+    )
+  }
+
+  /* Step 5 — Trip type */
+  if (step === 5) {
+    const types = [
+      { val: en ? 'beach' : 'mare',      label: en ? 'Beach'    : 'Mare',     emoji: '🏖️' },
+      { val: en ? 'city' : 'città',      label: en ? 'City'     : 'Città',    emoji: '🏙️' },
+      { val: en ? 'mountain' : 'montagna', label: en ? 'Mountain' : 'Montagna', emoji: '🏔️' },
+      { val: en ? 'business' : 'lavoro', label: en ? 'Business' : 'Lavoro',   emoji: '💼' },
+    ]
+    return (
+      <div style={{ padding: '20px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+        <StepDots current={5} />
+        <button onClick={() => setStep(4)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-dim)', fontSize: 13, marginBottom: 20, padding: 0 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          {travelStyle || (en ? 'Style' : 'Stile')}
+        </button>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 6 }}>
+          {en ? 'What kind of trip?' : 'Che tipo di viaggio?'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 24 }}>
+          {en ? 'The destination activities will shape your wardrobe.' : 'Le attività influenzeranno la scelta dei capi.'}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {types.map(t => (
+            <button key={t.val} onClick={() => { setTripType(t.val); generate({ tripType: t.val }) }} style={{
+              padding: '18px 12px', borderRadius: 16, border: `2px solid ${tripType === t.val ? 'var(--primary)' : 'var(--border)'}`,
+              background: tripType === t.val ? 'var(--primary-dim)' : 'var(--card)',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              WebkitTapHighlightColor: 'transparent', transition: 'border-color 0.15s',
+            }}>
+              <span style={{ fontSize: 28 }}>{t.emoji}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: tripType === t.val ? 'var(--primary-light)' : 'var(--text)' }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => generate({ tripType: '' })} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
+          {en ? 'Skip — generate now' : 'Salta — genera ora'}
+        </button>
+      </div>
+    )
+  }
+
+  /* Step 6 — Loading */
+  if (step === 6) return (
+    <div style={{ flex: 1, minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: '32px 24px' }}>
+      <div style={{ position: 'relative' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #f59e0b, #fb923c)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px rgba(245,158,11,0.35)', fontSize: 32 }}>✈️</div>
+        <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid rgba(245,158,11,0.3)', animation: 'splashGlow 1.8s ease-in-out infinite' }} />
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+          {en ? `Planning your trip to ${destination}…` : `Pianifico il viaggio a ${destination}…`}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6 }}>
+          {en ? 'Checking forecasts and browsing your wardrobe' : 'Controllo le previsioni e sfoglio il tuo armadio'}
+        </div>
+      </div>
+    </div>
+  )
+
+  /* Step 7 — Results */
+  return (
+    <div style={{ padding: '16px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>
+            {result ? result.destination : destination}
+          </div>
+          {result && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>{result.start_date} → {result.end_date} · {result.days} {en ? 'days' : 'giorni'}</div>}
+        </div>
+        <button onClick={reset} style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', borderRadius: 10, padding: '6px 14px', cursor: 'pointer' }}>
+          {en ? '↺ New' : '↺ Nuovo'}
         </button>
       </div>
 
-      {/* Error */}
       {error && (
-        <div style={{
-          padding: '12px 14px', borderRadius: 12,
-          background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
-          fontSize: 13, color: '#fca5a5',
-        }}>
+        <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#fca5a5' }}>
           {error}
         </div>
       )}
 
-      {/* Results */}
       {result && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'slideUp 0.38s ease backwards' }}>
-          {/* Header card */}
-          <div style={{
-            padding: '16px', borderRadius: 16,
-            background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 22 }}>✈️</span>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{result.destination}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{result.start_date} → {result.end_date} · {result.days} {il ? 'days' : 'giorni'}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-              <span>🌡️</span>
-              <span>{result.weather}</span>
-            </div>
+        <>
+          {/* Weather strip */}
+          <div style={{ padding: '12px 14px', borderRadius: 14, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+            <span>🌡️</span><span>{result.weather}</span>
           </div>
 
-          {/* AI description */}
           {result.description && (
-            <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, padding: '0 2px' }}>
-              {result.description}
-            </div>
+            <div style={{ fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.65 }}>{result.description}</div>
           )}
 
           {/* Outfit cards */}
           {result.outfits.map((outfit, i) => (
-            <div key={i} style={{
-              padding: '14px', borderRadius: 16,
-              background: 'var(--card)', border: '1px solid var(--border)',
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 2 }}>
-                {outfit.name}
-              </div>
-              {outfit.occasion && (
-                <div style={{ fontSize: 12, color: 'var(--primary-light)', marginBottom: 10, fontWeight: 600 }}>
-                  {outfit.occasion}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: outfit.notes ? 10 : 0 }}>
+            <div key={i} style={{ padding: '14px', borderRadius: 18, background: 'var(--card)', border: '1px solid var(--border)', animation: `slideUp 0.35s ease ${i * 70}ms backwards` }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 2, letterSpacing: '-0.01em' }}>{outfit.name}</div>
+              {outfit.occasion && <div style={{ fontSize: 12, color: 'var(--primary-light)', marginBottom: 10, fontWeight: 600 }}>{outfit.occasion}</div>}
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, marginBottom: outfit.notes ? 10 : 0 }}>
                 {(outfit.ids || []).map(id => {
                   const g = getById(id)
                   return g ? (
-                    <div key={id} style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                      width: 60,
-                    }}>
-                      <div style={{
-                        width: 56, height: 56, borderRadius: 10,
-                        background: 'var(--bg)', border: '1px solid var(--border)',
-                        overflow: 'hidden', flexShrink: 0,
-                      }}>
-                        {g.photo_front
-                          ? <img src={imgUrl(g.photo_front)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👕</div>
-                        }
+                    <div key={id} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 12, background: g.bg_color || 'var(--bg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                        {g.photo_front ? <img src={imgUrl(g.photo_front)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👕</div>}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word', maxWidth: 60 }}>
-                        {g.name || g.category}
-                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', textAlign: 'center', maxWidth: 56, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name || g.category}</div>
                     </div>
                   ) : null
                 })}
               </div>
-              {outfit.notes && (
-                <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  {outfit.notes}
-                </div>
-              )}
+              {outfit.notes && <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.5, fontStyle: 'italic' }}>{outfit.notes}</div>}
             </div>
           ))}
-        </div>
+        </>
       )}
     </div>
   )

@@ -875,45 +875,72 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     )
   }
 
+  /* ── Step indicator shared ── */
+  const StepDots = ({ current }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 20 }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{
+          height: 3, borderRadius: 99,
+          width: i === current ? 20 : 8,
+          background: i <= current ? 'var(--primary)' : 'var(--border)',
+          transition: 'width 0.25s, background 0.25s',
+        }} />
+      ))}
+      {quota !== null && quota !== -1 && quota < 999 && (
+        <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: quota === 0 ? '#ef4444' : 'var(--text-dim)', background: quota === 0 ? 'rgba(239,68,68,0.1)' : 'var(--card)', border: `1px solid ${quota === 0 ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`, borderRadius: 10, padding: '2px 8px' }}>
+          {language === 'en' ? `${quota} left` : `${quota} rimaste`}
+        </span>
+      )}
+    </div>
+  )
+
+  const OCC_COLORS = {
+    work: 'linear-gradient(135deg,#3b82f620,#6366f112)',
+    lavoro: 'linear-gradient(135deg,#3b82f620,#6366f112)',
+    casual: 'linear-gradient(135deg,#10b98120,#06b6d412)',
+    evening: 'linear-gradient(135deg,#8b5cf620,#ec489912)',
+    serata: 'linear-gradient(135deg,#8b5cf620,#ec489912)',
+    sport: 'linear-gradient(135deg,#f5971620,#ef444412)',
+    travel: 'linear-gradient(135deg,#0ea5e920,#6366f112)',
+    viaggio: 'linear-gradient(135deg,#0ea5e920,#6366f112)',
+  }
+
   /* ── Step 0: Occasion ── */
   if (step === 0) return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <StepDots current={0} />
+
       {hasSelection && (
-        <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 13, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconSparkle size={14} />
-          {language === 'en' ? `${selectedGarments.length} garment${selectedGarments.length !== 1 ? 's' : ''} selected` : `${selectedGarments.length} capo/i selezionati`}
+        <div style={{ marginBottom: 12, padding: '9px 13px', borderRadius: 12, background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', fontSize: 12.5, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <IconSparkle size={13} />
+          {language === 'en' ? `${selectedGarments.length} garment${selectedGarments.length !== 1 ? 's' : ''} selected` : `${selectedGarments.length} ${selectedGarments.length === 1 ? 'capo selezionato' : 'capi selezionati'}`}
         </div>
       )}
       {seasonMismatches.length > 0 && !warnDismissed && (
-        <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.30)', fontSize: 13, color: '#ca8a04', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <span style={{ flexShrink: 0, fontSize: 15 }}>⚠️</span>
+        <div style={{ marginBottom: 12, padding: '9px 13px', borderRadius: 12, background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.28)', fontSize: 12.5, color: '#ca8a04', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <span style={{ flexShrink: 0 }}>⚠️</span>
           <div style={{ flex: 1, lineHeight: 1.45 }}>
             {language === 'en'
-              ? `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'seems' : 'seem'} out of season for the current weather. The stylist will still use it if it fits the occasion.`
-              : `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'sembra fuori stagione' : 'sembrano fuori stagione'} per il meteo attuale. La stylist lo userà comunque se si adatta all'occasione.`}
+              ? `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'seems' : 'seem'} out of season. The stylist will still use it if it fits.`
+              : `${seasonMismatches.map(g => g.name).join(', ')} ${seasonMismatches.length === 1 ? 'sembra fuori stagione' : 'sembrano fuori stagione'}. La stylist lo userà comunque se si adatta.`}
           </div>
-          <button onClick={() => setWarnDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ca8a04', fontSize: 16, padding: 0, flexShrink: 0, lineHeight: 1 }}>×</button>
+          <button onClick={() => setWarnDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ca8a04', fontSize: 18, padding: 0, flexShrink: 0, lineHeight: 1, opacity: 0.7 }}>×</button>
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-          {language === 'en' ? 'What\'s the occasion?' : 'Per quale occasione?'}
-        </div>
-        {quota !== null && quota !== -1 && quota < 999 && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: quota === 0 ? 'var(--danger)' : 'var(--text-dim)', background: quota === 0 ? 'rgba(239,68,68,0.1)' : 'var(--card)', border: `1px solid ${quota === 0 ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`, borderRadius: 10, padding: '2px 8px', flexShrink: 0 }}>
-            {language === 'en' ? `${quota} left today` : `${quota} rimaste oggi`}
-          </span>
-        )}
+
+      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 4 }}>
+        {language === 'en' ? 'What\'s the occasion?' : 'Per quale occasione?'}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16 }}>
-        {language === 'en' ? 'I\'ll find the perfect outfit for you.' : 'Troverò l\'outfit perfetto per te.'}
+      <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginBottom: 18 }}>
+        {language === 'en' ? 'I\'ll build the perfect outfit from your wardrobe.' : 'Creo l\'outfit perfetto dal tuo armadio.'}
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {Q.map(o => (
           <button key={o.id} onClick={() => { setOccasion(o.id); setStep(1) }}
-            style={{ ...cardBtn, padding: '20px 12px', borderRadius: 16, border: '1.5px solid var(--border)', background: 'var(--card)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 28 }}>{o.emoji}</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{o.label}</span>
+            style={{ ...cardBtn, padding: '18px 12px 16px', borderRadius: 18, border: '1.5px solid var(--border)', background: OCC_COLORS[o.id] || 'var(--card)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, position: 'relative', overflow: 'hidden' }}>
+            <span style={{ fontSize: 32, lineHeight: 1 }}>{o.emoji}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.01em' }}>{o.label}</span>
           </button>
         ))}
       </div>
@@ -923,17 +950,19 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   /* ── Step 1: Sub-question ── */
   if (step === 1 && occ) return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <StepDots current={1} />
       <button onClick={() => setStep(0)}
-        style={{ ...cardBtn, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 13, marginBottom: 16 }}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        style={{ ...cardBtn, display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 12.5, marginBottom: 18, padding: '5px 10px 5px 6px', borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         {occ.emoji} {occ.label}
       </button>
-      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{occ.sub}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 16 }}>{occ.sub}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {occ.subs.map(s => (
           <button key={s} onClick={() => { setSelectedSub(s); setStep(2) }}
-            style={{ ...cardBtn, padding: '14px 18px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+            style={{ ...cardBtn, padding: '14px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {s}
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         ))}
       </div>
@@ -943,17 +972,19 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   /* ── Step 2: Style / vibe ── */
   if (step === 2 && occ) return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <StepDots current={2} />
       <button onClick={() => setStep(1)}
-        style={{ ...cardBtn, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 13, marginBottom: 16 }}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        style={{ ...cardBtn, display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 12.5, marginBottom: 18, padding: '5px 10px 5px 6px', borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         {selectedSub}
       </button>
-      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>{occ.style}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {occ.styles.map(s => (
+      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 16 }}>{occ.style}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {occ.styles.map((s, i) => (
           <button key={s} onClick={() => generate(occ.label, selectedSub, s)}
-            style={{ ...cardBtn, padding: '14px 18px', borderRadius: 14, border: '1.5px solid var(--border)', background: 'var(--card)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+            style={{ ...cardBtn, padding: '14px 16px', borderRadius: 14, border: '1.5px solid var(--border)', background: i === 0 ? 'var(--primary-dim)' : 'var(--card)', borderColor: i === 0 ? 'var(--primary-border)' : 'var(--border)', textAlign: 'left', fontSize: 14, fontWeight: 500, color: i === 0 ? 'var(--primary-light)' : 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {s}
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={i === 0 ? 'var(--primary-light)' : 'var(--text-dim)'} strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         ))}
       </div>
@@ -962,33 +993,51 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
 
   /* ── Step 3: Loading ── */
   if (step === 3) return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 20 }}>
-      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px var(--primary-shadow)' }}>
-        <div className="spinner" style={{ width: 30, height: 30, borderWidth: 3, borderColor: 'rgba(255,255,255,0.25)', borderTopColor: '#fff' }} />
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-          {language === 'en' ? 'Crafting your outfits…' : 'Creo i tuoi outfit…'}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 24 }}>
+      <div style={{ position: 'relative' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #c084fc)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 40px var(--primary-shadow)' }}>
+          <IconSparkle size={28} style={{ color: '#fff' }} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
-          {language === 'en' ? 'AI is browsing your wardrobe' : 'L\'AI sta sfogliando il tuo armadio'}
+        <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid var(--primary)', opacity: 0.3, animation: 'splashGlow 1.8s ease-in-out infinite' }} />
+      </div>
+      <div style={{ textAlign: 'center', maxWidth: 220 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+          {language === 'en' ? 'Building your look…' : 'Sto creando il tuo look…'}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 6, lineHeight: 1.5 }}>
+          {language === 'en' ? 'The AI is browsing your entire wardrobe' : 'L\'AI sta sfogliando tutto il tuo armadio'}
         </div>
       </div>
+      {streamText && (
+        <div style={{ width: '100%', maxHeight: 120, overflow: 'hidden', padding: '12px 14px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.55, maskImage: 'linear-gradient(to bottom, black 60%, transparent)' }}>
+          {streamText.slice(-300)}
+        </div>
+      )}
     </div>
   )
 
   /* ── Step 4: Results ── */
+  /* ── Step 4: Results ── */
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-          {language === 'en' ? 'Your outfits' : 'I tuoi outfit'}
+      {/* Header with context breadcrumb */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>
+              {language === 'en' ? 'Your looks' : 'I tuoi look'}
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--text-dim)', marginTop: 2 }}>
+              {occ?.emoji} {occ?.label} · {selectedSub}
+            </div>
+          </div>
+          <button onClick={reset}
+            style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', borderRadius: 10, padding: '6px 14px', cursor: 'pointer' }}>
+            {language === 'en' ? '↺ New' : '↺ Nuova'}
+          </button>
         </div>
-        <button onClick={reset}
-          style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', background: 'var(--primary-dim)', border: '1px solid var(--primary-border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
-          {language === 'en' ? 'New search' : 'Nuova ricerca'}
-        </button>
       </div>
+
       {resultError && (
         <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, marginBottom: 12 }}>
           ⚠ {resultError}
@@ -999,38 +1048,48 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
           <MarkdownText text={resultText} />
         </div>
       )}
+
       {resultOutfits.map((outfit, i) => {
         const isSubstitute = i === resultOutfits.length - 1 && resultOutfits.length > 1
         const og = (outfit.ids || []).map(id => getById(id)).filter(Boolean)
         return (
-          <div key={i} style={{ marginBottom: 14, borderRadius: 16, border: `1.5px solid ${isSubstitute ? 'var(--primary-border)' : 'var(--border)'}`, background: isSubstitute ? 'var(--primary-dim)' : 'var(--card)', overflow: 'hidden' }}>
+          <div key={i} style={{ marginBottom: 12, borderRadius: 18, border: `1.5px solid ${isSubstitute ? 'var(--primary-border)' : 'var(--border)'}`, background: isSubstitute ? 'var(--primary-dim)' : 'var(--card)', overflow: 'hidden', animation: `slideUp 0.35s ease ${i * 80}ms backwards` }}>
             {isSubstitute && (
-              <div style={{ padding: '7px 14px', borderBottom: '1px solid var(--primary-border)', fontSize: 11, fontWeight: 700, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                <IconSparkle size={12} /> {language === 'en' ? 'Substitute suggestion' : 'Variante sostitutiva'}
+              <div style={{ padding: '6px 14px', borderBottom: '1px solid var(--primary-border)', fontSize: 10.5, fontWeight: 700, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <IconSparkle size={11} /> {language === 'en' ? 'Alternative' : 'Variante'}
               </div>
             )}
-            <div style={{ padding: '12px 14px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>{outfit.name || `Outfit ${i + 1}`}</div>
+            <div style={{ padding: '14px' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 10, letterSpacing: '-0.01em' }}>{outfit.name || `Look ${i + 1}`}</div>
+
+              {/* Garment strip */}
               {og.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ display: 'flex', gap: 7, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
                   {og.map(g => (
-                    <div key={g.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                      <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                    <div key={g.id} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', background: g.bg_color || 'var(--bg)', border: '1px solid var(--border)' }}>
                         {g.photo_front
-                          ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}><IconTshirt size={20} /></div>
+                          ? <img src={imgUrl(g.photo_front)} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconTshirt size={22} /></div>
                         }
                       </div>
-                      <span style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 52, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</span>
+                      <span style={{ fontSize: 9, color: 'var(--text-dim)', maxWidth: 56, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>{g.name}</span>
                     </div>
                   ))}
                 </div>
               )}
-              {outfit.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>{outfit.notes}</div>}
+
+              {outfit.notes && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.55, padding: '8px 10px', background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                  {outfit.notes}
+                </div>
+              )}
+
               {onApplyOutfit && outfit.ids?.length > 0 && (
                 <button onClick={() => onApplyOutfit(outfit.ids, outfit.name, outfit.notes)}
-                  style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--primary), #7c3aed)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {language === 'en' ? 'Apply outfit' : 'Applica outfit'} →
+                  style={{ padding: '9px 18px', borderRadius: 11, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconSparkle size={12} />
+                  {language === 'en' ? 'Apply to mixer' : 'Applica al mixer'}
                 </button>
               )}
             </div>

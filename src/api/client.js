@@ -408,11 +408,14 @@ export const getAdBrands = () =>
   fetch(`${BASE_URL}/ads/brand`).then(r => r.json())
 
 // ── Viaggio ───────────────────────────────────────────────────────────────────
-export const fetchTravelPlan = ({ destination, startDate, endDate, preferredIds = [], language = 'it' }) =>
+export const fetchTravelPlan = ({ destination, startDate, endDate, preferredIds = [], language = 'it', numOutfits = 4, travelStyle = '', tripType = '' }) =>
   api.post('/api/travel/plan', {
     destination,
     start_date:    startDate,
     end_date:      endDate,
     preferred_ids: preferredIds,
     language,
+    num_outfits:   numOutfits,
+    travel_style:  travelStyle,
+    trip_type:     tripType,
   }).then(r => r.data)
