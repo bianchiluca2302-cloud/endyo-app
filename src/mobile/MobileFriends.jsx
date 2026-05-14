@@ -18,6 +18,23 @@ import usePullToRefresh from '../hooks/usePullToRefresh'
 import { hapticLight } from '../hooks/useHaptic'
 
 
+/* ── PlanBadge ───────────────────────────────────────────────────────────────── */
+function PlanBadge({ plan }) {
+  if (!plan || plan === 'free') return null
+  const isPlus = plan === 'premium_plus'
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
+      padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
+      background: isPlus ? 'rgba(245,158,11,0.14)' : 'rgba(139,92,246,0.14)',
+      color: isPlus ? '#f59e0b' : 'var(--primary-light)',
+      border: `1px solid ${isPlus ? 'rgba(245,158,11,0.28)' : 'var(--primary-border)'}`,
+    }}>
+      {isPlus ? 'Plus' : 'Premium'}
+    </span>
+  )
+}
+
 /* ── SuggestedUsers — consiglia utenti basandosi sui tag stile dell'armadio ───── */
 function SuggestedUsers({ language, garments, onSelectUser }) {
   const [users,     setUsers]     = useState([])
@@ -103,8 +120,9 @@ function SuggestedUsers({ language, garments, onSelectUser }) {
                 onClick={() => u.username && onSelectUser(u.username)}
                 style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
               >
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  @{u.username}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{u.username}</span>
+                  <PlanBadge plan={u.plan} />
                 </div>
                 {u.bio && (
                   <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1231,13 +1249,13 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
   }, [])
 
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return }
+    if (!query.trim()) { setResults([]); setLoading(false); return }
+    setLoading(true)
     const timer = setTimeout(async () => {
-      setLoading(true)
       try { setResults(await searchUsers(query)) }
       catch { setResults([]) }
       finally { setLoading(false) }
-    }, 350)
+    }, 150)
     return () => clearTimeout(timer)
   }, [query])
 
@@ -1293,6 +1311,73 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
 
       {/* ── Risultati / suggeriti ── */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* Suggerimenti stile Instagram — appaiono appena si digita */}
+        {query.trim() && (
+          <>
+            {loading && results.length === 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: 'var(--text-muted)', fontSize: 13 }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                  border: '2px solid var(--border)', borderTopColor: 'var(--primary)',
+                  animation: 'spin 0.8s linear infinite',
+                }} />
+                {language === 'en' ? 'Searching…' : 'Ricerca…'}
+              </div>
+            )}
+
+            {results.slice(0, 5).map((u, i) => (
+              <div key={u.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
+                borderBottom: '1px solid var(--border)',
+                animation: `fadeIn 0.18s ease ${i * 30}ms backwards`,
+              }}>
+                <button
+                  onClick={() => { onSelectUser(u.username); handleClose() }}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flex: 1, textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <Avatar src={u.profile_picture} username={u.username} size={42} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        @{u.username}
+                      </span>
+                      <PlanBadge plan={u.plan} />
+                    </div>
+                    {u.bio && (
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {u.bio}
+                      </div>
+                    )}
+                  </div>
+                </button>
+                {u.username !== currentUser && (
+                  <button onClick={() => toggleFollow(u)} style={{
+                    padding: '6px 14px', borderRadius: 99, cursor: 'pointer',
+                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                    background: following.has(u.username) ? 'var(--card)' : 'var(--primary)',
+                    color: following.has(u.username) ? 'var(--text-muted)' : '#fff',
+                    WebkitTapHighlightColor: 'transparent',
+                    border: following.has(u.username) ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.15s',
+                  }}>
+                    {following.has(u.username)
+                      ? (language === 'en' ? 'Following' : 'Seguito')
+                      : (language === 'en' ? 'Follow' : 'Segui')}
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {!loading && results.length === 0 && (
+              <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+                {language === 'en' ? 'No users found' : 'Nessun utente trovato'}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Suggeriti basati sullo stile — quando la barra è vuota */}
         {!query.trim() && (
           <div style={{ padding: '12px 16px 4px' }}>
             <SuggestedUsers
@@ -1300,47 +1385,6 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
               garments={garments}
               onSelectUser={username => { onSelectUser(username); handleClose() }}
             />
-          </div>
-        )}
-        {loading && (
-          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
-            {language === 'en' ? 'Searching…' : 'Ricerca…'}
-          </div>
-        )}
-        {results.map(u => (
-          <div key={u.id} style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            borderBottom: '1px solid var(--border)',
-          }}>
-            <button
-              onClick={() => { onSelectUser(u.username); handleClose() }}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, flex: 1, textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
-            >
-              <Avatar src={u.profile_picture} username={u.username} size={40} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>@{u.username}</div>
-                {u.name && <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{u.name}</div>}
-              </div>
-            </button>
-            {u.username !== currentUser && (
-              <button onClick={() => toggleFollow(u)} style={{
-                padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
-                fontSize: 13, fontWeight: 600,
-                background: following.has(u.username) ? 'var(--card)' : 'var(--primary)',
-                color: following.has(u.username) ? 'var(--text-muted)' : '#fff',
-                WebkitTapHighlightColor: 'transparent',
-                border: following.has(u.username) ? '1px solid var(--border)' : 'none',
-              }}>
-                {following.has(u.username)
-                ? (language === 'en' ? 'Following' : 'Seguito')
-                : (language === 'en' ? 'Follow' : 'Segui')}
-              </button>
-            )}
-          </div>
-        ))}
-        {!loading && query.trim() && results.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
-            {language === 'en' ? 'No users found' : 'Nessun utente trovato'}
           </div>
         )}
       </div>

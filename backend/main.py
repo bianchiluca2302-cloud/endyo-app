@@ -3179,9 +3179,8 @@ async def search_users(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Truncate query to prevent oversized LIKE patterns
     q = q[:50].strip()
-    if len(q) < 2:
+    if len(q) < 1:
         return []
     result = await db.execute(
         select(User).where(
@@ -3195,7 +3194,16 @@ async def search_users(
     for u in users:
         prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == u.id))
         prof = prof_res.scalar_one_or_none()
-        out.append({"id": u.id, "username": u.username, "profile_picture": prof.profile_picture if prof else None})
+        plan = u.plan or "free"
+        if plan in ("premium_annual",):      plan = "premium"
+        if plan in ("premium_plus_annual",): plan = "premium_plus"
+        out.append({
+            "id": u.id,
+            "username": u.username,
+            "profile_picture": prof.profile_picture if prof else None,
+            "bio": prof.bio if prof else None,
+            "plan": plan,
+        })
     return out
 
 
