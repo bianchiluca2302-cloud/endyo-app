@@ -53,6 +53,7 @@ from auth import (
     create_access_token, create_refresh_token, decode_token,
     generate_secure_token, token_expiry,
     VERIFY_TOKEN_TTL, RESET_TOKEN_TTL,
+    SECRET_KEY,
 )
 from email_service import send_verification_email, send_reset_email, send_google_link_email, DEV_MODE as EMAIL_DEV_MODE
 
@@ -3144,6 +3145,31 @@ async def admin_remove_backgrounds(
             background_tasks.add_task(_run_bg_removal_background, g.id)
             count += 1
     return {"ok": True, "processing": count, "message": f"Rimozione sfondo avviata per {count} capi"}
+
+
+# ── Admin: imposta piano utente ────────────────────────────────────────────────
+@app.post("/admin/set-plan")
+async def admin_set_plan(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    secret = request.headers.get("X-Admin-Secret", "")
+    if secret != SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    plan  = body.get("plan", "premium_plus")
+    if not email:
+        raise HTTPException(status_code=400, detail="email required")
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.plan = plan
+    user.plan_started_at = datetime.utcnow()
+    user.plan_expires_at = None
+    await db.commit()
+    return {"ok": True, "email": email, "plan": plan}
 
 
 # ── Ricerca utenti ────────────────────────────────────────────────────────────
