@@ -40,15 +40,17 @@ function SuggestedUsers({ language, garments, onSelectUser }) {
   const [users,     setUsers]     = useState([])
   const [following, setFollowing] = useState(new Set())
   const [loaded,    setLoaded]    = useState(false)
+  const fetchedRef  = useRef(false)
 
   useEffect(() => {
-    // Estrae i tag stile più frequenti dall'armadio
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+
     const freq = {}
     garments.forEach(g => (g.style_tags || []).forEach(t => { freq[t] = (freq[t] || 0) + 1 }))
     const topTags = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t)
     const queries = topTags.length > 0 ? topTags : ['casual', 'sporty', 'elegant', 'streetwear']
 
-    // Cerca utenti per ciascun tag, merge & deduplica
     Promise.all(queries.map(q => searchUsers(q).catch(() => [])))
       .then(results => {
         const seen = new Set()
