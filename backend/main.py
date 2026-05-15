@@ -1791,7 +1791,7 @@ _VALID_OCCASIONS = {"casual", "lavoro", "serata", "sport", "viaggio", "formale",
                     "work", "evening", "travel", "formal"}
 
 class ChatMessage(BaseModel):
-    message:  Annotated[str,          Field(min_length=1, max_length=2000)]
+    message:  Annotated[str,          Field(min_length=1, max_length=8000)]
     history:  Annotated[list,         Field(default_factory=list, max_length=30)]
     language: Annotated[str,          Field(default='it', max_length=5, pattern=r'^(it|en)$')]
     weather:  Annotated[Optional[str], Field(default=None, max_length=120)]
