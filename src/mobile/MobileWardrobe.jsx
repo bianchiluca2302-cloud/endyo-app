@@ -2033,10 +2033,10 @@ export default function MobileWardrobe() {
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
                 {Array.from({ length: skeletonCount }).map((_, i) => (
                   <div key={i} className="skeleton-card">
-                    <div className="skeleton" style={{ height: 158, borderRadius: 0 }} />
-                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div className="skeleton" style={{ height: compactCards ? 100 : 158, borderRadius: 0 }} />
+                    <div style={{ padding: compactCards ? '5px 7px 7px' : '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div className="skeleton" style={{ height: 11, width: '70%' }} />
-                      <div className="skeleton" style={{ height: 9, width: '45%' }} />
+                      {!compactCards && <div className="skeleton" style={{ height: 9, width: '45%' }} />}
                     </div>
                   </div>
                 ))}

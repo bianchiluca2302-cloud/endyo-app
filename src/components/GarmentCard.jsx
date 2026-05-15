@@ -121,7 +121,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         }}>
           {/* Immagine */}
           <div style={{
-            height: 158,
+            height: compact ? 100 : 158,
             background: 'var(--photo-bg)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative',
@@ -134,7 +134,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             ) : (
-              <div style={{ fontSize: 44, opacity: 0.25 }}>
+              <div style={{ fontSize: compact ? 30 : 44, opacity: 0.25 }}>
                 {CATEGORY_ICONS[garment.category] || '👕'}
               </div>
             )}
@@ -157,21 +157,21 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
           </div>
 
           {/* Info */}
-          <div style={{ padding: '8px 10px 10px' }}>
+          <div style={{ padding: compact ? '5px 7px 7px' : '8px 10px 10px' }}>
             <div style={{
               fontSize: 12.5, fontWeight: 600, color: 'var(--text)',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              lineHeight: 1.3, marginBottom: 4,
+              lineHeight: 1.3, marginBottom: compact ? 3 : 4,
             }}>
               {liveGarment.name}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: compact ? 0 : 5 }}>
               {(() => {
                 const palette = liveGarment.color_palette?.length > 0
                   ? liveGarment.color_palette
                   : liveGarment.color_hex ? [{ hex: liveGarment.color_hex }] : []
-                return palette.slice(0, 4).map((c, i) => c.hex ? (
+                return palette.slice(0, compact ? 2 : 4).map((c, i) => c.hex ? (
                   <span key={i} style={{
                     width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                     background: c.hex, border: '1px solid rgba(0,0,0,0.12)',
@@ -179,7 +179,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
                   }} />
                 ) : null)
               })()}
-              {liveGarment.brand && (
+              {!compact && liveGarment.brand && (
                 <span style={{
                   fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -187,7 +187,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
                   {liveGarment.brand}
                 </span>
               )}
-              {liveGarment.size && (
+              {!compact && liveGarment.size && (
                 <span style={{
                   fontSize: 9.5, fontWeight: 700, color: 'var(--primary-light)',
                   background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
@@ -198,7 +198,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
               )}
             </div>
 
-            {(liveGarment.style_tags || []).length > 0 && (
+            {!compact && (liveGarment.style_tags || []).length > 0 && (
               <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
                 {liveGarment.style_tags.slice(0, 2).map(tag => (
                   <span key={tag} style={{

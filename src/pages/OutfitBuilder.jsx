@@ -2604,6 +2604,7 @@ export default function OutfitBuilder() {
                             selected={selected[cat] === g.id}
                             onClick={() => toggleGarment(g)}
                             mobile={isMobile}
+                            compact={isMobile && compactCards}
                           />
                           {isSelHidden && (
                             <div style={{
