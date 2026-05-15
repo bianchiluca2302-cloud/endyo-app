@@ -2705,14 +2705,6 @@ export default function OutfitBuilder() {
                     outfit={outfit}
                     getById={getById}
                     onClick={() => setDetailOutfit(outfit)}
-                    wearCount={wearCounts[outfit.id] || 0}
-                    onWear={async (e) => {
-                      e.stopPropagation()
-                      try {
-                        const res = await wearOutfit(outfit.id)
-                        setWearCounts(prev => ({ ...prev, [outfit.id]: res.wear_count }))
-                      } catch {}
-                    }}
                   />
                   </div>
                 ))}
@@ -2802,6 +2794,12 @@ export default function OutfitBuilder() {
             getById={getById}
             wearCount={wearCounts[detailOutfit.id] || 0}
             onClose={() => setDetailOutfit(null)}
+            onWear={async (e) => {
+              try {
+                const res = await wearOutfit(detailOutfit.id)
+                setWearCounts(prev => ({ ...prev, [detailOutfit.id]: res.wear_count }))
+              } catch {}
+            }}
             onLoad={() => {
               const newSel = {}
               for (const id of detailOutfit.garment_ids) {
@@ -3193,17 +3191,16 @@ function MiniMixer({ garments, transforms = {} }) {
 }
 
 // ── SavedOutfitCard ───────────────────────────────────────────────────────────
-function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
+function SavedOutfitCard({ outfit, getById, onClick }) {
   const [hovered, setHovered] = useState(false)
-  const [wornAnim, setWornAnim] = useState(false)
   const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
-  const t = useT()
-  const language = useSettingsStore(s => s.language) || 'it'
 
-  const handleWear = async (e) => {
-    await onWear?.(e)
-    setWornAnim(true)
-    setTimeout(() => setWornAnim(false), 1500)
+  const mainColors = []
+  for (const g of garments) {
+    const palette = g.color_palette?.length > 0 ? g.color_palette : g.color_hex ? [{ hex: g.color_hex }] : []
+    for (const c of palette) {
+      if (c.hex && !mainColors.includes(c.hex)) mainColors.push(c.hex)
+    }
   }
 
   return (
@@ -3238,60 +3235,45 @@ function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
       </div>
 
       {/* Info */}
-      <div style={{ padding: '12px 14px' }}>
+      <div style={{ padding: '10px 12px 12px' }}>
         <div style={{
           fontSize: 13, fontWeight: 600, color: 'var(--text)',
-          marginBottom: 6,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          marginBottom: mainColors.length > 0 ? 6 : 0,
         }}>
           {outfit.name}
         </div>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-          {outfit.ai_generated ? <span className="tag tag-purple">{t('outfitsAiLabel')}</span> : null}
-          {outfit.occasion && <span className="tag tag-purple">{outfit.occasion}</span>}
-          {outfit.season   && <span className="tag tag-green">{outfit.season}</span>}
-          <span className="tag tag-amber" style={{ marginLeft: 'auto' }}>{t('outfitsGarments', garments.length)}</span>
-        </div>
-
-        {/* Bottone Indossa oggi + contatore */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <button
-            onClick={handleWear}
-            style={{
-              flex: 1, fontSize: 11, fontWeight: 600, padding: '5px 0',
-              borderRadius: 8, cursor: 'pointer', border: 'none',
-              background: wornAnim ? 'rgba(16,185,129,0.2)' : 'rgba(108,63,199,0.15)',
-              color: wornAnim ? '#10b981' : 'var(--primary-light)',
-              transition: 'all .25s',
-            }}
-          >
-            {wornAnim ? <IconCheck size={12} /> : <IconTshirt size={12} />}
-            {' '}{wornAnim
-              ? (language === 'en' ? 'Logged!' : 'Registrato!')
-              : (language === 'en' ? 'Wore today' : 'Indossato oggi')}
-          </button>
-          {wearCount > 0 && (
-            <span style={{
-              fontSize: 10, color: 'var(--text-dim)', flexShrink: 0,
-              background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: 8, padding: '3px 7px',
-            }}>
-              {wearCount}×
-            </span>
-          )}
-        </div>
+        {mainColors.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {mainColors.slice(0, 7).map((hex, i) => (
+              <span key={i} style={{
+                width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                background: hex, border: '1px solid rgba(0,0,0,0.12)',
+                display: 'inline-block',
+              }} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 // ── OutfitDetailModal ─────────────────────────────────────────────────────────
-function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCount = 0 }) {
+function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCount = 0, onWear }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [wornAnim, setWornAnim] = useState(false)
   const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
   const t = useT()
   const language = useSettingsStore(s => s.language) || 'it'
   const CATEGORY_LABELS = useCategoryLabels()
+
+  const handleWear = async (e) => {
+    e.stopPropagation()
+    await onWear?.(e)
+    setWornAnim(true)
+    setTimeout(() => setWornAnim(false), 1500)
+  }
 
   return (
     <div
@@ -3449,24 +3431,42 @@ function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCou
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
-                onClick={() => setConfirmDelete(true)}
-                className="btn btn-ghost"
-                style={{ padding: '9px 14px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.25)', flexShrink: 0 }}
-                title={language === 'en' ? 'Delete outfit' : 'Elimina outfit'}
+                onClick={handleWear}
+                style={{
+                  width: '100%', fontSize: 13, fontWeight: 600, padding: '9px 0',
+                  borderRadius: 10, cursor: 'pointer', border: 'none',
+                  background: wornAnim ? 'rgba(16,185,129,0.15)' : 'var(--primary-dim)',
+                  color: wornAnim ? '#10b981' : 'var(--primary-light)',
+                  transition: 'all .25s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
               >
-                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-                </svg>
+                {wornAnim ? <IconCheck size={14} /> : <IconTshirt size={14} />}
+                {wornAnim
+                  ? (language === 'en' ? 'Logged!' : 'Registrato!')
+                  : (language === 'en' ? 'Wore today' : 'Indossato oggi')}
               </button>
-              <button
-                onClick={onLoad}
-                className="btn btn-primary"
-                style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}
-              >
-                {t('outfitsOpenEditor')}
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="btn btn-ghost"
+                  style={{ padding: '9px 14px', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.25)', flexShrink: 0 }}
+                  title={language === 'en' ? 'Delete outfit' : 'Elimina outfit'}
+                >
+                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={onLoad}
+                  className="btn btn-primary"
+                  style={{ flex: 1, justifyContent: 'center', fontSize: 13 }}
+                >
+                  {t('outfitsOpenEditor')}
+                </button>
+              </div>
             </div>
           )}
         </div>
