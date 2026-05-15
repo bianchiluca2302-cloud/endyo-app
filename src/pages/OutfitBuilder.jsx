@@ -938,6 +938,14 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   }, [step])
 
   const generate = async (occ, subObj, styleObj) => {
+    if (quota !== null && quota !== -1 && quota <= 0) {
+      setResultError(language === 'en'
+        ? 'You\'ve used all your daily requests. Come back tomorrow or upgrade to Premium.'
+        : 'Hai esaurito le richieste giornaliere. Torna domani o passa a Premium.')
+      setResultText(''); setResultOutfits([])
+      setStep(4)
+      return
+    }
     setStep(3); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
     try {
     const gDesc = hasSelection ? selectedGarments.map(g => `${g.name} (${g.category})`).join(', ') : null
@@ -1004,6 +1012,11 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
       message: prompt, history: [], language, weather: weather?.summary ?? null, occasion: occ.label,
       onToken: tok => { acc += tok; setStreamText(acc) },
       onDone: () => {
+        if (!acc.trim()) {
+          setResultError(language === 'en' ? 'No response received. Please try again.' : 'Nessuna risposta ricevuta. Riprova.')
+          setStep(4)
+          return
+        }
         const matches = [...acc.matchAll(/<OUTFIT>([\s\S]*?)<\/OUTFIT>/g)]
         const outfits = matches.flatMap(m => { try { return [JSON.parse(m[1])] } catch { return [] } })
         outfits.forEach(o => { if (o.ids) shownIdsRef.current = [...new Set([...shownIdsRef.current, ...o.ids])] })
@@ -1016,7 +1029,10 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
           try { if (val !== null) sessionStorage.setItem('stylist-quota', String(val)) } catch {}
         }).catch(() => {})
       },
-      onError: err => { setResultError(err); setStep(4) },
+      onError: err => {
+        setResultError(err || (language === 'en' ? 'An error occurred.' : 'Si è verificato un errore.'))
+        setStep(4)
+      },
     })
     } catch (err) {
       setResultError(language === 'en' ? 'An error occurred. Please try again.' : 'Si è verificato un errore. Riprova.')
@@ -1254,7 +1270,6 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
   )
 
   /* ── Step 4: Results ── */
-  /* ── Step 4: Results ── */
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
       {/* Header with context breadcrumb */}
@@ -1276,8 +1291,31 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
       </div>
 
       {resultError && (
-        <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, marginBottom: 12 }}>
-          ⚠ {resultError}
+        <div style={{ padding: '16px', borderRadius: 14, background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.25)', color: '#ef4444', marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ fontSize: 16 }}>⚠</span>
+            {language === 'en' ? 'Something went wrong' : 'Qualcosa è andato storto'}
+          </div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, color: '#f87171', marginBottom: 14 }}>{resultError}</div>
+          <button onClick={reset}
+            style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#ef4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            {language === 'en' ? '↺ Try again' : '↺ Riprova'}
+          </button>
+        </div>
+      )}
+      {!resultError && !resultText && !resultOutfits.length && (
+        <div style={{ padding: '24px 16px', borderRadius: 14, background: 'var(--card)', border: '1.5px solid var(--border)', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🤔</div>
+          <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            {language === 'en' ? 'No response received' : 'Nessuna risposta ricevuta'}
+          </div>
+          <div style={{ lineHeight: 1.5, marginBottom: 16 }}>
+            {language === 'en' ? 'The stylist couldn\'t generate looks. Please try again.' : 'La stylist non è riuscita a generare i look. Riprova.'}
+          </div>
+          <button onClick={reset}
+            style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            {language === 'en' ? '↺ Try again' : '↺ Riprova'}
+          </button>
         </div>
       )}
       {resultText && !resultOutfits.length && (

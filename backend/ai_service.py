@@ -858,7 +858,7 @@ async def stream_chat_with_stylist(
         stream = await client.chat.completions.create(
             model=TEXT_MODEL,
             messages=messages,
-            max_tokens=600,
+            max_tokens=2000,
             temperature=0.75,
             stream=True,
         )
