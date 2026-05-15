@@ -84,7 +84,20 @@ export function applyTheme(settings) {
   document.body.style.color      = theme.text
 
   const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
-  document.documentElement.style.zoom = zoomMap[settings.textScale] ?? 1.12
+  const zoomVal = zoomMap[settings.textScale] ?? 1.12
+  document.documentElement.style.zoom = zoomVal
+  // Compensate body dimensions: zoomed html makes content zoomVal× wider/taller
+  // than the physical viewport. Shrink body so body × zoom = viewport exactly.
+  if (zoomVal !== 1) {
+    const invPct = ((1 / zoomVal) * 100).toFixed(4) + '%'
+    document.body.style.width  = invPct
+    document.body.style.height = invPct
+  } else {
+    document.body.style.width  = ''
+    document.body.style.height = ''
+  }
+  // Expose zoom factor for JS viewport calculations
+  document.documentElement.dataset.zoom = zoomVal
 }
 
 // ── Valute ────────────────────────────────────────────────────────────────────

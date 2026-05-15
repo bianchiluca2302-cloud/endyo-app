@@ -869,19 +869,26 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
   const [search,    setSearch]    = useState('')
   const [activeCat, setActiveCat] = useState('')
   const [dragY,     setDragY]     = useState(0)
-  const [vpH,       setVpH]       = useState(() => window.visualViewport?.height ?? window.innerHeight)
+  const getVpH = () => {
+    const rawH = window.visualViewport?.height ?? window.innerHeight
+    const zoom = parseFloat(document.documentElement.dataset.zoom) || 1
+    return rawH / zoom
+  }
+  const [vpH,       setVpH]       = useState(getVpH)
   const startYRef  = useRef(0)
   const dragging   = useRef(false)
   const sheetRef   = useRef(null)
   const en = language === 'en'
 
   useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const fn = () => setVpH(vv.height)
-    vv.addEventListener('resize', fn)
-    return () => vv.removeEventListener('resize', fn)
-  }, [])
+    const fn = () => setVpH(getVpH())
+    window.visualViewport?.addEventListener('resize', fn)
+    window.addEventListener('resize', fn)
+    return () => {
+      window.visualViewport?.removeEventListener('resize', fn)
+      window.removeEventListener('resize', fn)
+    }
+  }, []) // eslint-disable-line
 
   const onTouchStart = e => { startYRef.current = e.touches[0].clientY; dragging.current = true }
   const onTouchMove  = e => {
