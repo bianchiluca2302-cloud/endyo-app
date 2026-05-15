@@ -2005,8 +2005,8 @@ export default function MobileWardrobe() {
               <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>🚧</span>
               <div style={{ flex: 1, fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {language === 'en'
-                  ? <>Beta version. Bugs may occur. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Report one →</a></>
-                  : <>Versione beta. Potrebbero esserci bug. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Segnalane uno →</a></>}
+                  ? <>{`Beta version. Bugs may occur.`}<br/><a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Report one →</a></>
+                  : <>{`Versione beta. Potrebbero esserci bug.`}<br/><a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Segnalane uno →</a></>}
               </div>
               <button
                 onClick={() => { setBetaDismissed(true); localStorage.setItem('endyo_beta_dismissed', '1') }}

@@ -1081,9 +1081,8 @@ export default function Settings() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { id: 'sm', label: 'A', size: 13 },
               { id: 'md', label: 'A', size: 16 },
-              { id: 'lg', label: 'A', size: 20 },
+              { id: 'lg', label: 'A', size: 21 },
             ].map(opt => (
               <button
                 key={opt.id}

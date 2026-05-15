@@ -83,8 +83,8 @@ export function applyTheme(settings) {
   document.body.style.background = theme.bg
   document.body.style.color      = theme.text
 
-  const zoomMap = { sm: 0.9, md: 1.0, lg: 1.12 }
-  document.documentElement.style.zoom = zoomMap[settings.textScale] ?? 1.0
+  const zoomMap = { md: 1.12, lg: 1.25 }
+  document.documentElement.style.zoom = zoomMap[settings.textScale] ?? 1.12
 }
 
 // ── Valute ────────────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ function detectSystemLanguage() {
 const DEFAULTS = {
   accentColor:        'amber',
   theme:              'light',
-  textScale:          'md',      // 'sm' | 'md' | 'lg'
+  textScale:          'md',      // 'md' | 'lg'
   language:           detectSystemLanguage(),
   shoeSizeSystem:     'eu',
   clothingSizeSystem: 'eu',
