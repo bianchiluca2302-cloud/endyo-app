@@ -351,6 +351,11 @@ User style profile:
     has_felpa     = "felpa"     in avail_cats
     has_pantaloni = "pantaloni" in avail_cats
     has_scarpe    = "scarpe"    in avail_cats
+    has_cintura   = "cintura"   in avail_cats
+    has_jeans     = any(
+        "jeans" in (g.get("name", "") + " " + " ".join(g.get("style_tags", []))).lower()
+        for g in garments if g["category"] == "pantaloni"
+    )
     acc_cats      = {"cappello", "occhiali", "cintura", "borsa", "orologio"}
     has_acc       = bool(avail_cats & acc_cats)
 
@@ -359,6 +364,8 @@ User style profile:
         mandatory_note += "- ALWAYS include at least one top (maglietta, felpa, or giacchetto). An outfit without a top is INVALID.\n"
     if has_felpa and has_maglietta:
         mandatory_note += "- LAYERING RULE: if the outfit includes a felpa (sweatshirt/hoodie), you MUST also include a maglietta (t-shirt) as a base layer underneath. A felpa without a maglietta is INVALID.\n"
+    if has_jeans and has_cintura:
+        mandatory_note += "- BELT RULE: if the outfit includes jeans (denim pants), you MUST also include a cintura (belt). Jeans without a cintura is INVALID.\n"
     if has_pantaloni:
         mandatory_note += "- ALWAYS include pantaloni. An outfit without pants is INVALID.\n"
     if has_scarpe:
@@ -413,6 +420,15 @@ Return ONLY the JSON array."""
         # Enforce maglietta as base layer under felpa
         if has_maglietta and "felpa" in cur_cats and "maglietta" not in cur_cats:
             ids.add(garments_by_cat["maglietta"][0]); cur_cats.add("maglietta")
+
+        # Enforce cintura when outfit includes jeans
+        if has_cintura and "cintura" not in cur_cats:
+            outfit_jeans = any(
+                "jeans" in (garments_by_id[i].get("name", "") + " " + " ".join(garments_by_id[i].get("style_tags", []))).lower()
+                for i in ids if garments_by_id[i]["category"] == "pantaloni"
+            )
+            if outfit_jeans:
+                ids.add(garments_by_cat["cintura"][0]); cur_cats.add("cintura")
 
         # Enforce pantaloni
         if has_pantaloni and "pantaloni" not in cur_cats:
@@ -732,6 +748,7 @@ When suggesting a combination using items the user already owns, ALWAYS append a
 Use exact numeric IDs from the wardrobe above. Include 3–6 items following these rules:
 - ALWAYS include at least one top (maglietta/felpa/giacchetto) if available — an outfit without a top is incomplete
 - LAYERING: if the outfit includes a felpa (sweatshirt/hoodie), ALWAYS also include a maglietta (t-shirt) as base layer underneath — felpa without maglietta is invalid when magliette are available
+- BELT RULE: if the outfit includes jeans (denim pants), ALWAYS also include a cintura (belt) — jeans without a cintura is invalid when a cintura is available
 - ALWAYS include pantaloni if available
 - ALWAYS include scarpe if available
 - ALWAYS add 1–2 accessories (cintura, borsa, orologio, occhiali, cappello) that complement the look's style and colors
@@ -793,6 +810,7 @@ Quando suggerisci una combinazione con capi che l'utente già possiede, aggiungi
 Usa ID numerici esatti dall'armadio sopra. Include 3–6 capi rispettando queste regole:
 - Includi SEMPRE almeno un top (maglietta/felpa/giacchetto) se disponibile — un outfit senza top è incompleto
 - LAYERING: se l'outfit include una felpa, includi SEMPRE anche una maglietta come layer base sotto — felpa senza maglietta è invalido quando nell'armadio ci sono magliette
+- BELT RULE: se l'outfit include dei jeans, includi SEMPRE anche una cintura — jeans senza cintura è invalido quando c'è una cintura nell'armadio
 - Includi SEMPRE i pantaloni se disponibili
 - Includi SEMPRE le scarpe se disponibili
 - Aggiungi SEMPRE 1–2 accessori (cintura, borsa, orologio, occhiali, cappello) che completano lo stile e armonizzano con i colori
