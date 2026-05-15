@@ -568,7 +568,7 @@ export default function MobileOutfits() {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
             {filtered.map((o, i) => (
               <div key={o.id} style={{ animation: `slideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(i * 90, 540)}ms backwards` }}>
                 <OutfitCard outfit={o} language={language} compact={compactCards} />

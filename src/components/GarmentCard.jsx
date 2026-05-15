@@ -179,7 +179,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
                   }} />
                 ) : null)
               })()}
-              {!compact && liveGarment.brand && (
+              {liveGarment.brand && (
                 <span style={{
                   fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
