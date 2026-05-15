@@ -346,7 +346,9 @@ User style profile:
     # Pre-compute which mandatory categories exist in the wardrobe
     avail_cats = {g["category"] for g in garments}
     top_cats = {"maglietta", "felpa", "giacchetto"}
-    has_top      = bool(avail_cats & top_cats)
+    has_top       = bool(avail_cats & top_cats)
+    has_maglietta = "maglietta" in avail_cats
+    has_felpa     = "felpa"     in avail_cats
     has_pantaloni = "pantaloni" in avail_cats
     has_scarpe    = "scarpe"    in avail_cats
     acc_cats      = {"cappello", "occhiali", "cintura", "borsa", "orologio"}
@@ -354,7 +356,9 @@ User style profile:
 
     mandatory_note = "MANDATORY RULES FOR EVERY OUTFIT:\n"
     if has_top:
-        mandatory_note += "- ALWAYS include exactly one top (maglietta, felpa, or giacchetto). An outfit without a top is INVALID.\n"
+        mandatory_note += "- ALWAYS include at least one top (maglietta, felpa, or giacchetto). An outfit without a top is INVALID.\n"
+    if has_felpa and has_maglietta:
+        mandatory_note += "- LAYERING RULE: if the outfit includes a felpa (sweatshirt/hoodie), you MUST also include a maglietta (t-shirt) as a base layer underneath. A felpa without a maglietta is INVALID.\n"
     if has_pantaloni:
         mandatory_note += "- ALWAYS include pantaloni. An outfit without pants is INVALID.\n"
     if has_scarpe:
@@ -405,6 +409,10 @@ Return ONLY the JSON array."""
             for cat in ("maglietta", "felpa", "giacchetto"):
                 if garments_by_cat.get(cat):
                     ids.add(garments_by_cat[cat][0]); cur_cats.add(cat); break
+
+        # Enforce maglietta as base layer under felpa
+        if has_maglietta and "felpa" in cur_cats and "maglietta" not in cur_cats:
+            ids.add(garments_by_cat["maglietta"][0]); cur_cats.add("maglietta")
 
         # Enforce pantaloni
         if has_pantaloni and "pantaloni" not in cur_cats:
@@ -722,7 +730,8 @@ CREATING OUTFITS FROM WARDROBE:
 When suggesting a combination using items the user already owns, ALWAYS append at the very end:
 <OUTFIT>{{"ids":[id1,id2],"name":"Look name","notes":"One sentence explaining why this works"}}</OUTFIT>
 Use exact numeric IDs from the wardrobe above. Include 3–6 items following these rules:
-- ALWAYS include one top (maglietta/felpa/giacchetto) if available — an outfit without a top is incomplete
+- ALWAYS include at least one top (maglietta/felpa/giacchetto) if available — an outfit without a top is incomplete
+- LAYERING: if the outfit includes a felpa (sweatshirt/hoodie), ALWAYS also include a maglietta (t-shirt) as base layer underneath — felpa without maglietta is invalid when magliette are available
 - ALWAYS include pantaloni if available
 - ALWAYS include scarpe if available
 - ALWAYS add 1–2 accessories (cintura, borsa, orologio, occhiali, cappello) that complement the look's style and colors
@@ -782,7 +791,8 @@ CREARE OUTFIT DALL'ARMADIO:
 Quando suggerisci una combinazione con capi che l'utente già possiede, aggiungi SEMPRE in fondo:
 <OUTFIT>{{"ids":[id1,id2],"name":"Nome look","notes":"Una frase che spiega perché funziona"}}</OUTFIT>
 Usa ID numerici esatti dall'armadio sopra. Include 3–6 capi rispettando queste regole:
-- Includi SEMPRE una maglia/felpa/giacchetto se disponibile — un outfit senza top è incompleto
+- Includi SEMPRE almeno un top (maglietta/felpa/giacchetto) se disponibile — un outfit senza top è incompleto
+- LAYERING: se l'outfit include una felpa, includi SEMPRE anche una maglietta come layer base sotto — felpa senza maglietta è invalido quando nell'armadio ci sono magliette
 - Includi SEMPRE i pantaloni se disponibili
 - Includi SEMPRE le scarpe se disponibili
 - Aggiungi SEMPRE 1–2 accessori (cintura, borsa, orologio, occhiali, cappello) che completano lo stile e armonizzano con i colori
