@@ -2696,8 +2696,8 @@ export default function OutfitBuilder() {
             ) : (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: 16,
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: isMobile ? (compactCards ? 6 : 10) : 16,
               }}>
                 {filtered.map((outfit, i) => (
                   <div key={outfit.id} style={{ animation: `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards` }}>
