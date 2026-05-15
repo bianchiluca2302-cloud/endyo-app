@@ -15,7 +15,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: 'Wardrobe Analysis',
-    body: 'Charts on categories, colours and brands — plus suggestions on what to add.',
+    body: 'Charts on categories, colours and brands, plus suggestions on what to add.',
     target: '[data-pagetour="wardrobe-analysis"]',
     position: 'left',
   },
@@ -27,7 +27,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: '🚧 Beta version',
-    body: 'Endyo is in active development. You may encounter bugs — we\'re fixing them continuously. Found one? Email us at bugs@endyo.it',
+    body: 'Endyo is in active development. You may encounter bugs. We\'re fixing them continuously. Found one? Email us at bugs@endyo.it',
     target: null,
     position: 'center',
     cta: 'Got it →',
@@ -41,7 +41,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: 'Analisi Armadio',
-    body: 'Grafici su categorie, colori e brand — più suggerimenti su cosa aggiungere.',
+    body: 'Grafici su categorie, colori e brand, più suggerimenti su cosa aggiungere.',
     target: '[data-pagetour="wardrobe-analysis"]',
     position: 'left',
   },
@@ -53,7 +53,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: '🚧 Versione Beta',
-    body: 'Endyo è in sviluppo attivo. Potresti incontrare dei bug — li stiamo risolvendo continuamente. Hai trovato un problema? Scrivici a bugs@endyo.it',
+    body: 'Endyo è in sviluppo attivo. Potresti incontrare dei bug. Li stiamo risolvendo continuamente. Hai trovato un problema? Scrivici a bugs@endyo.it',
     target: null,
     position: 'center',
     cta: 'Capito →',

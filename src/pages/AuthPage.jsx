@@ -621,7 +621,7 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Genere</label>
           <select className="input" style={{ width: '100%' }} value={gender} onChange={e => setGender(e.target.value)}>
-            <option value="">— Seleziona —</option>
+            <option value="">Seleziona</option>
             <option value="uomo">Uomo</option>
             <option value="donna">Donna</option>
             <option value="non_binario">Non binario</option>
@@ -631,7 +631,7 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Anno di nascita</label>
           <select className="input" style={{ width: '100%' }} value={birthYear} onChange={e => setBirthYear(e.target.value)}>
-            <option value="">— Anno —</option>
+            <option value="">Anno</option>
             {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 13 - i).map(y => (
               <option key={y} value={y}>{y}</option>
             ))}

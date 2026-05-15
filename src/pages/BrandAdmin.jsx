@@ -31,7 +31,7 @@ const BRAND_I18N = {
     emailPlaceholder: 'brand@esempio.com',
     // Settings
     settingsTitle: 'Impostazioni', logoTitle: 'Logo brand',
-    uploadLogo: 'Carica logo', logoHint: 'PNG, JPG — consigliato 200×200px',
+    uploadLogo: 'Carica logo', logoHint: 'PNG, JPG · consigliato 200×200px',
     brandDataTitle: 'Dati brand', brandName: 'Nome brand',
     website: 'Sito web', websitePh: 'https://tuosito.com', description: 'Descrizione',
     saveBtn: 'Salva modifiche', saving: 'Salvo…', savedOk: 'Salvato con successo ✓',
@@ -102,7 +102,7 @@ const BRAND_I18N = {
     emailPlaceholder: 'brand@example.com',
     // Settings
     settingsTitle: 'Settings', logoTitle: 'Brand logo',
-    uploadLogo: 'Upload logo', logoHint: 'PNG, JPG — recommended 200×200px',
+    uploadLogo: 'Upload logo', logoHint: 'PNG, JPG · recommended 200×200px',
     brandDataTitle: 'Brand info', brandName: 'Brand name',
     website: 'Website', websitePh: 'https://yoursite.com', description: 'Description',
     saveBtn: 'Save changes', saving: 'Saving…', savedOk: 'Saved successfully ✓',
@@ -1026,7 +1026,7 @@ function Products({ lang = 'it' }) {
             width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto',
           }}>
             <h3 style={{ fontWeight: 700, fontSize: 17, color: 'var(--text)', marginBottom: 20 }}>
-              {modal === 'add' ? t('newProduct') : `${t('editProduct')} — ${modal.name}`}
+              {modal === 'add' ? t('newProduct') : `${t('editProduct')}: ${modal.name}`}
             </h3>
             <ProductForm
               initial={modal === 'add' ? null : modal}
@@ -1119,7 +1119,7 @@ function BrandPosts({ lang }) {
               onChange={e => setSelProd(e.target.value)}
               style={{ width: '100%' }}
             >
-              <option value="">— {t('postsSelectProduct')} —</option>
+              <option value="">{t('postsSelectProduct')}</option>
               {products.map(p => (
                 <option key={p.id} value={p.id}>{p.name} · {p.category}</option>
               ))}

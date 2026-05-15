@@ -636,7 +636,7 @@ export default function MobileUpload() {
           })()}
         </div>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24, marginTop: 4 }}>
-          Scatta o carica una foto — l'AI fa il resto
+          Scatta o carica una foto. L'AI fa il resto
         </p>
       </div>
 

@@ -19,7 +19,7 @@ const STORAGE_KEY = 'endyo_tutorial_done'
 const STEPS_IT = [
   {
     id: 'welcome', title: 'Benvenuto in Endyo! 👋',
-    body: 'Un tour rapido per scoprire le sezioni principali. Ogni sezione ha un mini-tutorial dedicato al primo accesso.',
+    body: 'Un tour rapido per scoprire le sezioni principali. Ogni sezione ha un tutorial dedicato al primo accesso.',
     target: null, position: 'center',
   },
   {
@@ -58,7 +58,7 @@ const STEPS_IT = [
 const STEPS_EN = [
   {
     id: 'welcome', title: 'Welcome to Endyo! 👋',
-    body: 'A quick tour of the main sections. Each section has its own mini-tutorial on first visit.',
+    body: 'A quick tour of the main sections. Each section has its own tutorial on first visit.',
     target: null, position: 'center',
   },
   {

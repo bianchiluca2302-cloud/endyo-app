@@ -600,9 +600,9 @@ function StylistUsage({ language }) {
       blocked:      'Bloccato (solo Premium)',
       extraCredits: 'Crediti extra',
       buyPack:      'Acquista pacchetto',
-      packS:        '40 upload — 2,49€',
-      packM:        '100 upload — 4,99€',
-      packL:        '300 upload — 9,99€',
+      packS:        '40 upload · 2,49€',
+      packM:        '100 upload · 4,99€',
+      packL:        '300 upload · 9,99€',
       buying:       'Apertura pagamento…',
     },
     en: {
@@ -625,9 +625,9 @@ function StylistUsage({ language }) {
       blocked:      'Locked (Premium only)',
       extraCredits: 'Extra credits',
       buyPack:      'Buy a pack',
-      packS:        '40 uploads — €2.49',
-      packM:        '100 uploads — €4.99',
-      packL:        '300 uploads — €9.99',
+      packS:        '40 uploads · €2.49',
+      packM:        '100 uploads · €4.99',
+      packL:        '300 uploads · €9.99',
       buying:       'Opening payment…',
     },
   }
@@ -989,8 +989,8 @@ export default function Settings() {
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {language === 'en'
-              ? 'Endyo is in active development. You may encounter bugs — we\'re fixing them continuously and improving the app over time.'
-              : 'Endyo è in sviluppo attivo. Potresti incontrare dei bug — li stiamo risolvendo continuamente e l\'app migliorerà nel tempo.'}
+              ? 'Endyo is in active development. You may encounter bugs. We\'re fixing them continuously and improving the app over time.'
+              : 'Endyo è in sviluppo attivo. Potresti incontrare dei bug. Li stiamo risolvendo continuamente e l\'app migliorerà nel tempo.'}
           </div>
           <a
             href="mailto:bugs@endyo.it?subject=Bug%20Report%20-%20Endyo"

@@ -10,7 +10,7 @@ import { useToast } from '../components/Toast'
 const getOutfitTour = (lang) => lang === 'en' ? [
   {
     title: 'Visual Mixer',
-    body: 'Select items on the left — they appear in the mixer. Drag to reposition, click to resize.',
+    body: 'Select items on the left. They appear in the mixer. Drag to reposition, click to resize.',
     target: '[data-pagetour="outfit-mixer"]',
     position: 'left',
   },
@@ -24,7 +24,7 @@ const getOutfitTour = (lang) => lang === 'en' ? [
 ] : [
   {
     title: 'Mixer visivo',
-    body: 'Seleziona i capi a sinistra — compaiono nel mixer. Trascina per riposizionare, clicca per ridimensionare.',
+    body: 'Seleziona i capi a sinistra. Compaiono nel mixer. Trascina per riposizionare, clicca per ridimensionare.',
     target: '[data-pagetour="outfit-mixer"]',
     position: 'left',
   },
@@ -717,30 +717,30 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       sub: 'What\'s the social context at work today?',
       subs: [
         { label: 'Meetings or presentations', ctx: 'high-stakes professional setting — you need to project competence and authority to people evaluating you; first impressions matter and the look must reinforce your credibility' },
-        { label: 'Regular office day — same people', ctx: 'familiar environment with colleagues you already know — be presentable and functional without overdoing it; comfort and coherence are the goal' },
+        { label: 'Regular office day, same people', ctx: 'familiar environment with colleagues you already know — be presentable and functional without overdoing it; comfort and coherence are the goal' },
         { label: 'Working from home', ctx: 'private space, comfort comes first, but still decent for occasional video calls; no need to perform for others today' },
         { label: 'Networking / new professional contacts', ctx: 'making a first impression in a professional context — you want to be remembered positively, feel confident, and project who you are professionally' },
       ],
       style: 'What do you want this look to say about you?',
       styles: [
-        { label: 'Professional but unmistakably me', note: 'my natural style applied to work — I don\'t become someone else, I just show up polished' },
+        { label: 'Professional but unmistakably me', note: 'my natural style applied to work. I don\'t become someone else, I just show up polished' },
         { label: 'A step above my usual', note: 'more curated than normal, I want to make a strong impression today' },
-        { label: 'Creative and distinctive', note: 'I express my personal style even in professional context — I stand out deliberately' },
+        { label: 'Creative and distinctive', note: 'I express my personal style even in professional context. I stand out deliberately' },
       ],
     },
     { id: 'casual', label: 'Casual', emoji: '👟',
-      sub: 'Who will you be with — and how much does the impression matter?',
+      sub: 'Who will you be with, and how much does the impression matter?',
       subs: [
         { label: 'Close friends or family', ctx: 'intimate setting — these people already know and accept you; zero pressure to perform, maximum freedom to be your most authentic and relaxed self; comfort and identity win over polish' },
-        { label: 'Out in public — city, café, shops', ctx: 'you\'re visible to people you don\'t know; first impressions matter more here; a semi-curated look that feels effortless is the sweet spot — you might run into someone' },
+        { label: 'Out in public: city, café, shops', ctx: 'you\'re visible to people you don\'t know; first impressions matter more here; a semi-curated look that feels effortless is the sweet spot — you might run into someone' },
         { label: 'Someone you want to impress', ctx: 'a date or an encounter that matters — you want to be attractive and memorable while still feeling genuinely yourself; the look should feel magnetic, not costumey' },
-        { label: 'Mixed — friends plus new faces', ctx: 'balance between being comfortable with people you know and making a decent impression on those you don\'t — relaxed confidence is the goal' },
+        { label: 'Mixed: friends plus new faces', ctx: 'balance between being comfortable with people you know and making a decent impression on those you don\'t — relaxed confidence is the goal' },
       ],
       style: 'What do you want your outfit to communicate today?',
       styles: [
-        { label: 'This is me at my best', note: 'authentic self-expression — my identity enhanced, not transformed; people should recognize me in what I\'m wearing' },
-        { label: 'Effortlessly put together', note: 'the art of looking curated without looking like you tried too hard — elevated but natural' },
-        { label: 'I want to be noticed', note: 'making a statement — bold choices, visual impact, I want to leave an impression' },
+        { label: 'This is me at my best', note: 'authentic self-expression, my identity enhanced, not transformed; people should recognize me in what I\'m wearing' },
+        { label: 'Effortlessly put together', note: 'the art of looking curated without looking like you tried too hard, elevated but natural' },
+        { label: 'I want to be noticed', note: 'making a statement: bold choices, visual impact, I want to leave an impression' },
       ],
     },
     { id: 'evening', label: 'Evening', emoji: '🌙',
@@ -748,14 +748,14 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       subs: [
         { label: 'Romantic dinner or date', ctx: 'you want to be attractive and memorable to a specific person; the look should feel personal and deliberate — elevated but warm, not stiff or performative' },
         { label: 'Night out with close friends', ctx: 'you want to feel good in your own skin more than impress anyone; festive but relaxed energy, comfort matters, authenticity beats polish' },
-        { label: 'Party or event — mixed crowd, new faces', ctx: 'first impression in an evening context; there\'s a social expectation of being somewhat dressed up; you want to stand out without looking like you\'re trying too hard' },
+        { label: 'Party or event: mixed crowd, new faces', ctx: 'first impression in an evening context; there\'s a social expectation of being somewhat dressed up; you want to stand out without looking like you\'re trying too hard' },
         { label: 'Theatre, concert or cultural event', ctx: 'a context with a certain aesthetic standard — you want to honor the event without losing yourself; smart casual that feels intentional' },
       ],
       style: 'What\'s your intention tonight?',
       styles: [
-        { label: 'Me in evening mode', note: 'my daytime identity elevated for the night — recognizable, authentic, just more refined' },
-        { label: 'Elegant but relaxed', note: 'smart casual chic — dressed up but not stiff, I can move and be myself' },
-        { label: 'Full impact — I want to be unforgettable', note: 'maximum expression, bold choices, I\'m the protagonist tonight' },
+        { label: 'Me in evening mode', note: 'my daytime identity elevated for the night, recognizable, authentic, just more refined' },
+        { label: 'Elegant but relaxed', note: 'smart casual chic, dressed up but not stiff, I can move and be myself' },
+        { label: 'Full impact: I want to be unforgettable', note: 'maximum expression, bold choices, I\'m the protagonist tonight' },
       ],
     },
     { id: 'sport', label: 'Sport', emoji: '🏃',
@@ -768,24 +768,24 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       ],
       style: 'What\'s your priority today?',
       styles: [
-        { label: 'Sport with personality — look good, move well', note: 'athleisure mindset: functional but I still look like myself, not just "in gym clothes"' },
-        { label: 'Pure performance — function only', note: 'technical and optimized, aesthetics are secondary today' },
-        { label: 'Maximum comfort above all', note: 'softest, most comfortable option — I just want to feel free' },
+        { label: 'Sport with personality: look good, move well', note: 'athleisure mindset: functional but I still look like myself, not just "in gym clothes"' },
+        { label: 'Pure performance: function only', note: 'technical and optimized, aesthetics are secondary today' },
+        { label: 'Maximum comfort above all', note: 'softest, most comfortable option. I just want to feel free' },
       ],
     },
     { id: 'travel', label: 'Travel', emoji: '✈️',
       sub: 'How will this travel day unfold?',
       subs: [
-        { label: 'Long transit — plane or train', ctx: 'hours sitting and moving through public spaces — comfort is non-negotiable but you\'ll arrive somewhere new and want to look decent; versatile and travel-smart' },
+        { label: 'Long transit: plane or train', ctx: 'hours sitting and moving through public spaces — comfort is non-negotiable but you\'ll arrive somewhere new and want to look decent; versatile and travel-smart' },
         { label: 'Exploring a new city', ctx: 'walking, discovering, potentially meeting new people — practical but with personality; you\'re a traveler with a style, not a tourist' },
         { label: 'Beach or warm destination', ctx: 'heat, relaxation, freedom — light and identity-driven looks tied to the destination vibe' },
         { label: 'Mountain or outdoor adventure', ctx: 'movement and nature — functional outdoor aesthetic that still reflects who you are; rugged but considered' },
       ],
       style: 'How do you want to feel while traveling?',
       styles: [
-        { label: 'Me — just in travel mode', note: 'I don\'t become an anonymous tourist; my identity travels with me, just adapted to practicality' },
-        { label: 'Smart and versatile', note: 'outfits that work from morning to evening and adapt — investment pieces that do double duty' },
-        { label: 'Adventurous — I embrace the destination', note: 'the destination\'s energy influences the look; I dress into the experience' },
+        { label: 'Me, just in travel mode', note: 'I don\'t become an anonymous tourist; my identity travels with me, just adapted to practicality' },
+        { label: 'Smart and versatile', note: 'outfits that work from morning to evening and adapt, investment pieces that do double duty' },
+        { label: 'Adventurous: I embrace the destination', note: 'the destination\'s energy influences the look; I dress into the experience' },
       ],
     },
   ] : [
@@ -793,30 +793,30 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       sub: 'Com\'è il contesto sociale al lavoro oggi?',
       subs: [
         { label: 'Riunioni o presentazioni', ctx: 'contesto ad alta posta: devi proiettare competenza e autorevolezza a persone che ti stanno valutando; la prima impressione conta e il look deve rafforzare la tua credibilità' },
-        { label: 'Giornata normale — le solite persone', ctx: 'ambiente familiare con colleghi che già conosci — essere presentabile e funzionale senza eccedere; comfort e coerenza sono il traguardo' },
+        { label: 'Giornata normale, le solite persone', ctx: 'ambiente familiare con colleghi che già conosci — essere presentabile e funzionale senza eccedere; comfort e coerenza sono il traguardo' },
         { label: 'Smart working da casa', ctx: 'spazio privato, comfort prima di tutto, ma dignitoso per eventuali videocall; oggi non devi performare per gli altri' },
         { label: 'Networking / nuove persone in contesto pro', ctx: 'prima impressione in contesto professionale — vuoi essere ricordato positivamente, sentirti sicuro e proiettare chi sei professionalmente' },
       ],
       style: 'Cosa vuoi che comunichi il tuo look?',
       styles: [
-        { label: 'Professionale ma inconfondibilmente io', note: 'il mio stile naturale applicato al lavoro — non divento un\'altra persona, mi presento solo al meglio' },
+        { label: 'Professionale ma inconfondibilmente io', note: 'il mio stile naturale applicato al lavoro. Non divento un\'altra persona, mi presento solo al meglio' },
         { label: 'Un gradino sopra il solito', note: 'più curato del normale, voglio fare un\'ottima impressione oggi' },
-        { label: 'Creativo e distintivo', note: 'esprimo il mio stile personale anche nel contesto professionale — mi distinguo deliberatamente' },
+        { label: 'Creativo e distintivo', note: 'esprimo il mio stile personale anche nel contesto professionale. Mi distinguo deliberatamente' },
       ],
     },
     { id: 'casual', label: 'Casual', emoji: '👟',
-      sub: 'Con chi sarai — e quanto conta l\'impressione?',
+      sub: 'Con chi sarai, e quanto conta l\'impressione?',
       subs: [
         { label: 'Amici stretti o famiglia', ctx: 'contesto intimo — queste persone ti conoscono e accettano già; zero pressione di performare, massima libertà di essere il tuo sé più autentico e rilassato; il comfort e l\'identità battono la perfezione estetica' },
         { label: 'Uscita in città, caffè, negozi', ctx: 'sei visibile a persone che non conosci; la prima impressione conta di più; un look semi-curato che sembra naturale è il punto di equilibrio — potresti incontrare qualcuno' },
         { label: 'Qualcuno che vuoi colpire', ctx: 'un appuntamento o un incontro che conta — vuoi essere attraente e memorabile pur restando genuinamente te stesso; il look deve sembrare magnetico, non un costume' },
-        { label: 'Mix — amici + nuove conoscenze', ctx: 'equilibrio tra stare a proprio agio con chi conosci e fare buona impressione su chi non conosci — la fiducia rilassata è il traguardo' },
+        { label: 'Mix: amici e nuove conoscenze', ctx: 'equilibrio tra stare a proprio agio con chi conosci e fare buona impressione su chi non conosci — la fiducia rilassata è il traguardo' },
       ],
       style: 'Cosa deve comunicare il tuo outfit oggi?',
       styles: [
-        { label: 'Sono io — la mia versione migliore', note: 'espressione autentica di sé — la mia identità esaltata, non trasformata; le persone devono riconoscermi in quello che indosso' },
-        { label: 'Curato senza sembrarlo', note: 'l\'arte di sembrare messo bene senza sembrare che ci abbia pensato troppo — elevato ma naturale' },
-        { label: 'Voglio essere notato', note: 'faccio uno statement — scelte audaci, impatto visivo, voglio lasciare un\'impressione' },
+        { label: 'Sono io: la mia versione migliore', note: 'espressione autentica di sé, la mia identità esaltata, non trasformata; le persone devono riconoscermi in quello che indosso' },
+        { label: 'Curato senza sembrarlo', note: 'l\'arte di sembrare messo bene senza sembrare che ci abbia pensato troppo, elevato ma naturale' },
+        { label: 'Voglio essere notato', note: 'faccio uno statement: scelte audaci, impatto visivo, voglio lasciare un\'impressione' },
       ],
     },
     { id: 'serata', label: 'Serata', emoji: '🌙',
@@ -824,14 +824,14 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       subs: [
         { label: 'Cena romantica o appuntamento', ctx: 'vuoi essere attraente e memorabile per una persona specifica; il look deve sembrare personale e deliberato — elevato ma caldo, non rigido o performativo' },
         { label: 'Uscita con amici stretti', ctx: 'vuoi sentirti bene nella tua pelle più che impressionare qualcuno; energia festosa ma rilassata, il comfort conta, l\'autenticità batte la perfezione' },
-        { label: 'Party o evento — folla mista, facce nuove', ctx: 'prima impressione in contesto serale; c\'è un\'aspettativa sociale di essere un po\' vestiti; vuoi distinguerti senza sembrare che ci stai provando troppo' },
+        { label: 'Party o evento: folla mista, facce nuove', ctx: 'prima impressione in contesto serale; c\'è un\'aspettativa sociale di essere un po\' vestiti; vuoi distinguerti senza sembrare che ci stai provando troppo' },
         { label: 'Teatro, concerto o evento culturale', ctx: 'contesto con un certo standard estetico — vuoi onorare l\'evento senza perderti; smart casual intenzionale' },
       ],
       style: 'Qual è la tua intenzione stasera?',
       styles: [
-        { label: 'Io in versione serale', note: 'la mia identità diurna elevata per la notte — riconoscibile, autentica, solo più raffinata' },
-        { label: 'Elegante ma rilassato', note: 'smart casual chic — vestito ma non imbrigliato, posso muovermi ed essere me stesso' },
-        { label: 'Impatto totale — voglio essere indimenticabile', note: 'espressione massima, scelte audaci, stasera sono il protagonista' },
+        { label: 'Io in versione serale', note: 'la mia identità diurna elevata per la notte, riconoscibile, autentica, solo più raffinata' },
+        { label: 'Elegante ma rilassato', note: 'smart casual chic, vestito ma non imbrigliato, posso muovermi ed essere me stesso' },
+        { label: 'Impatto totale: voglio essere indimenticabile', note: 'espressione massima, scelte audaci, stasera sono il protagonista' },
       ],
     },
     { id: 'sport', label: 'Sport', emoji: '🏃',
@@ -844,24 +844,24 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
       ],
       style: 'Qual è la tua priorità oggi?',
       styles: [
-        { label: 'Sport con personalità — bello e funzionale', note: 'mindset athleisure: funzionale ma resto me stesso, non solo "in tuta da palestra"' },
-        { label: 'Performance pura — solo funzione', note: 'tecnico e ottimizzato, l\'estetica è secondaria oggi' },
-        { label: 'Massimo comfort sopra ogni cosa', note: 'l\'opzione più morbida e comoda — voglio solo sentirmi libero' },
+        { label: 'Sport con personalità: bello e funzionale', note: 'mindset athleisure: funzionale ma resto me stesso, non solo "in tuta da palestra"' },
+        { label: 'Performance pura: solo funzione', note: 'tecnico e ottimizzato, l\'estetica è secondaria oggi' },
+        { label: 'Massimo comfort sopra ogni cosa', note: 'l\'opzione più morbida e comoda. Voglio solo sentirmi libero' },
       ],
     },
     { id: 'viaggio', label: 'Viaggio', emoji: '✈️',
       sub: 'Com\'è strutturata questa giornata di viaggio?',
       subs: [
-        { label: 'Lungo transito — aereo o treno', ctx: 'ore seduto e in movimento attraverso spazi pubblici — il comfort è irrinunciabile ma arriverai da qualche parte di nuovo e vuoi sembrare a posto; versatile e travel-smart' },
+        { label: 'Lungo transito: aereo o treno', ctx: 'ore seduto e in movimento attraverso spazi pubblici — il comfort è irrinunciabile ma arriverai da qualche parte di nuovo e vuoi sembrare a posto; versatile e travel-smart' },
         { label: 'Esplorazione di una nuova città', ctx: 'camminare, scoprire, potenzialmente incontrare persone nuove — pratico ma con personalità; sei un viaggiatore con stile, non un turista anonimo' },
         { label: 'Mare o destinazione calda', ctx: 'caldo, relax, libertà — look leggeri e legati all\'identità della destinazione' },
         { label: 'Montagna o avventura outdoor', ctx: 'movimento e natura — estetica outdoor funzionale che riflette comunque chi sei; robusto ma ragionato' },
       ],
       style: 'Come vuoi sentirti in viaggio?',
       styles: [
-        { label: 'Io — solo in modalità viaggio', note: 'non divento un turista anonimo; la mia identità viaggia con me, solo adattata alla praticità' },
-        { label: 'Smart e versatile', note: 'outfit che funzionano dal mattino alla sera e si adattano — investimento che fa doppio lavoro' },
-        { label: 'Avventuroso — abbraccio la destinazione', note: 'l\'energia della destinazione influenza il look; mi vesto per l\'esperienza' },
+        { label: 'Io, solo in modalità viaggio', note: 'non divento un turista anonimo; la mia identità viaggia con me, solo adattata alla praticità' },
+        { label: 'Smart e versatile', note: 'outfit che funzionano dal mattino alla sera e si adattano, investimento che fa doppio lavoro' },
+        { label: 'Avventuroso: abbraccio la destinazione', note: 'l\'energia della destinazione influenza il look; mi vesto per l\'esperienza' },
       ],
     },
   ]
@@ -939,7 +939,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
 
   const generate = async (occ, subObj, styleObj) => {
     setStep(3); setStreamText(''); setResultText(''); setResultOutfits([]); setResultError(null)
-
+    try {
     const gDesc = hasSelection ? selectedGarments.map(g => `${g.name} (${g.category})`).join(', ') : null
     const shownNote = shownIdsRef.current.length
       ? (language === 'en'
@@ -1018,6 +1018,10 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
       },
       onError: err => { setResultError(err); setStep(4) },
     })
+    } catch (err) {
+      setResultError(language === 'en' ? 'An error occurred. Please try again.' : 'Si è verificato un errore. Riprova.')
+      setStep(4)
+    }
   }
 
   const reset = () => { setStep(0); setOccasion(null); setSelectedSub(null) }
@@ -1193,7 +1197,7 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
       </button>
       <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em', marginBottom: 4 }}>{occ.style}</div>
       <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16, lineHeight: 1.4 }}>
-        {language === 'en' ? 'The first option is what your stylist recommends — your identity, enhanced.' : 'La prima opzione è quella che ti consiglia la stylist — la tua identità, esaltata.'}
+        {language === 'en' ? 'The first option is what your stylist recommends: your identity, enhanced.' : 'La prima opzione è quella che ti consiglia la stylist: la tua identità, esaltata.'}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {occ.styles.map((s, i) => (
@@ -1736,7 +1740,7 @@ function WeatherBadge({ weather, language, chatOpen, onOpenChat }) {
     }}>
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-          {weather.icon} {weather.temp}°C — {weather.label}
+          {weather.icon} {weather.temp}°C · {weather.label}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><IconThermometer size={12} /> {feelsLabel} {weather.feels}°C</span>
@@ -1874,8 +1878,8 @@ function StylistSlider({ selectedGarments, onApplyOutfit, currentTab }) {
 
   const hint = selectedGarments.length > 0
     ? (language === 'en'
-        ? `${selectedGarments.length} item${selectedGarments.length !== 1 ? 's' : ''} selected — tap for advice`
-        : `${selectedGarments.length} capo/i selezionati — tocca per consigli`)
+        ? `${selectedGarments.length} item${selectedGarments.length !== 1 ? 's' : ''} selected, tap for advice`
+        : `${selectedGarments.length} capo/i selezionati, tocca per consigli`)
     : (language === 'en' ? 'Ask your AI stylist…' : 'Chiedi allo Stylist AI…')
 
   // Su mobile: quando l'input è focused (tastiera aperta) convertiamo il pannello

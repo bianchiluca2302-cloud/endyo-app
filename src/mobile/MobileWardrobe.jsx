@@ -1004,7 +1004,7 @@ function TravelGarmentSheet({ selectedIds, onToggle, onClose, language }) {
         <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             {selectedIds.length > 0
-              ? (en ? `Confirm — ${selectedIds.length} item${selectedIds.length === 1 ? '' : 's'}` : `Conferma — ${selectedIds.length} ${selectedIds.length === 1 ? 'capo' : 'capi'}`)
+              ? (en ? `Confirm (${selectedIds.length} item${selectedIds.length === 1 ? '' : 's'})` : `Conferma (${selectedIds.length} ${selectedIds.length === 1 ? 'capo' : 'capi'})`)
               : (en ? 'Done' : 'Fatto')}
           </button>
         </div>
@@ -1418,7 +1418,7 @@ function TravelTab() {
         {en ? 'Any must-haves?' : 'Capi che vuoi portare?'}
       </div>
       <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 20 }}>
-        {en ? 'Optional — pick items you definitely want to include.' : 'Opzionale — seleziona capi che vuoi assolutamente portare.'}
+        {en ? 'Optional: pick items you definitely want to include.' : 'Opzionale: seleziona capi che vuoi assolutamente portare.'}
       </div>
 
       {/* Selected chips preview */}
@@ -1446,7 +1446,7 @@ function TravelTab() {
       }}>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
         {preferredIds.length > 0
-          ? (en ? `${preferredIds.length} items selected — change` : `${preferredIds.length} capi selezionati — modifica`)
+          ? (en ? `${preferredIds.length} items selected (tap to change)` : `${preferredIds.length} capi selezionati (tocca per modificare)`)
           : (en ? 'Select items from wardrobe' : 'Scegli capi dal guardaroba')}
       </button>
 
@@ -1454,7 +1454,7 @@ function TravelTab() {
         {en ? 'Next →' : 'Avanti →'}
       </button>
       <button onClick={() => setStep(3)} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
-        {en ? 'Skip — let AI decide' : 'Salta'}
+        {en ? 'Skip, let AI decide' : 'Salta'}
       </button>
 
       {showPicker && (
@@ -1592,7 +1592,7 @@ function TravelTab() {
           ))}
         </div>
         <button onClick={() => generate({ tripType: '' })} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}>
-          {en ? 'Skip — generate now' : 'Salta — genera ora'}
+          {en ? 'Skip, generate now' : 'Salta, genera ora'}
         </button>
       </div>
     )
@@ -2005,8 +2005,8 @@ export default function MobileWardrobe() {
               <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>🚧</span>
               <div style={{ flex: 1, fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {language === 'en'
-                  ? <>Beta version — bugs may occur. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Report one →</a></>
-                  : <>Versione beta — potrebbero esserci bug. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Segnalane uno →</a></>}
+                  ? <>Beta version. Bugs may occur. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Report one →</a></>
+                  : <>Versione beta. Potrebbero esserci bug. <a href="mailto:bugs@endyo.it" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Segnalane uno →</a></>}
               </div>
               <button
                 onClick={() => { setBetaDismissed(true); localStorage.setItem('endyo_beta_dismissed', '1') }}

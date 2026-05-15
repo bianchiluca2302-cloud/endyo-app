@@ -225,33 +225,37 @@ export const chatWithStylistStream = async ({ message, history, language = 'it',
   const decoder = new TextDecoder()
   let buffer = ''
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() // ultima riga potenzialmente incompleta
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue
-      const payload = line.slice(6).trim()
-      if (!payload) continue
-      try {
-        const msg = JSON.parse(payload)
-        if (msg.t === 'tok') onToken?.(msg.v)
-        else if (msg.t === 'err') onError?.(msg.v)
-        else if (msg.t === 'done') {
-          onDone?.({
-            remaining:      msg.remaining_day ?? msg.remaining ?? null,
-            remaining_day:  msg.remaining_day  ?? null,
-            remaining_week: msg.remaining_week ?? null,
-            brandProducts:  msg.brand_products || [],
-          })
-          return
-        }
-      } catch {}
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() // ultima riga potenzialmente incompleta
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const payload = line.slice(6).trim()
+        if (!payload) continue
+        try {
+          const msg = JSON.parse(payload)
+          if (msg.t === 'tok') onToken?.(msg.v)
+          else if (msg.t === 'err') onError?.(msg.v)
+          else if (msg.t === 'done') {
+            onDone?.({
+              remaining:      msg.remaining_day ?? msg.remaining ?? null,
+              remaining_day:  msg.remaining_day  ?? null,
+              remaining_week: msg.remaining_week ?? null,
+              brandProducts:  msg.brand_products || [],
+            })
+            return
+          }
+        } catch {}
+      }
     }
+    onDone?.({ remaining: null, remaining_day: null, remaining_week: null })
+  } catch (streamErr) {
+    onError?.('Connessione interrotta.')
   }
-  onDone?.({ remaining: null, remaining_day: null, remaining_week: null })
 }
 
 export const fetchChatQuota = async (retries = 2) => {
