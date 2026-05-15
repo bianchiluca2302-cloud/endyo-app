@@ -71,7 +71,7 @@ const normalizeColor = (raw) => {
 }
 
 /* ── Garment card ────────────────────────────────────────────────────────────── */
-function GarmentCard({ g, onClick }) {
+function GarmentCard({ g, onClick, compact = false }) {
   const translateTag    = useTagTranslator()
   const language        = useSettingsStore(s => s.language) || 'it'
   const updateGarmentBg = useWardrobeStore(s => s.updateGarmentBg)
@@ -141,7 +141,7 @@ function GarmentCard({ g, onClick }) {
 
         {/* Immagine */}
         <div style={{
-          height: 158,
+          height: compact ? 100 : 158,
           background: 'var(--photo-bg)',
           display: 'flex',
           alignItems: 'center',
@@ -168,29 +168,31 @@ function GarmentCard({ g, onClick }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
             }}>
               <div className="spinner" style={{ width: 11, height: 11, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', borderTopColor: '#fbbf24', flexShrink: 0 }} />
-              <span style={{ fontSize: 9.5, color: '#fcd34d', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {language === 'en' ? 'Removing bg…' : 'Rimozione sfondo…'}
-              </span>
+              {!compact && (
+                <span style={{ fontSize: 9.5, color: '#fcd34d', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {language === 'en' ? 'Removing bg…' : 'Rimozione sfondo…'}
+                </span>
+              )}
             </div>
           )}
         </div>
 
         {/* Info */}
-        <div style={{ padding: '8px 10px 10px', flex: 1 }}>
+        <div style={{ padding: compact ? '5px 7px 7px' : '8px 10px 10px', flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: 12.5, fontWeight: 600, color: 'var(--text)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            lineHeight: 1.3, marginBottom: 4,
+            lineHeight: 1.3, marginBottom: compact ? 2 : 4,
           }}>
             {liveGarment.name || (language === 'en' ? 'Item' : 'Capo')}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
             {(() => {
               const palette = liveGarment.color_palette?.length > 0
                 ? liveGarment.color_palette
                 : liveGarment.color_hex ? [{ hex: liveGarment.color_hex }] : []
-              return palette.slice(0, 4).map((c, i) => c.hex ? (
+              return palette.slice(0, compact ? 2 : 4).map((c, i) => c.hex ? (
                 <span key={i} style={{
                   width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                   background: c.hex, border: '1px solid rgba(0,0,0,0.12)',
@@ -200,13 +202,13 @@ function GarmentCard({ g, onClick }) {
             })()}
             {liveGarment.brand && (
               <span style={{
-                fontSize: 10.5, color: 'var(--text-dim)', flex: 1,
+                fontSize: 10.5, color: 'var(--text-dim)', flex: 1, minWidth: 0,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
                 {liveGarment.brand}
               </span>
             )}
-            {liveGarment.size && (
+            {liveGarment.size && !compact && (
               <span style={{
                 fontSize: 9.5, fontWeight: 700, color: 'var(--primary-light)',
                 background: 'var(--primary-dim)', border: '1px solid var(--primary-border)',
@@ -217,8 +219,8 @@ function GarmentCard({ g, onClick }) {
             )}
           </div>
 
-          {(liveGarment.style_tags || []).length > 0 && (
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
+          {!compact && (liveGarment.style_tags || []).length > 0 && (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden', marginTop: 5 }}>
               {liveGarment.style_tags.slice(0, 2).map(tag => (
                 <span key={tag} style={{
                   fontSize: 9.5, fontWeight: 600,
@@ -227,6 +229,7 @@ function GarmentCard({ g, onClick }) {
                   color: 'var(--primary-light)',
                   borderRadius: 5, padding: '1px 6px',
                   whiteSpace: 'nowrap',
+                  overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {translateTag(tag)}
                 </span>
@@ -2064,7 +2067,7 @@ export default function MobileWardrobe() {
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
                         <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
-                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                          <GarmentCard g={g} onClick={() => setSelected(g)} compact={compactCards} />
                         </div>
                       ))}
                     </div>
@@ -2091,7 +2094,7 @@ export default function MobileWardrobe() {
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
                         <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
-                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                          <GarmentCard g={g} onClick={() => setSelected(g)} compact={compactCards} />
                         </div>
                       ))}
                     </div>
@@ -2118,7 +2121,7 @@ export default function MobileWardrobe() {
                     <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                       {group.items.map((g, i) => (
                         <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.3s ease ${Math.min(i * 35, 250)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
-                          <GarmentCard g={g} onClick={() => setSelected(g)} />
+                          <GarmentCard g={g} onClick={() => setSelected(g)} compact={compactCards} />
                         </div>
                       ))}
                     </div>
@@ -2130,7 +2133,7 @@ export default function MobileWardrobe() {
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10, alignItems: 'stretch' }}>
                 {filtered.map((g, i) => (
                   <div key={g.id} style={{ animation: animateCards.current ? `slideUp 0.38s ease ${Math.min(i * 50, 380)}ms backwards` : 'none', height: '100%', minWidth: 0 }}>
-                    <GarmentCard g={g} onClick={() => setSelected(g)} />
+                    <GarmentCard g={g} onClick={() => setSelected(g)} compact={compactCards} />
                   </div>
                 ))}
               </div>
