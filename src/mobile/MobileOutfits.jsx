@@ -85,25 +85,26 @@ function GarmentPickerItem({ g, selected, onToggle }) {
 }
 
 /* ── Outfit card nella griglia ───────────────────────────────────────────────── */
-function OutfitCard({ outfit, language }) {
+function OutfitCard({ outfit, language, compact = false }) {
   const garments = useWardrobeStore(s => s.garments)
   const members  = outfit.garment_ids
     ? garments.filter(g => outfit.garment_ids.some(id => Number(id) === Number(g.id)))
     : []
   const total = outfit.garment_ids?.length || 0
+  const canvasH = compact ? 120 : 180
 
   return (
     <div style={{
-      borderRadius: 20, overflow: 'hidden',
+      borderRadius: compact ? 14 : 20, overflow: 'hidden',
       background: 'var(--card)', border: '1px solid var(--border)',
       cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
       {/* Canvas outfit */}
-      <div style={{ height: 180, overflow: 'hidden', background: 'var(--bg)' }}>
+      <div style={{ height: canvasH, overflow: 'hidden', background: 'var(--bg)' }}>
         {members.length === 0 ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={1.5} strokeLinecap="round">
+            <svg width={compact ? 24 : 36} height={compact ? 24 : 36} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={1.5} strokeLinecap="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </div>
@@ -111,20 +112,22 @@ function OutfitCard({ outfit, language }) {
           <OutfitCanvasShared
             garmentItems={members}
             transforms={outfit.transforms || {}}
-            height={180}
+            height={canvasH}
           />
         )}
       </div>
       {/* Info */}
-      <div style={{ padding: '9px 12px 11px' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+      <div style={{ padding: compact ? '5px 8px 7px' : '9px 12px 11px', minWidth: 0 }}>
+        <div style={{ fontSize: compact ? 11.5 : 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
           {outfit.name || 'Outfit'}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
-          {language === 'en'
-            ? `${total} item${total === 1 ? '' : 's'}`
-            : `${total} ${total === 1 ? 'capo' : 'capi'}`}
-        </div>
+        {!compact && (
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+            {language === 'en'
+              ? `${total} item${total === 1 ? '' : 's'}`
+              : `${total} ${total === 1 ? 'capo' : 'capi'}`}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -371,7 +374,8 @@ function BuilderSheet({ onClose, language }) {
 export default function MobileOutfits() {
   const outfits  = useWardrobeStore(s => s.outfits)
   const garments = useWardrobeStore(s => s.garments)
-  const language = useSettingsStore(s => s.language) || 'it'
+  const language     = useSettingsStore(s => s.language) || 'it'
+  const compactCards = useSettingsStore(s => s.compactCards)
   const CATEGORY_LABELS = useCategoryLabels()
 
   const [showBuilder, setShowBuilder] = useState(false)
@@ -564,10 +568,10 @@ export default function MobileOutfits() {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
             {filtered.map((o, i) => (
               <div key={o.id} style={{ animation: `slideUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(i * 90, 540)}ms backwards` }}>
-                <OutfitCard outfit={o} language={language} />
+                <OutfitCard outfit={o} language={language} compact={compactCards} />
               </div>
             ))}
           </div>
