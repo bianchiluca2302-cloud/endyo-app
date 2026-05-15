@@ -773,7 +773,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         { label: 'Maximum comfort above all', note: 'softest, most comfortable option. I just want to feel free' },
       ],
     },
-    { id: 'travel', label: 'Travel', emoji: '✈️',
+    { id: 'travel', label: 'Short trip', emoji: '✈️',
       sub: 'How will this travel day unfold?',
       subs: [
         { label: 'Long transit: plane or train', ctx: 'hours sitting and moving through public spaces — comfort is non-negotiable but you\'ll arrive somewhere new and want to look decent; versatile and travel-smart' },
@@ -849,7 +849,7 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
         { label: 'Massimo comfort sopra ogni cosa', note: 'l\'opzione più morbida e comoda. Voglio solo sentirmi libero' },
       ],
     },
-    { id: 'viaggio', label: 'Viaggio', emoji: '✈️',
+    { id: 'viaggio', label: 'Viaggio breve', emoji: '✈️',
       sub: 'Com\'è strutturata questa giornata di viaggio?',
       subs: [
         { label: 'Lungo transito: aereo o treno', ctx: 'ore seduto e in movimento attraverso spazi pubblici — il comfort è irrinunciabile ma arriverai da qualche parte di nuovo e vuoi sembrare a posto; versatile e travel-smart' },
