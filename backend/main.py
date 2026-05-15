@@ -2244,7 +2244,12 @@ async def ai_chat_stream(
     product_map = {p['id']: p for p in brand_products}
 
     async def generate():
+        import asyncio as _asyncio
+        import re as _re
         accumulated = ''
+        suggested_products = []
+        stream_error = None
+
         try:
             async for token in stream_chat_with_stylist(
                 data.message, garments, data.history, profile_dict, data.language,
@@ -2258,37 +2263,41 @@ async def ai_chat_stream(
             ):
                 accumulated += token
                 yield f"data: {json.dumps({'t': 'tok', 'v': token})}\n\n"
+        except _asyncio.CancelledError:
+            # Client disconnected — stop cleanly without yielding done
+            return
         except Exception as exc:
-            yield f"data: {json.dumps({'t': 'err', 'v': str(exc)})}\n\n"
-        finally:
-            # Aggiorna la memoria stylist in background (non blocca la risposta)
-            import asyncio as _asyncio
+            stream_error = str(exc)
+            yield f"data: {json.dumps({'t': 'err', 'v': stream_error})}\n\n"
+
+        # Post-processing: save memory and extract brand products
+        # (no yield inside finally — avoids Python async generator yield-in-finally issues)
+        try:
             _asyncio.create_task(_save_stylist_memory(
                 user_id_for_memory, stylist_memory, data.message, accumulated, data.language
             ))
-            # Estrae eventuali prodotti brand suggeriti dall'AI e li invia come evento separato
-            import re as _re
-            bp_match = _re.search(r'<BRAND_PRODUCTS>([\s\S]*?)</BRAND_PRODUCTS>', accumulated)
-            suggested_products = []
-            if bp_match:
-                try:
-                    ids = json.loads(bp_match.group(1))
-                    suggested_products = [product_map[i] for i in ids if i in product_map]
-                except Exception:
-                    pass
+        except Exception:
+            pass
 
-            # Traccia le impressioni per i prodotti suggeriti
-            for p in suggested_products:
-                try:
-                    db.add(BrandProductImpression(
-                        product_id=p['id'],
-                        brand_id=p['brand_id'],
-                        impression_type='suggestion',
-                    ))
-                except Exception:
-                    pass
+        bp_match = _re.search(r'<BRAND_PRODUCTS>([\s\S]*?)</BRAND_PRODUCTS>', accumulated)
+        if bp_match:
+            try:
+                ids = json.loads(bp_match.group(1))
+                suggested_products = [product_map[i] for i in ids if i in product_map]
+            except Exception:
+                pass
 
-            yield f"data: {json.dumps({'t': 'done', 'remaining_day': remaining['remaining_day'], 'remaining_week': remaining['remaining_week'], 'brand_products': suggested_products})}\n\n"
+        for p in suggested_products:
+            try:
+                db.add(BrandProductImpression(
+                    product_id=p['id'],
+                    brand_id=p['brand_id'],
+                    impression_type='suggestion',
+                ))
+            except Exception:
+                pass
+
+        yield f"data: {json.dumps({'t': 'done', 'remaining_day': remaining['remaining_day'], 'remaining_week': remaining['remaining_week'], 'brand_products': suggested_products})}\n\n"
 
     return StreamingResponse(
         generate(),

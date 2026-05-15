@@ -1008,10 +1008,12 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
 `.trim()
 
     let acc = ''
+    let errorFired = false
     await chatWithStylistStream({
       message: prompt, history: [], language, weather: weather?.summary ?? null, occasion: occ.label,
       onToken: tok => { acc += tok; setStreamText(acc) },
       onDone: () => {
+        if (errorFired) return  // onError already set the error state
         if (!acc.trim()) {
           setResultError(language === 'en' ? 'No response received. Please try again.' : 'Nessuna risposta ricevuta. Riprova.')
           setStep(4)
@@ -1030,6 +1032,7 @@ Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzi
         }).catch(() => {})
       },
       onError: err => {
+        errorFired = true
         setResultError(err || (language === 'en' ? 'An error occurred.' : 'Si è verificato un errore.'))
         setStep(4)
       },

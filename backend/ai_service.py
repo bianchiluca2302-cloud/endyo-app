@@ -861,13 +861,14 @@ async def stream_chat_with_stylist(
             max_tokens=2000,
             temperature=0.75,
             stream=True,
+            timeout=50,
         )
         async for chunk in stream:
             delta = chunk.choices[0].delta.content
             if delta:
                 yield delta
     except Exception as e:
-        yield f"\n\n⚠️ Errore: {str(e)}"
+        raise RuntimeError(str(e)) from e
 
 
 def _mock_analysis(language: str = 'it') -> dict:

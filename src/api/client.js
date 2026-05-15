@@ -199,6 +199,10 @@ export const chatWithStylist = (message, history, language = 'it') =>
  */
 export const chatWithStylistStream = async ({ message, history, language = 'it', weather = null, occasion = null, onToken, onDone, onError }) => {
   const token = useAuthStore.getState().accessToken
+  const controller = new AbortController()
+  // 60-second hard timeout: connection + full stream
+  const timeoutId = setTimeout(() => controller.abort(), 60000)
+
   let res
   try {
     res = await fetch(`${BASE_URL}/ai/chat-stream`, {
@@ -208,14 +212,21 @@ export const chatWithStylistStream = async ({ message, history, language = 'it',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ message, history, language, weather, occasion }),
+      signal: controller.signal,
     })
   } catch (networkErr) {
-    onError?.('Connessione al server non riuscita.')
+    clearTimeout(timeoutId)
+    if (networkErr?.name === 'AbortError') {
+      onError?.(language === 'en' ? 'Request timed out. Please try again.' : 'Richiesta scaduta. Riprova.')
+    } else {
+      onError?.('Connessione al server non riuscita.')
+    }
     return
   }
 
   if (!res.ok) {
-    let detail = 'Errore del server.'
+    clearTimeout(timeoutId)
+    let detail = language === 'en' ? 'Server error.' : 'Errore del server.'
     try { detail = (await res.json()).detail || detail } catch {}
     onError?.(detail)
     return
@@ -231,7 +242,7 @@ export const chatWithStylistStream = async ({ message, history, language = 'it',
       if (done) break
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
-      buffer = lines.pop() // ultima riga potenzialmente incompleta
+      buffer = lines.pop()
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue
         const payload = line.slice(6).trim()
@@ -254,7 +265,13 @@ export const chatWithStylistStream = async ({ message, history, language = 'it',
     }
     onDone?.({ remaining: null, remaining_day: null, remaining_week: null })
   } catch (streamErr) {
-    onError?.('Connessione interrotta.')
+    if (streamErr?.name === 'AbortError') {
+      onError?.(language === 'en' ? 'Request timed out. Please try again.' : 'Richiesta scaduta. Riprova.')
+    } else {
+      onError?.('Connessione interrotta.')
+    }
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
