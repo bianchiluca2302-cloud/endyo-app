@@ -3300,7 +3300,7 @@ function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCou
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,0,0,0.7)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
+        padding: '20px 20px calc(env(safe-area-inset-bottom, 0px) + 78px)',
       }}
     >
       <div
@@ -3311,7 +3311,7 @@ function OutfitDetailModal({ outfit, getById, onClose, onLoad, onDelete, wearCou
           border: '1px solid var(--border)',
           borderRadius: 20,
           width: '100%', maxWidth: 460,
-          maxHeight: '92vh',
+          maxHeight: '90vh',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
