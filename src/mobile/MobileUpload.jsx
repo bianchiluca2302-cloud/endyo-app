@@ -372,8 +372,8 @@ export default function MobileUpload() {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 999,
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: 28, gap: 20, background: 'var(--bg)',
+      alignItems: 'center', justifyContent: 'flex-start',
+      padding: '48px 28px 40px', gap: 20, background: 'var(--bg)',
       overflowY: 'auto',
     }}>
       <div style={{
