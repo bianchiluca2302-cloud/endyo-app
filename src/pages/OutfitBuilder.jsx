@@ -897,15 +897,6 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
   const occ = Q.find(o => o.id === occasion)
   const getById = id => garments.find(g => g.id === id)
 
-  // Weather is a background signal, not a style driver
-  const buildWeatherNote = (occ_id) => {
-    if (!weather) return ''
-    if (occ_id === 'travel' || occ_id === 'viaggio') return ''
-    if (language === 'en') {
-      return ` [Background info — weather today: ${weather.temp}°C, ${weather.label}. Factor this in only where it genuinely affects the choice (e.g. a coat if freezing), but don't let it override the style and social context above.]`
-    }
-    return ` [Info di sfondo — meteo oggi: ${weather.temp}°C, ${weather.label}. Tienilo in considerazione solo dove influisce davvero sulla scelta (es. un cappotto se fa freddo), ma non lasciare che sovrasti lo stile e il contesto sociale descritto.]`
-  }
 
   const STYLIST_LOADING_IT = [
     'Analizzo il tuo armadio…',
@@ -951,60 +942,26 @@ function StylistWizard({ selectedGarments, weather, onApplyOutfit }) {
     const gDesc = hasSelection ? selectedGarments.map(g => `${g.name} (${g.category})`).join(', ') : null
     const shownNote = shownIdsRef.current.length
       ? (language === 'en'
-          ? `\n[Already shown — do not repeat these garment ID combinations: ${shownIdsRef.current.join(', ')}]`
-          : `\n[Già mostrati — non riproporre queste combinazioni di ID: ${shownIdsRef.current.join(', ')}]`)
+          ? ` [Do not reuse these ID combos: ${shownIdsRef.current.join(', ')}]`
+          : ` [Non riproporre queste combinazioni di ID: ${shownIdsRef.current.join(', ')}]`)
       : ''
-    const weatherNote = buildWeatherNote(occ.id)
-    const stylePrefs  = (profile?.style_preferences || []).join(', ') || null
 
     const prompt = language === 'en' ? `
-You are my personal stylist. Your mission is to help me EXPRESS myself, not to teach me how to dress.
+CONTEXT: ${occ.label} — ${subObj.ctx}
+MY INTENTION: ${styleObj.note}
+${gDesc ? `BUILD AROUND (already chosen): ${gDesc}` : ''}${shownNote}
 
-SOCIAL CONTEXT: ${occ.label} — ${subObj.ctx}
-MY INTENTION TODAY: ${styleObj.note}
-${stylePrefs ? `MY STYLE IDENTITY (from my wardrobe profile): ${stylePrefs}` : ''}
-${gDesc ? `GARMENTS I'VE ALREADY CHOSEN: ${gDesc} — build around these, add what's needed from my wardrobe` : ''}
-${weatherNote}${shownNote}
-
-OUTFIT CONSTRUCTION RULES (always apply, no exceptions):
-• A sweatshirt/hoodie/felpa ALWAYS requires a base layer (t-shirt or shirt) underneath — ALWAYS include both in the outfit IDs
-• Shoes define the formality register of the entire outfit — match them coherently with the rest
-• Each outfit must be a complete system: base layer + optional mid-layer + optional outer layer
-• Trousers/bottoms determine the casual-to-formal axis — choose them in line with the context above
-• If the wardrobe has no perfect match for a layer, pick the closest option rather than omitting it
-
-GENUINE DIFFERENTIATION (mandatory):
-The 3 outfits must be structurally DIFFERENT — not variations of the same formula with different colors. They must differ in:
-1. Formality level (one more curated, one more relaxed, one in between)
-2. Layering strategy (different number and type of layers)
-3. Shoe choice (shoes change the entire "mood" — make this count)
-4. Overall energy (the three should feel like three genuinely different people's choices)
-
-Propose EXACTLY 3 complete outfits from my wardrobe that honor my intention and context, then 1 "substitute" variant (swap one garment with a smarter alternative). Give each outfit an evocative name (e.g. "The clean rebel", "Effortless authority") and notes that explain WHY this specific outfit works for this specific intention. Each must have <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.
+Give me EXACTLY 3 structurally different outfits (vary formality, layering, shoes, and overall energy) + 1 substitute variant. If a sweatshirt/hoodie is used, always include the base layer underneath.
+Each needs an evocative name and a note explaining WHY it fits this specific intention.
+Format: <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>
 `.trim() : `
-Sei il mio stylist personale. Il tuo scopo è aiutarmi ad ESPRIMERMI, non insegnarmi a vestirmi.
+CONTESTO: ${occ.label} — ${subObj.ctx}
+INTENZIONE: ${styleObj.note}
+${gDesc ? `COSTRUISCI ATTORNO A (già scelti): ${gDesc}` : ''}${shownNote}
 
-CONTESTO SOCIALE: ${occ.label} — ${subObj.ctx}
-LA MIA INTENZIONE OGGI: ${styleObj.note}
-${stylePrefs ? `LA MIA IDENTITÀ STILISTICA (dal profilo del mio armadio): ${stylePrefs}` : ''}
-${gDesc ? `CAPI CHE HO GIÀ SCELTO: ${gDesc} — costruisci intorno a questi, aggiungi dal mio armadio quello che serve` : ''}
-${weatherNote}${shownNote}
-
-REGOLE DI COSTRUZIONE OUTFIT (sempre, senza eccezioni):
-• Una felpa/hoodie/sweatshirt richiede SEMPRE uno strato di base sotto (maglietta o t-shirt) — includi SEMPRE entrambi negli ID dell'outfit
-• Le scarpe definiscono il registro formale dell'intero outfit — abbinale in modo coerente con il resto
-• Ogni outfit deve essere un sistema completo: strato base + strato medio opzionale + outer opzionale
-• Pantaloni/bottom determinano l'asse casual-formale — sceglili in linea con il contesto sopra
-• Se l'armadio non ha la corrispondenza perfetta per uno strato, prendi l'opzione più vicina piuttosto che ometterla
-
-DIFFERENZIAZIONE GENUINA (obbligatoria):
-I 3 outfit devono essere STRUTTURALMENTE diversi — non variazioni della stessa formula con colori diversi. Devono differire in:
-1. Livello di formalità (uno più curato, uno più rilassato, uno a metà)
-2. Strategia di layering (numero e tipo di strati diversi)
-3. Scelta delle scarpe (le scarpe cambiano l'umore dell'intero look — fallo contare)
-4. Energia complessiva (i tre devono sembrare scelte genuinamente diverse)
-
-Proponi ESATTAMENTE 3 outfit completi dal mio armadio che onorino la mia intenzione e il contesto, poi 1 variante "sostitutiva" (sostituisci un capo con un'alternativa migliore). Dai a ogni outfit un nome evocativo (es. "Il ribelle pulito", "Autorità effortless") e delle note che spieghino PERCHÉ questo outfit specifico funziona per questa intenzione specifica. Ognuno deve avere <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>.
+Proponi ESATTAMENTE 3 outfit strutturalmente diversi (varia formalità, layering, scarpe ed energia) + 1 variante sostitutiva. Se usi una felpa/hoodie, includi sempre la base sotto.
+Ognuno deve avere un nome evocativo e una nota che spieghi PERCHÉ funziona per questa specifica intenzione.
+Formato: <OUTFIT>{"ids":[...],"name":"...","notes":"..."}</OUTFIT>
 `.trim()
 
     let acc = ''
