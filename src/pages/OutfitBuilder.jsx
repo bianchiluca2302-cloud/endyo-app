@@ -3198,9 +3198,8 @@ function SavedOutfitCard({ outfit, getById, onClick }) {
   const mainColors = []
   for (const g of garments) {
     const palette = g.color_palette?.length > 0 ? g.color_palette : g.color_hex ? [{ hex: g.color_hex }] : []
-    for (const c of palette) {
-      if (c.hex && !mainColors.includes(c.hex)) mainColors.push(c.hex)
-    }
+    const primary = palette[0]
+    if (primary?.hex && !mainColors.includes(primary.hex)) mainColors.push(primary.hex)
   }
 
   return (
