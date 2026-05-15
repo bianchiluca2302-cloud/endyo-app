@@ -38,6 +38,7 @@ const getOutfitTour = (lang) => lang === 'en' ? [
 ]
 import { completeOutfit, imgUrl, trackBrandClick, chatWithStylistStream, fetchChatQuota, sendBrandFeedback, wearOutfit, fetchWearStats } from '../api/client'
 import { brandImgUrl } from '../api/brandClient'
+import OutfitCanvas from '../components/OutfitCanvas'
 import { useT, useCategoryLabels } from '../i18n'
 import useWeather from '../hooks/useWeather'
 import useIsMobile from '../hooks/useIsMobile'
@@ -2058,6 +2059,14 @@ export default function OutfitBuilder() {
     .map(id => getById(id))
     .filter(Boolean)
 
+  const _selHasGiacchetto = selectedGarments.some(g => g.category === 'giacchetto')
+  const _selHasFelpa      = selectedGarments.some(g => g.category === 'felpa')
+  const isHiddenInMixer = (g) => {
+    if (g.category === 'maglietta' && (_selHasFelpa || _selHasGiacchetto)) return true
+    if (g.category === 'felpa'     && _selHasGiacchetto) return true
+    return false
+  }
+
   // Lampeggio tab Stylist: attivo finché ci sono capi selezionati e non si è sul tab stylist
   const stylistPulse = selectedGarments.length > 0 && tab !== 'stylist'
 
@@ -2403,17 +2412,30 @@ export default function OutfitBuilder() {
                     {selected[cat] && <span style={{ color: 'var(--success)', marginLeft: 8 }}>✓</span>}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? (compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)') : 'repeat(auto-fill, minmax(150px, 1fr))', gap: isMobile ? (compactCards ? 6 : 10) : 10 }}>
-                    {byCategory[cat].map((g, gi) => (
-                      <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(gi * 35, 250)}ms backwards`, minWidth: 0 }}>
-                      <GarmentCard
-                        garment={g}
-                        selectable
-                        selected={selected[cat] === g.id}
-                        onClick={() => toggleGarment(g)}
-                        mobile={isMobile}
-                      />
-                      </div>
-                    ))}
+                    {byCategory[cat].map((g, gi) => {
+                      const isSelHidden = selected[cat] === g.id && isHiddenInMixer(g)
+                      return (
+                        <div key={g.id} style={{ animation: `slideUp 0.3s ease ${Math.min(gi * 35, 250)}ms backwards`, minWidth: 0, position: 'relative' }}>
+                          <GarmentCard
+                            garment={g}
+                            selectable
+                            selected={selected[cat] === g.id}
+                            onClick={() => toggleGarment(g)}
+                            mobile={isMobile}
+                          />
+                          {isSelHidden && (
+                            <div style={{
+                              position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)',
+                              background: 'rgba(0,0,0,0.68)', color: '#fff',
+                              fontSize: 9, fontWeight: 700, borderRadius: 99,
+                              padding: '2px 7px', whiteSpace: 'nowrap', pointerEvents: 'none',
+                            }}>
+                              {language === 'en' ? 'hidden in mixer' : 'nascosto nel mixer'}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -2678,8 +2700,12 @@ export default function OutfitBuilder() {
           </div>
           <div style={{ flex: 1, overflow: 'auto', padding: '0 12px 8px' }}>
             {selectedGarments.map(g => {
-              const isActive = mixerActiveId === g.id
-              const photo = g.photo_front ? imgUrl(g.photo_front) : null
+              const isActive  = mixerActiveId === g.id
+              const isHidden  = isHiddenInMixer(g)
+              const photo     = g.photo_front ? imgUrl(g.photo_front) : null
+              const coverCat  = g.category === 'maglietta'
+                ? (_selHasGiacchetto ? 'giacchetto' : 'felpa')
+                : 'giacchetto'
               return (
                 <div
                   key={g.id}
@@ -2690,6 +2716,7 @@ export default function OutfitBuilder() {
                     background: isActive ? 'var(--primary-dim)' : 'var(--card)',
                     border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
                     cursor: 'pointer', transition: 'var(--transition)',
+                    opacity: isHidden ? 0.5 : 1,
                   }}
                 >
                   {/* Foto miniatura */}
@@ -2713,10 +2740,22 @@ export default function OutfitBuilder() {
                     }}>
                       {g.name}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 1 }}>
-                      {CATEGORY_LABELS[g.category]}{g.brand ? ` · ${g.brand}` : ''}
+                    <div style={{ fontSize: 10, color: isHidden ? 'var(--text-dim)' : 'var(--text-dim)', marginTop: 1 }}>
+                      {isHidden
+                        ? (language === 'en' ? `under ${CATEGORY_LABELS[coverCat]}` : `sotto ${CATEGORY_LABELS[coverCat]}`)
+                        : `${CATEGORY_LABELS[g.category]}${g.brand ? ` · ${g.brand}` : ''}`
+                      }
                     </div>
                   </div>
+                  {isHidden && (
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                      stroke="var(--text-dim)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                      style={{ flexShrink: 0, opacity: 0.6 }}>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <path d="M1 1l22 22"/>
+                    </svg>
+                  )}
                 </div>
               )
             })}
@@ -2977,9 +3016,6 @@ function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
   const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
   const t = useT()
   const language = useSettingsStore(s => s.language) || 'it'
-  const preview  = garments.slice(0, 4)
-  const cols     = preview.length <= 1 ? 1 : 2
-  const rows     = preview.length <= 2 ? 1 : 2
 
   const handleWear = async (e) => {
     await onWear?.(e)
@@ -3003,34 +3039,19 @@ function SavedOutfitCard({ outfit, getById, onClick, wearCount = 0, onWear }) {
         boxShadow: hovered ? '0 0 0 3px var(--primary-dim), var(--shadow)' : 'none',
       }}
     >
-      {/* Griglia anteprima foto */}
-      <div style={{
-        height: 180,
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-        background: 'var(--photo-bg)',
-        gap: 1, overflow: 'hidden',
-      }}>
-        {preview.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2, color: 'var(--text-dim)' }}>
+      {/* Mixer anteprima */}
+      <div style={{ height: 180, overflow: 'hidden', background: 'var(--bg)' }}>
+        {garments.length === 0 ? (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2, color: 'var(--text-dim)' }}>
             <IconTshirt size={48} />
           </div>
-        ) : preview.map(g => {
-          const photo = g.photo_front ? imgUrl(g.photo_front) : null
-          return (
-            <div key={g.id} style={{
-              background: 'var(--photo-bg)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {photo
-                ? <img src={photo} alt={g.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                : <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 800, opacity: 0.35 }}>{CAT_ICONS[g.category]}</span>
-              }
-            </div>
-          )
-        })}
+        ) : (
+          <OutfitCanvas
+            garmentItems={garments}
+            transforms={outfit.transforms || {}}
+            height={180}
+          />
+        )}
       </div>
 
       {/* Info */}
