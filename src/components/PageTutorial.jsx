@@ -179,7 +179,7 @@ function TooltipCard({ step, stepIndex, total, onNext, onBack, onSkip, targetRec
         </h4>
 
         {/* Testo */}
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16, whiteSpace: 'pre-line' }}>
           {step.body}
         </p>
 

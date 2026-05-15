@@ -27,7 +27,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: '🚧 Beta version',
-    body: 'Endyo is in active development. You may encounter bugs. We\'re fixing them continuously. Found one? Email us at bugs@endyo.it',
+    body: 'Endyo is in active development. You may encounter bugs. We\'re fixing them continuously.\nFound one? Email us at bugs@endyo.it',
     target: null,
     position: 'center',
     cta: 'Got it →',
@@ -53,7 +53,7 @@ const getWardrobeTour = (lang) => lang === 'en' ? [
   },
   {
     title: '🚧 Versione Beta',
-    body: 'Endyo è in sviluppo attivo. Potresti incontrare dei bug. Li stiamo risolvendo continuamente. Hai trovato un problema? Scrivici a bugs@endyo.it',
+    body: 'Endyo è in sviluppo attivo. Potresti incontrare dei bug. Li stiamo risolvendo continuamente.\nHai trovato un problema? Scrivici a bugs@endyo.it',
     target: null,
     position: 'center',
     cta: 'Capito →',
