@@ -86,12 +86,15 @@ function GarmentPickerItem({ g, selected, onToggle }) {
 
 /* ── Outfit card nella griglia ───────────────────────────────────────────────── */
 function OutfitCard({ outfit, language, compact = false }) {
-  const garments = useWardrobeStore(s => s.garments)
+  const garments   = useWardrobeStore(s => s.garments)
+  const textScale  = useSettingsStore(s => s.textScale)
   const members  = outfit.garment_ids
     ? garments.filter(g => outfit.garment_ids.some(id => Number(id) === Number(g.id)))
     : []
   const total = outfit.garment_ids?.length || 0
-  const canvasH = compact ? 120 : 180
+  const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
+  const zoom = zoomMap[textScale] ?? 1.12
+  const canvasH = Math.round((compact ? 150 : 225) / zoom)
 
   return (
     <div style={{

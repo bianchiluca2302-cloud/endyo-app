@@ -141,7 +141,7 @@ function GarmentCard({ g, onClick, compact = false }) {
 
         {/* Immagine */}
         <div style={{
-          height: compact ? 100 : 158,
+          height: compact ? 'var(--card-img-h-compact)' : 'var(--card-img-h)',
           background: 'var(--photo-bg)',
           display: 'flex',
           alignItems: 'center',
@@ -2033,7 +2033,7 @@ export default function MobileWardrobe() {
               <div style={{ display: 'grid', gridTemplateColumns: compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: compactCards ? 6 : 10 }}>
                 {Array.from({ length: skeletonCount }).map((_, i) => (
                   <div key={i} className="skeleton-card">
-                    <div className="skeleton" style={{ height: compactCards ? 100 : 158, borderRadius: 0 }} />
+                    <div className="skeleton" style={{ height: compactCards ? 'var(--card-img-h-compact)' : 'var(--card-img-h)', borderRadius: 0 }} />
                     <div style={{ padding: compactCards ? '5px 7px 7px' : '8px 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                       <div className="skeleton" style={{ height: 11, width: '70%' }} />
                       <div className="skeleton" style={{ height: 8, width: compactCards ? '50%' : '45%' }} />

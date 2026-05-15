@@ -121,7 +121,7 @@ export default function GarmentCard({ garment, onClick, selectable, selected, co
         }}>
           {/* Immagine */}
           <div style={{
-            height: compact ? 100 : 158,
+            height: compact ? 'var(--card-img-h-compact)' : 'var(--card-img-h)',
             background: 'var(--photo-bg)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative',

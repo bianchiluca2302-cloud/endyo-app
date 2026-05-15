@@ -87,6 +87,13 @@ export function applyTheme(settings) {
   const zoomVal = zoomMap[settings.textScale] ?? 1.12
   document.documentElement.style.zoom = zoomVal
   document.documentElement.dataset.zoom = zoomVal
+
+  // Card image heights — always render at the physical size of zoom-1.25
+  // so card proportions don't change when the user adjusts text size
+  root.style.setProperty('--card-img-h',          `${Math.round(197.5 / zoomVal)}px`)
+  root.style.setProperty('--card-img-h-compact',   `${Math.round(125   / zoomVal)}px`)
+  root.style.setProperty('--outfit-img-h',         `${Math.round(225   / zoomVal)}px`)
+  root.style.setProperty('--outfit-img-h-compact', `${Math.round(150   / zoomVal)}px`)
 }
 
 // ── Valute ────────────────────────────────────────────────────────────────────

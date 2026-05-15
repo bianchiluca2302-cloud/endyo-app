@@ -3193,7 +3193,10 @@ function MiniMixer({ garments, transforms = {} }) {
 // ── SavedOutfitCard ───────────────────────────────────────────────────────────
 function SavedOutfitCard({ outfit, getById, onClick }) {
   const [hovered, setHovered] = useState(false)
+  const textScale = useSettingsStore(s => s.textScale)
   const garments = sortByOutfitOrder((outfit.garment_ids || []).map(id => getById(id)).filter(Boolean))
+  const zoom = ({ sm: 1.0, md: 1.12, lg: 1.25 })[textScale] ?? 1.12
+  const canvasH = Math.round(225 / zoom)
 
   const mainColors = []
   for (const g of garments) {
@@ -3219,7 +3222,7 @@ function SavedOutfitCard({ outfit, getById, onClick }) {
       }}
     >
       {/* Mixer anteprima */}
-      <div style={{ height: 180, overflow: 'hidden', background: 'var(--bg)' }}>
+      <div style={{ height: 'var(--outfit-img-h)', overflow: 'hidden', background: 'var(--bg)' }}>
         {garments.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2, color: 'var(--text-dim)' }}>
             <IconTshirt size={48} />
@@ -3228,7 +3231,7 @@ function SavedOutfitCard({ outfit, getById, onClick }) {
           <OutfitCanvas
             garmentItems={garments}
             transforms={outfit.transforms || {}}
-            height={180}
+            height={canvasH}
           />
         )}
       </div>
