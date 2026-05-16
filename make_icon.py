@@ -1,11 +1,10 @@
 """
 Genera ic_launcher_fg_{color}.png per ogni densità Android e public/logo_{color}.png
-per la preview web. Tinge il logo con i colori accent preservando la luminosità 3D.
+per la preview web. Tinge il logo e applica un gradiente radiale sui bordi.
 """
 from PIL import Image
 import numpy as np
 import os
-from collections import deque
 
 SRC = "backend/assets/Endyoapp4.png"
 RES = "android/app/src/main/res"
@@ -30,43 +29,32 @@ DENSITIES = [
     ("mipmap-xxxhdpi", 432),
 ]
 
-TOLERANCE = 30
 
-
-def flood_fill_alpha(img: Image.Image) -> Image.Image:
-    img = img.convert("RGBA")
+def radial_alpha(img: Image.Image, inner: float = 0.48, outer: float = 0.82) -> Image.Image:
+    """
+    Maschera alpha radiale: completamente opaco fino a inner*r,
+    poi sfuma dolcemente fino a trasparente a outer*r.
+    Nessun ritaglio netto — solo gradiente morbido.
+    """
     w, h = img.size
-    pixels = img.load()
+    cx, cy = w / 2, h / 2
+    r = min(cx, cy)
+    inner_r = r * inner
+    outer_r = r * outer
 
-    def is_bg(r, g, b):
-        return r >= 255 - TOLERANCE and g >= 255 - TOLERANCE and b >= 255 - TOLERANCE
+    ys, xs = np.mgrid[0:h, 0:w]
+    dist = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2)
 
-    visited = [[False] * h for _ in range(w)]
-    queue = deque()
-    for x in range(w):
-        for y in [0, h - 1]:
-            r, g, b, a = pixels[x, y]
-            if not visited[x][y] and is_bg(r, g, b):
-                visited[x][y] = True
-                queue.append((x, y))
-    for y in range(h):
-        for x in [0, w - 1]:
-            r, g, b, a = pixels[x, y]
-            if not visited[x][y] and is_bg(r, g, b):
-                visited[x][y] = True
-                queue.append((x, y))
+    alpha = np.ones((h, w), dtype=np.float32)
+    fade = (dist >= inner_r) & (dist <= outer_r)
+    t = (dist[fade] - inner_r) / (outer_r - inner_r)
+    alpha[fade] = (1 - t) ** 1.8          # curva smooth
+    alpha[dist > outer_r] = 0.0
 
-    while queue:
-        cx, cy = queue.popleft()
-        pixels[cx, cy] = (0, 0, 0, 0)
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = cx + dx, cy + dy
-            if 0 <= nx < w and 0 <= ny < h and not visited[nx][ny]:
-                r, g, b, a = pixels[nx, ny]
-                if is_bg(r, g, b):
-                    visited[nx][ny] = True
-                    queue.append((nx, ny))
-    return img
+    mask = Image.fromarray((alpha * 255).astype(np.uint8), mode='L')
+    out = img.convert("RGBA")
+    out.putalpha(mask)
+    return out
 
 
 def tint(img: Image.Image, hex_color: str) -> Image.Image:
@@ -99,17 +87,17 @@ def make_canvas(source: Image.Image, size: int) -> Image.Image:
     return canvas
 
 
-# ── 1. Carica e rimuovi sfondo ────────────────────────────────────────────────
+# ── 1. Carica immagine sorgente ──────────────────────────────────────────────
 print(f"Carico {SRC}…")
-src_raw = Image.open(SRC)
-transparent = flood_fill_alpha(src_raw)
-print("  Sfondo rimosso.")
+src_raw = Image.open(SRC).convert("RGB")
+print(f"  Dimensione: {src_raw.size}")
 
 # ── 2. Genera PNG per ogni colore e densità ───────────────────────────────────
 os.makedirs("public", exist_ok=True)
 
 for color_id, hex_color in ACCENTS.items():
-    tinted = tint(transparent, hex_color)
+    tinted_raw = tint(src_raw, hex_color)
+    tinted = radial_alpha(tinted_raw)   # gradiente sui bordi, no ritaglio
 
     # Web preview (324 px, stessa del xxhdpi)
     web = make_canvas(tinted, 324)
