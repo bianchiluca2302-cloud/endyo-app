@@ -2809,7 +2809,6 @@ async def update_fcm_token(
     token = (data.get("token") or "").strip()
     current_user.fcm_token = token or None
     await db.commit()
-    print(f"[FCM] Token registrato per @{current_user.username}: {token[:20]}…")
     return {"ok": True}
 
 
