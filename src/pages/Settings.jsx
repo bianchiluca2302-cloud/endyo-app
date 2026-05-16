@@ -7,6 +7,7 @@ import useAuthStore from '../store/authStore'
 import {
   ACCENT_COLORS, THEMES, CURRENCIES, LANGUAGES,
   SHOE_SIZE_SYSTEMS, CLOTHING_SIZE_SYSTEMS, STYLIST_TONES,
+  switchLauncherIcon,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
 import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone, updateMarketingConsent } from '../api/client'
@@ -855,6 +856,10 @@ export default function Settings() {
   const [openSection, setOpenSection] = useState(location.state?.openSection ?? null)
   const toggleSection = (id) => setOpenSection(prev => prev === id ? null : id)
 
+  // Dialog conferma cambio icona launcher (solo Android nativo)
+  const [pendingIconAccent, setPendingIconAccent] = useState(null)
+  const isNativeApp = !!(window?.Capacitor?.isNativePlatform?.())
+
   // Stato conferme a catena: null → 'outfits'/'garments'/'all'/'settings'/'logout'
   const [resetConfirm, setResetConfirm] = useState(null)
   // Azione in attesa della conferma modale irreversibile
@@ -1007,7 +1012,10 @@ export default function Settings() {
             {ACCENT_COLORS.map(c => (
               <button
                 key={c.id}
-                onClick={() => updateSetting('accentColor', c.id)}
+                onClick={() => {
+                  updateSetting('accentColor', c.id)
+                  if (isNativeApp && c.id !== settings.accentColor) setPendingIconAccent(c.id)
+                }}
                 title={c.label}
                 style={{
                   width: 34, height: 34, borderRadius: '50%',
@@ -1031,6 +1039,50 @@ export default function Settings() {
             </div>
           )}
         </div>
+
+        {/* Dialog conferma aggiornamento icona launcher */}
+        {pendingIconAccent && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 24px',
+          }}>
+            <div style={{
+              background: 'var(--surface)', borderRadius: 16, padding: '24px 20px',
+              border: '1px solid var(--border)', maxWidth: 320, width: '100%',
+              display: 'flex', flexDirection: 'column', gap: 16,
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                {t('iconChangeTitle')}
+              </div>
+              <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {t('iconChangeMsg')}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setPendingIconAccent(null)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    background: 'var(--card)', border: '1px solid var(--border)',
+                    color: 'var(--text)', fontSize: 14, cursor: 'pointer',
+                  }}
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={() => { switchLauncherIcon(pendingIconAccent); setPendingIconAccent(null) }}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    background: 'var(--primary)', border: 'none',
+                    color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {t('iconChangeConfirm')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Temi */}
         <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>

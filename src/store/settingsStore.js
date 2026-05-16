@@ -146,7 +146,7 @@ export const STYLIST_TONES = [
 ]
 
 // ── Switcher icona launcher (solo Android nativo) ────────────────────────────
-function switchLauncherIcon(accentId) {
+export function switchLauncherIcon(accentId) {
   if (!window?.Capacitor?.isNativePlatform?.()) return
   import('@capacitor/core').then(({ registerPlugin }) => {
     const IconSwitcher = registerPlugin('IconSwitcher')
@@ -190,9 +190,6 @@ const useSettingsStore = create(
         if (key === 'accentColor' || key === 'theme' || key === 'textScale') {
           applyTheme({ ...get(), [key]: value })
         }
-        if (key === 'accentColor') {
-          switchLauncherIcon(value)
-        }
       },
 
       resetSettings: () => {
@@ -228,10 +225,7 @@ const useSettingsStore = create(
       // Applica il tema immediatamente dopo la reidratazione da localStorage
       // In modo che i CSS variables siano corretti senza dover toccare le impostazioni
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          applyTheme(state)
-          switchLauncherIcon(state.accentColor || 'amber')
-        }
+        if (state) applyTheme(state)
       },
     }
   )
