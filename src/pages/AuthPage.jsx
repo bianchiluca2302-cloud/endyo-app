@@ -268,7 +268,7 @@ function useUsernameCheck(username) {
 }
 
 // ── Helper componente campo input ─────────────────────────────────────────────
-function Field({ label, type = 'text', value, onChange, placeholder, error, autoComplete }) {
+function Field({ label, type = 'text', value, onChange, placeholder, error, autoComplete, name }) {
   const [show, setShow] = useState(false)
   const isPassword = type === 'password'
   return (
@@ -282,6 +282,7 @@ function Field({ label, type = 'text', value, onChange, placeholder, error, auto
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
+          name={name}
           autoComplete={autoComplete}
           className="input"
           style={{
@@ -407,6 +408,7 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess, onGoogleLinkRequired
       <Field
         label={t('authEmailLabel')}
         type="email"
+        name="email"
         value={email}
         onChange={setEmail}
         placeholder={t('authEmailPlaceholder')}
@@ -415,6 +417,7 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess, onGoogleLinkRequired
       <Field
         label={t('authPasswordLabel')}
         type="password"
+        name="password"
         value={password}
         onChange={setPassword}
         placeholder="••••••••"
@@ -563,7 +566,7 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
         </svg>
         {t('authSignIn')}
       </button>
-      <Field label={t('authEmailLabel')} type="email" value={email} onChange={v => { setEmail(v); clearFieldError('email') }}
+      <Field label={t('authEmailLabel')} type="email" name="email" value={email} onChange={v => { setEmail(v); clearFieldError('email') }}
         placeholder={t('authEmailPlaceholder')} autoComplete="email" error={fieldErrors.email} />
 
       {/* Username con check disponibilità */}
@@ -590,11 +593,11 @@ function RegisterForm({ onLogin, onGoogleSuccess, onGoogleLinkRequired }) {
       </div>
 
       {/* Password con strength meter */}
-      <Field label={t('authPasswordLabel')} type="password" value={password} onChange={v => { setPassword(v); clearFieldError('password'); clearFieldError('confirm') }}
+      <Field label={t('authPasswordLabel')} type="password" name="new-password" value={password} onChange={v => { setPassword(v); clearFieldError('password'); clearFieldError('confirm') }}
         placeholder={t('authPasswordPlaceholder')} autoComplete="new-password" error={fieldErrors.password} />
       <PasswordStrength password={password} />
 
-      <Field label={t('authConfirmLabel')} type="password" value={confirm} onChange={v => { setConfirm(v); clearFieldError('confirm') }}
+      <Field label={t('authConfirmLabel')} type="password" name="confirm-password" value={confirm} onChange={v => { setConfirm(v); clearFieldError('confirm') }}
         placeholder={t('authConfirmPlaceholder')} autoComplete="new-password" error={fieldErrors.confirm} />
 
       {/* ── Dati opzionali ──────────────────────────────────────────── */}
