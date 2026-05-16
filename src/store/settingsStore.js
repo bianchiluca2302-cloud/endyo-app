@@ -45,6 +45,13 @@ export function applyTheme(settings) {
     theme = prefersDark ? AUTO_DARK : AUTO_LIGHT
   }
 
+  // Zoom prima delle CSS variables — in alcuni Android WebView lo zoom causa
+  // un re-style che cancella le variabili inline settate prima di esso
+  const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
+  const zoomVal = zoomMap[settings.textScale] ?? 1.12
+  root.style.zoom = zoomVal
+  root.dataset.zoom = zoomVal
+
   // Calcola rgba dall'hex per generare le varianti hover/active
   const _h = accent.hex
   const _r = parseInt(_h.slice(1, 3), 16)
@@ -92,10 +99,6 @@ export function applyTheme(settings) {
     }).catch(() => {})
   }
 
-  const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
-  const zoomVal = zoomMap[settings.textScale] ?? 1.12
-  document.documentElement.style.zoom = zoomVal
-  document.documentElement.dataset.zoom = zoomVal
 
   // Card image heights — always render at the physical size of zoom-1.25
   // so card proportions don't change when the user adjusts text size
