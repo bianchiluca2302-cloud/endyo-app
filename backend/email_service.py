@@ -187,7 +187,7 @@ async def send_reset_email(to: str, token: str, brand_portal: bool = False) -> N
     if brand_portal:
         link = f"{APP_URL}/portal/brand.html#reset/{token}"
     else:
-        link = f"{APP_URL}/#/reset-password/{token}"
+        link = f"{APP_URL}/app#/reset-password/{token}"
     if DEV_MODE:
         logger.warning(
             "\n╔══════════════════════════════════════════════════╗\n"
@@ -271,7 +271,7 @@ async def send_premium_confirmation_email(to: str, plan: str) -> None:
           </p>
         </td></tr>
       </table>
-      {_btn(f"{APP_URL}/#/wardrobe", 'Apri Endyo')}
+      {_btn(f"{APP_URL}/app#/wardrobe", 'Apri Endyo')}
       {_divider()}
       <p style="color:#a08060;font-size:12px;margin:0;line-height:1.6">
         Per gestire o annullare il tuo abbonamento, vai su <strong style="color:#92400e">Impostazioni → Piano</strong>.
