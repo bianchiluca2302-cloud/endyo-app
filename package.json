@@ -12,7 +12,12 @@
     "start": "npm run build && electron .",
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist:linux": "npm run build && electron-builder --linux",
+    "build:mobile": "vite build --mode production",
+    "sync:android": "npm run build:mobile && npx cap sync android",
+    "sync:ios": "npm run build:mobile && npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios"
   },
   "build": {
     "appId": "app.endyo.desktop",
@@ -51,7 +56,12 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.ico"
     },
@@ -68,18 +78,30 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "assets/icon.icns",
       "category": "public.app-category.lifestyle"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "icon": "assets/icon.png",
       "category": "Utility"
     }
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "@react-three/drei": "^9.105.0",
     "@react-three/fiber": "^8.16.0",
     "axios": "^1.7.0",

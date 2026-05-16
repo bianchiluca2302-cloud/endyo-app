@@ -9,7 +9,11 @@ backend/__pycache__/
 *.pyc
 node_modules/
 dist/
+# Capacitor native projects
+android/
+ios/
 # Graphify
 graphify-out/cache/
 graphify-out/graph.html
 prompt.txt
+LAUNCH_CHECKLIST.txt

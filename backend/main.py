@@ -106,8 +106,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# In produzione impostare ALLOWED_ORIGINS="https://yourapp.com,https://www.yourapp.com"
-# In sviluppo, se non impostato, si accetta solo localhost.
+# In produzione impostare ALLOWED_ORIGINS con tutte le origini permesse:
+#   https://endyo.it,https://www.endyo.it,https://app.endyo.it,capacitor://app.endyo.it
+# Le ultime due servono per l'app mobile Capacitor (Android usa https://, iOS usa capacitor://).
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 if _raw_origins.strip():
     _cors_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
@@ -117,7 +118,7 @@ else:
     if _IS_PROD and not _cors_origins:
         raise RuntimeError(
             "[CRITICAL] ALLOWED_ORIGINS non impostata in produzione. "
-            "Esempio: ALLOWED_ORIGINS=https://yourapp.com"
+            "Esempio: ALLOWED_ORIGINS=https://endyo.it,https://app.endyo.it,capacitor://app.endyo.it"
         )
 
 app.add_middleware(
