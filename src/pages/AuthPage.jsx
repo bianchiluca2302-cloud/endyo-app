@@ -5,6 +5,8 @@ import { authLogin, authRegister, authForgotPassword, authResendVerification, au
 const logoUrl = './Endyoapp.png?v=4'
 import { useT } from '../i18n'
 
+const isNativeApp = !!(window?.Capacitor?.isNativePlatform?.())
+
 // ── Schermata scelta username dopo Google OAuth ───────────────────────────────
 function UsernameSetupScreen({ onDone }) {
   const [value, setValue]   = useState('')
@@ -115,15 +117,64 @@ function UsernameSetupScreen({ onDone }) {
   )
 }
 
-// ── Google Sign-In button ─────────────────────────────────────────────────────
-// Carica Google Identity Services on-demand e renderizza il bottone ufficiale.
-// onSuccess(user) viene chiamato dopo il login — il chiamante decide se navigare
-// o mostrare il picker per lo username (se user.username è null).
-function GoogleButton({ onSuccess, onError, onLinkRequired }) {
-  const containerRef = useRef(null)
-  const [ready, setReady]     = useState(false)
+// ── Google Sign-In button — native (Capacitor) ───────────────────────────────
+function GoogleButtonNative({ onSuccess, onError, onLinkRequired }) {
   const [loading, setLoading] = useState(false)
-  const setAuth    = useAuthStore(s => s.setAuth)
+  const setAuth = useAuthStore(s => s.setAuth)
+
+  const handlePress = async () => {
+    setLoading(true)
+    try {
+      const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth')
+      await GoogleAuth.initialize({ scopes: ['profile', 'email'], grantOfflineAccess: true })
+      const googleUser = await GoogleAuth.signIn()
+      const idToken = googleUser?.authentication?.idToken
+      if (!idToken) throw new Error('No idToken')
+      const data = await authGoogle(idToken)
+      setAuth(data.access_token, data.refresh_token, data.user, true)
+      onSuccess?.(data.user)
+    } catch (e) {
+      if (e.response?.status === 409 && e.response?.data?.action === 'link_required') {
+        onLinkRequired?.({ ...e.response.data, credential: null })
+      } else if (e?.error !== 'popup_closed_by_user' && e?.message !== 'The user canceled the sign-in flow.') {
+        onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handlePress}
+      disabled={loading}
+      style={{
+        width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)',
+        background: 'var(--card)', color: 'var(--text)', fontSize: 14, fontWeight: 600,
+        cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: 10, opacity: loading ? 0.6 : 1,
+      }}
+    >
+      {loading ? (
+        <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+      )}
+      {loading ? 'Accesso in corso…' : 'Continua con Google'}
+    </button>
+  )
+}
+
+// ── Google Sign-In button — web (browser / PWA) ───────────────────────────────
+function GoogleButtonWeb({ onSuccess, onError, onLinkRequired }) {
+  const containerRef = useRef(null)
+  const [loading, setLoading] = useState(false)
+  const setAuth = useAuthStore(s => s.setAuth)
 
   useEffect(() => {
     let cancelled = false
@@ -142,7 +193,6 @@ function GoogleButton({ onSuccess, onError, onLinkRequired }) {
               setAuth(data.access_token, data.refresh_token, data.user, true)
               onSuccess?.(data.user)
             } catch (e) {
-              // 409 → email già registrata con account normale → proponi collegamento
               if (e.response?.status === 409 && e.response?.data?.action === 'link_required') {
                 onLinkRequired?.({ ...e.response.data, credential: response.credential })
               } else {
@@ -164,7 +214,6 @@ function GoogleButton({ onSuccess, onError, onLinkRequired }) {
             locale: 'it',
           })
         }
-        setReady(true)
       }
 
       if (window.google?.accounts?.id) {
@@ -195,6 +244,12 @@ function GoogleButton({ onSuccess, onError, onLinkRequired }) {
       )}
     </div>
   )
+}
+
+function GoogleButton(props) {
+  return isNativeApp
+    ? <GoogleButtonNative {...props} />
+    : <GoogleButtonWeb {...props} />
 }
 
 // ── Divisore "oppure" ─────────────────────────────────────────────────────────
@@ -1444,7 +1499,6 @@ export default function AuthPage() {
 
   // Se aperto da browser mobile (non PWA standalone) → mostra istruzioni installazione
   // window.Capacitor è iniettato dal runtime nativo → non mostrare la schermata di installazione
-  const isNativeApp = !!(window?.Capacitor?.isNativePlatform?.())
   const isMobileBrowser = (
     !isNativeApp &&
     /android|iphone|ipad|ipod/i.test(navigator.userAgent) &&

@@ -17,6 +17,14 @@ const config: CapacitorConfig = {
       backgroundColor: '#0a0a0f',
       showSpinner: false,
     },
+    GoogleAuth: {
+      // Il serverClientId è il Web Client ID di Google Cloud Console
+      // (lo stesso usato dal backend — si legge da GOOGLE_CLIENT_ID in Railway)
+      // Verrà sovrascritto dal valore reale nel build
+      scopes: ['profile', 'email'],
+      serverClientId: '249107874982-lqdd0fdj96hu330m9sqlmm2dj093m9p6.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+    },
   },
   android: {
     // Consente immagini HTTPS da Railway

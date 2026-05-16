@@ -28,6 +28,7 @@ import MobileUpload from './mobile/MobileUpload'
 import MobileFriends from './mobile/MobileFriends'
 import MobileProfile from './mobile/MobileProfile'
 import { ToastProvider } from './components/Toast'
+import { useT } from './i18n'
 
 const ROUTER_FUTURE = {
   v7_startTransition:  true,
@@ -413,6 +414,8 @@ function MobileTabLayout({ showBackendError, showTutorial }) {
 }
 
 function BackendErrorBanner() {
+  const t = useT()
+  const isNative = !!(window?.Capacitor?.isNativePlatform?.())
   return (
     <div style={{
       background: 'rgba(239,68,68,0.08)',
@@ -423,8 +426,8 @@ function BackendErrorBanner() {
     }}>
       <span style={{ fontSize: 16 }}>⚠️</span>
       <div>
-        <strong>Backend non raggiungibile.</strong>
-        {' '}Assicurati di aver avviato il server Python.
+        <strong>{t('backendUnreachable')}</strong>
+        {' '}{t(isNative ? 'backendUnreachableMobile' : 'backendUnreachableDesktop')}
       </div>
     </div>
   )

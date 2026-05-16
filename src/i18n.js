@@ -105,6 +105,9 @@ const translations = {
     infoFooter: 'I tuoi dati sono conservati in modo sicuro sui nostri server 🔒',
 
     // Wardrobe page
+    backendUnreachable: 'Connessione assente.',
+    backendUnreachableDesktop: 'Assicurati di aver avviato il server Python.',
+    backendUnreachableMobile: 'Controlla la connessione a Internet.',
     wardrobeLoading: 'Connessione al backend...',
     wardrobeWelcomeTitle: 'Benvenuto in Endyo',
     wardrobeWelcomeDesc: 'Il tuo armadio digitale con stylist AI. Inizia in 3 passi:',
@@ -740,6 +743,9 @@ const translations = {
     infoFooter: 'Your data is stored securely on our servers 🔒',
 
     // Wardrobe page
+    backendUnreachable: 'No connection.',
+    backendUnreachableDesktop: 'Make sure the Python server is running.',
+    backendUnreachableMobile: 'Check your internet connection.',
     wardrobeLoading: 'Connecting to backend...',
     wardrobeWelcomeTitle: 'Welcome to Endyo',
     wardrobeWelcomeDesc: 'Your digital wardrobe with AI stylist. Get started in 3 steps:',
