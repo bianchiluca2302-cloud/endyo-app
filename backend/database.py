@@ -138,6 +138,8 @@ _MIGRATIONS = [
     ("users", "travel_month_reset_at",        "TIMESTAMP WITH TIME ZONE"),
     ("users", "travel_week_count",            "INTEGER DEFAULT 0"),
     ("users", "travel_week_reset_at",         "TIMESTAMP WITH TIME ZONE"),
+    # Account privato
+    ("users", "is_private",                   "BOOLEAN NOT NULL DEFAULT FALSE"),
 ]
 
 
