@@ -308,7 +308,8 @@ export default function MobileProfile() {
   const outfits   = useWardrobeStore(s => s.outfits)
   const language  = useSettingsStore(s => s.language) || 'it'
 
-  const [followSheet, setFollowSheet] = useState(null)   // null | 'followers' | 'following'
+  const [followSheet,       setFollowSheet]       = useState(null)   // null | 'followers' | 'following'
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const isPremium = user?.plan && user.plan !== 'free'
   const isPlus    = user?.plan?.startsWith('premium_plus')
@@ -456,12 +457,63 @@ export default function MobileProfile() {
             <MenuRow
               icon={<LogoutIcon />}
               label={en ? 'Log out' : "Esci dall'account"}
-              onPress={handleLogout}
+              onPress={() => setShowLogoutConfirm(true)}
               danger
             />
           </div>
         </div>
       </div>
+
+      {/* ── Logout confirm sheet ─────────────────────────────────────────────── */}
+      {showLogoutConfirm && (
+        <>
+          <div
+            onClick={() => setShowLogoutConfirm(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 800 }}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 801,
+            background: 'var(--surface)',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px 20px',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+          }}>
+            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)', margin: '0 auto 20px' }} />
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
+              {en ? 'Log out?' : "Esci dall'account?"}
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5, margin: '0 0 24px' }}>
+              {en
+                ? 'You will need to log in again to access your wardrobe.'
+                : 'Dovrai accedere di nuovo per usare il tuo armadio.'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={handleLogout}
+                style={{
+                  width: '100%', padding: 16, borderRadius: 14,
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                  color: '#f87171', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {en ? 'Log out' : 'Esci'}
+              </button>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  width: '100%', padding: 16, borderRadius: 14,
+                  background: 'var(--card)', border: '1px solid var(--border)',
+                  color: 'var(--text)', fontSize: 16, fontWeight: 600, cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {en ? 'Cancel' : 'Annulla'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Follow sheet ─────────────────────────────────────────────────────── */}
       {followSheet && (

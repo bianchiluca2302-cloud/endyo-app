@@ -188,6 +188,15 @@ async def send_reset_email(to: str, token: str, brand_portal: bool = False) -> N
         link = f"{APP_URL}/portal/brand.html#reset/{token}"
     else:
         link = f"{APP_URL}/#/reset-password/{token}"
+    if DEV_MODE:
+        logger.warning(
+            "\n╔══════════════════════════════════════════════════╗\n"
+            "║  [DEV] RESET PASSWORD — copia il link qui sotto  ║\n"
+            "╚══════════════════════════════════════════════════╝\n"
+            "  → %s\n",
+            link
+        )
+        return
     html = _base_template(
         preview="Hai richiesto di reimpostare la password del tuo account Endyo.",
         content=f"""
