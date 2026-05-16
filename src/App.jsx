@@ -123,16 +123,30 @@ export default function App() {
     }
   }, [splashReady, bootstrapping]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 1. Applica tema all'avvio + listener per tema automatico ──────────────
+  // ── 1. Applica tema all'avvio + listener per tema automatico + rientro app ──
   useEffect(() => {
     applyTheme(settings)
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => {
+    const mqHandler = () => {
       const s = useSettingsStore.getState()
       if (s.theme === 'auto') applyTheme(s)
     }
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
+    mq.addEventListener('change', mqHandler)
+
+    // Riapplica status bar color quando l'app torna in foreground (Capacitor)
+    let appListener = null
+    if (window?.Capacitor?.isNativePlatform?.()) {
+      import('@capacitor/core').then(({ App: CapApp }) => {
+        CapApp.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) applyTheme(useSettingsStore.getState())
+        }).then(l => { appListener = l })
+      }).catch(() => {})
+    }
+
+    return () => {
+      mq.removeEventListener('change', mqHandler)
+      appListener?.remove()
+    }
   }, [settings.theme, settings.accentColor, settings.textScale]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 2. Tenta refresh del token al riavvio ───────────────────────────────────
