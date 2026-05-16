@@ -70,7 +70,7 @@ export default function CreatePostModal({ onClose, onCreated }) {
       }
       onCreated(newPost)
     } catch (e) {
-      setError(e.response?.data?.detail || 'Errore nella pubblicazione.')
+      setError(e.response?.data?.detail || t('postPublishError'))
     } finally {
       setLoading(false)
     }

@@ -15,6 +15,7 @@ function UsernameSetupScreen({ onDone }) {
   const status = useUsernameCheck(value)
   const updateUser = useAuthStore(s => s.updateUser)
   const user       = useAuthStore(s => s.user)
+  const t          = useT()
 
   const hint = {
     null:      value.length > 0 && value.length < 3 ? { text: 'Almeno 3 caratteri', color: 'var(--text-dim)' } : null,
@@ -37,7 +38,7 @@ function UsernameSetupScreen({ onDone }) {
       updateUser({ ...user, username: data.username })
       onDone()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Errore, riprova')
+      setError(err.response?.data?.detail || t('authGenericError'))
     } finally {
       setLoading(false)
     }
@@ -121,6 +122,7 @@ function UsernameSetupScreen({ onDone }) {
 function GoogleButtonNative({ onSuccess, onError, onLinkRequired }) {
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore(s => s.setAuth)
+  const t = useT()
 
   const handlePress = async () => {
     setLoading(true)
@@ -137,7 +139,8 @@ function GoogleButtonNative({ onSuccess, onError, onLinkRequired }) {
       if (e.response?.status === 409 && e.response?.data?.action === 'link_required') {
         onLinkRequired?.({ ...e.response.data, credential: null })
       } else if (e?.error !== 'popup_closed_by_user' && e?.message !== 'The user canceled the sign-in flow.') {
-        onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+        const detail = e.response?.data?.detail || e?.message || e?.error || t('authGoogleError')
+        onError?.(detail)
       }
     } finally {
       setLoading(false)
@@ -175,6 +178,7 @@ function GoogleButtonWeb({ onSuccess, onError, onLinkRequired }) {
   const containerRef = useRef(null)
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore(s => s.setAuth)
+  const t = useT()
 
   useEffect(() => {
     let cancelled = false
@@ -196,7 +200,7 @@ function GoogleButtonWeb({ onSuccess, onError, onLinkRequired }) {
               if (e.response?.status === 409 && e.response?.data?.action === 'link_required') {
                 onLinkRequired?.({ ...e.response.data, credential: response.credential })
               } else {
-                onError?.(e.response?.data?.detail || 'Errore accesso con Google')
+                onError?.(e.response?.data?.detail || t('authGoogleError'))
               }
             } finally {
               setLoading(false)
@@ -872,6 +876,7 @@ function LinkAccountScreen({ email, googleName, credential, onCancel }) {
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState(null)
   const [emailSent,  setEmailSent]  = useState(false)
+  const t = useT()
 
   const handleSendEmail = async () => {
     setLoading(true)
@@ -880,7 +885,7 @@ function LinkAccountScreen({ email, googleName, credential, onCancel }) {
       await authGoogleLinkInit(credential)
       setEmailSent(true)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Errore, riprova')
+      setError(err.response?.data?.detail || t('authGenericError'))
     } finally {
       setLoading(false)
     }

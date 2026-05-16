@@ -573,7 +573,7 @@ function StylistUsage({ language }) {
       const data = await startUploadPackCheckout(pack)
       if (data.checkout_url) window.location.href = data.checkout_url
     } catch {
-      alert('Errore pagamento. Riprova.')
+      alert(language === 'en' ? 'Payment error. Please try again.' : 'Errore pagamento. Riprova.')
     } finally {
       setPackBuying(null)
     }
@@ -593,17 +593,6 @@ function StylistUsage({ language }) {
       upgradeHint:  'Passa a Premium per aumentare il limite di richieste.',
       loading:      'Caricamento…',
       error:        'Impossibile caricare i dati di utilizzo.',
-      stylistLabel: 'Stylist AI',
-      shopLabel:    'Shopping Advisor',
-      armoLabel:    'Armocromia',
-      uploadLabel:  'Upload Vestiti',
-      blocked:      'Bloccato (solo Premium)',
-      extraCredits: 'Crediti extra',
-      buyPack:      'Acquista pacchetto',
-      packS:        '40 upload · 2,49€',
-      packM:        '100 upload · 4,99€',
-      packL:        '300 upload · 9,99€',
-      buying:       'Apertura pagamento…',
     },
     en: {
       plan:         'Plan',
