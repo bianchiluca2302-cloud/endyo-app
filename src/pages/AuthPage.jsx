@@ -125,9 +125,14 @@ function GoogleButtonNative({ onSuccess, onError, onLinkRequired }) {
   const t = useT()
 
   useEffect(() => {
-    import('@codetrix-studio/capacitor-google-auth').then(({ GoogleAuth }) => {
-      GoogleAuth.initialize({ scopes: ['profile', 'email'] })
-    }).catch(() => {})
+    let cancelled = false
+    fetchGoogleClientId().then(clientId => {
+      if (!clientId || cancelled) return
+      import('@codetrix-studio/capacitor-google-auth').then(({ GoogleAuth }) => {
+        GoogleAuth.initialize({ clientId, scopes: ['profile', 'email'] })
+      }).catch(() => {})
+    })
+    return () => { cancelled = true }
   }, [])
 
   const handlePress = async () => {
