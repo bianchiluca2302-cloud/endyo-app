@@ -126,9 +126,6 @@ export default function App() {
   // ── 1. Applica tema all'avvio + listener per tema automatico ──────────────
   useEffect(() => {
     applyTheme(settings)
-    // Se il tema è "auto", aggiorna quando il sistema cambia dark/light.
-    // Usiamo getState() per leggere sempre lo state più aggiornato (evita
-    // il problema della closure stale che perdeva il colore accent).
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => {
       const s = useSettingsStore.getState()
@@ -136,7 +133,7 @@ export default function App() {
     }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [settings.theme]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [settings.theme, settings.accentColor, settings.textScale]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 2. Tenta refresh del token al riavvio ───────────────────────────────────
   useEffect(() => {
