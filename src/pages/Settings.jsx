@@ -1038,7 +1038,6 @@ export default function Settings() {
         {/* Anteprima + applica icona launcher (solo Android nativo) */}
         {isNativeApp && (() => {
           const isLight = useSettingsStore.getState().isLightTheme()
-          const bgColor = isLight ? '#ffffff' : '#000000'
           return (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1046,18 +1045,16 @@ export default function Settings() {
               border: '1px solid var(--border)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {/* Anteprima icona: sfondo bianco/nero + logo colorato */}
+                {/* Anteprima icona — il PNG include già il colore di sfondo */}
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: bgColor,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 48, height: 48, borderRadius: 12,
                   flexShrink: 0, overflow: 'hidden',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
                 }}>
                   <img
                     src={`/logo_${settings.accentColor}${isLight ? '' : '_dark'}.png`}
                     alt="icon"
-                    style={{ width: 36, height: 36, objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   />
                 </div>
                 <div>
