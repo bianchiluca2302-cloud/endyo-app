@@ -3221,6 +3221,29 @@ async def admin_set_plan(
     return {"ok": True, "email": email, "plan": plan}
 
 
+@app.post("/admin/verify-user")
+async def admin_verify_user(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verifica manualmente un account (per account di test Play Store / App Store)."""
+    secret = request.headers.get("X-Admin-Secret", "")
+    if secret != SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="email required")
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_verified = True
+    user.verify_token = None
+    await db.commit()
+    return {"ok": True, "email": email, "verified": True}
+
+
 # ── Ricerca utenti ────────────────────────────────────────────────────────────
 @app.get("/users/search")
 async def search_users(
