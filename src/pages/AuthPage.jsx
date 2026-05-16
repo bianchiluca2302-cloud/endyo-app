@@ -124,11 +124,16 @@ function GoogleButtonNative({ onSuccess, onError, onLinkRequired }) {
   const setAuth = useAuthStore(s => s.setAuth)
   const t = useT()
 
+  useEffect(() => {
+    import('@codetrix-studio/capacitor-google-auth').then(({ GoogleAuth }) => {
+      GoogleAuth.initialize({ scopes: ['profile', 'email'] })
+    }).catch(() => {})
+  }, [])
+
   const handlePress = async () => {
     setLoading(true)
     try {
       const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth')
-      await GoogleAuth.initialize({ scopes: ['profile', 'email'], grantOfflineAccess: true })
       const googleUser = await GoogleAuth.signIn()
       const idToken = googleUser?.authentication?.idToken
       if (!idToken) throw new Error('No idToken')
