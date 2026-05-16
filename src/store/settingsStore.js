@@ -45,11 +45,12 @@ export function applyTheme(settings) {
     theme = prefersDark ? AUTO_DARK : AUTO_LIGHT
   }
 
-  // Zoom prima delle CSS variables — in alcuni Android WebView lo zoom causa
-  // un re-style che cancella le variabili inline settate prima di esso
+  // Zoom su body (NON su documentElement) — Chrome/WebView ha un bug per cui
+  // zoom su <html> impedisce alle CSS custom properties di propagarsi ai discendenti
   const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
   const zoomVal = zoomMap[settings.textScale] ?? 1.12
-  root.style.zoom = zoomVal
+  document.body.style.zoom = zoomVal
+  root.style.removeProperty('zoom')
   root.dataset.zoom = zoomVal
 
   // Calcola rgba dall'hex per generare le varianti hover/active
