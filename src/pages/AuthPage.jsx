@@ -427,7 +427,7 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess, onGoogleLinkRequired
   const t = useT()
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
   const [needsVerify, setNeedsVerify] = useState(false)
