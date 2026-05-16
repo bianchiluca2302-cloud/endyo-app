@@ -145,6 +145,15 @@ export const STYLIST_TONES = [
   { id: 'streetwear', label: { it: 'Streetwear', en: 'Streetwear' }, desc: { it: 'Urban e moderno',         en: 'Urban and modern'         } },
 ]
 
+// ── Switcher icona launcher (solo Android nativo) ────────────────────────────
+function switchLauncherIcon(accentId) {
+  if (!window?.Capacitor?.isNativePlatform?.()) return
+  import('@capacitor/core').then(({ registerPlugin }) => {
+    const IconSwitcher = registerPlugin('IconSwitcher')
+    IconSwitcher.setIcon({ accent: accentId }).catch(() => {})
+  }).catch(() => {})
+}
+
 // ── Rileva lingua di sistema (solo per il primo avvio, poi usa quella salvata) ─
 function detectSystemLanguage() {
   try {
@@ -181,6 +190,9 @@ const useSettingsStore = create(
         if (key === 'accentColor' || key === 'theme' || key === 'textScale') {
           applyTheme({ ...get(), [key]: value })
         }
+        if (key === 'accentColor') {
+          switchLauncherIcon(value)
+        }
       },
 
       resetSettings: () => {
@@ -216,7 +228,10 @@ const useSettingsStore = create(
       // Applica il tema immediatamente dopo la reidratazione da localStorage
       // In modo che i CSS variables siano corretti senza dover toccare le impostazioni
       onRehydrateStorage: () => (state) => {
-        if (state) applyTheme(state)
+        if (state) {
+          applyTheme(state)
+          switchLauncherIcon(state.accentColor || 'amber')
+        }
       },
     }
   )
