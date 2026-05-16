@@ -10,7 +10,7 @@ import {
   switchLauncherIcon,
 } from '../store/settingsStore'
 import { useT } from '../i18n'
-import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone, updateMarketingConsent } from '../api/client'
+import { fetchChatQuota, authDeleteAccount, startUploadPackCheckout, checkUsernameAvailable, updateUsername, updatePhone, updateMarketingConsent, updatePrivacy } from '../api/client'
 import {
   IconAlertTriangle, IconStar, IconCalendar, IconRefreshCw, IconCheck,
   IconLightbulb, IconPalette, IconGlobe,
@@ -1055,7 +1055,7 @@ export default function Settings() {
                   boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
                 }}>
                   <img
-                    src={`/logo_${settings.accentColor}.png`}
+                    src={`/logo_${settings.accentColor}${isLight ? '' : '_dark'}.png`}
                     alt="icon"
                     style={{ width: 36, height: 36, objectFit: 'contain' }}
                   />
@@ -1304,6 +1304,42 @@ export default function Settings() {
 
         {/* Phone editor */}
         <PhoneEditor user={user} language={language} onUpdateUser={updateUser} />
+
+        {/* Account privato */}
+        <Row
+          label={language === 'en' ? 'Private account' : 'Account privato'}
+          desc={language === 'en'
+            ? 'Only approved followers can see your posts and wardrobe'
+            : 'Solo i follower approvati possono vedere i tuoi post e il guardaroba'}
+        >
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!(user?.is_private)}
+              onChange={async (e) => {
+                const val = e.target.checked
+                try {
+                  await updatePrivacy(val)
+                  updateUser({ ...user, is_private: val })
+                } catch {}
+              }}
+              style={{ display: 'none' }}
+            />
+            <div style={{
+              width: 44, height: 24, borderRadius: 12,
+              background: user?.is_private ? 'var(--primary)' : 'var(--border)',
+              position: 'relative', transition: 'background 0.2s',
+              flexShrink: 0,
+            }}>
+              <div style={{
+                position: 'absolute', top: 3, left: user?.is_private ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%',
+                background: '#fff', transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }} />
+            </div>
+          </label>
+        </Row>
 
         {/* Logout */}
         <Row label={t('logoutLabel')} desc={t('logoutDesc')}>

@@ -2763,6 +2763,7 @@ async def get_profile(
         "shoe_size": profile.shoe_size,
         # foto profilo pubblica
         "profile_picture": profile.profile_picture_data or profile.profile_picture or None,
+        "is_private": getattr(current_user, 'is_private', False),
         # armocromia (Premium)
         "face_photo_1": profile.face_photo_1 or None,
         "armocromia_season": profile.armocromia_season or None,
@@ -2795,6 +2796,19 @@ async def upsert_profile(
     await db.commit()
     await db.refresh(profile)
     return {"ok": True}
+
+
+@app.put("/profile/privacy")
+async def set_account_privacy(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Attiva/disattiva account privato."""
+    is_private = bool(data.get("is_private", False))
+    current_user.is_private = is_private
+    await db.commit()
+    return {"ok": True, "is_private": is_private}
 
 
 # ── Try-on endpoints ──────────────────────────────────────────────────────────
@@ -3256,10 +3270,16 @@ async def follow_user(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail=f"Stai già seguendo @{username}")
 
+    if getattr(target, 'is_private', False):
+        follow = Friendship(requester_id=current_user.id, addressee_id=target.id, status="pending")
+        db.add(follow)
+        await db.commit()
+        return {"ok": True, "pending": True, "message": f"Richiesta inviata a @{username}"}
+
     follow = Friendship(requester_id=current_user.id, addressee_id=target.id, status="following")
     db.add(follow)
     await db.commit()
-    return {"ok": True, "message": f"Ora segui @{username}"}
+    return {"ok": True, "pending": False, "message": f"Ora segui @{username}"}
 
 
 @app.get("/friends")
@@ -3322,6 +3342,70 @@ async def list_followers(
                 "bio": getattr(prof, 'bio', None) if prof else None,
             })
     return out
+
+
+@app.get("/friends/requests")
+async def list_follow_requests(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Richieste di follow in attesa di approvazione ricevute dall'utente corrente."""
+    result = await db.execute(
+        select(Friendship).where(
+            Friendship.addressee_id == current_user.id,
+            Friendship.status == "pending",
+        ).order_by(Friendship.created_at.desc())
+    )
+    out = []
+    for f in result.scalars().all():
+        user_res = await db.execute(select(User).where(User.id == f.requester_id))
+        requester = user_res.scalar_one_or_none()
+        if not requester:
+            continue
+        prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == requester.id))
+        prof = prof_res.scalar_one_or_none()
+        out.append({
+            "friendship_id": f.id,
+            "id": requester.id,
+            "username": requester.username,
+            "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
+            "created_at": f.created_at.isoformat() if f.created_at else None,
+        })
+    return out
+
+
+@app.post("/friends/{friendship_id}/accept")
+async def accept_follow_request(
+    friendship_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Accetta una richiesta di follow (solo se sei il destinatario)."""
+    result = await db.execute(select(Friendship).where(Friendship.id == friendship_id))
+    f = result.scalar_one_or_none()
+    if not f or f.addressee_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Richiesta non trovata")
+    if f.status != "pending":
+        raise HTTPException(status_code=400, detail="Richiesta già gestita")
+    f.status = "following"
+    await db.commit()
+    return {"ok": True}
+
+
+@app.post("/friends/{friendship_id}/reject")
+async def reject_follow_request(
+    friendship_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Rifiuta/rimuove una richiesta di follow."""
+    result = await db.execute(select(Friendship).where(Friendship.id == friendship_id))
+    f = result.scalar_one_or_none()
+    if not f or f.addressee_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Richiesta non trovata")
+    await db.delete(f)
+    await db.commit()
+    return {"ok": True}
 
 
 @app.delete("/friends/{friendship_id}")
@@ -4161,10 +4245,13 @@ async def get_notifications(
                 "is_new":   (seen_at is None or like.created_at > seen_at) if like.created_at else False,
             })
 
-    # ── Nuovi follower ────────────────────────────────────────────────────────
+    # ── Nuovi follower + richieste pending ───────────────────────────────────
     followers_res = await db.execute(
         select(Friendship)
-        .where(Friendship.addressee_id == current_user.id, Friendship.status == 'following')
+        .where(
+            Friendship.addressee_id == current_user.id,
+            Friendship.status.in_(['following', 'pending']),
+        )
         .order_by(Friendship.created_at.desc())
         .limit(40)
     )
@@ -4174,13 +4261,15 @@ async def get_notifications(
         if not follower: continue
         prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == follower.id))
         prof = prof_res.scalar_one_or_none()
+        notif_type = "follow_request" if f.status == "pending" else "follow"
         notifications.append({
-            "id":       f"follow_{f.id}",
-            "type":     "follow",
-            "actor":    follower.username,
-            "actor_pic": (prof.profile_picture_data or prof.profile_picture) if prof else None,
-            "created_at": f.created_at.isoformat() if f.created_at else None,
-            "is_new":   (seen_at is None or f.created_at > seen_at) if f.created_at else False,
+            "id":            f"follow_{f.id}",
+            "type":          notif_type,
+            "friendship_id": f.id,
+            "actor":         follower.username,
+            "actor_pic":     (prof.profile_picture_data or prof.profile_picture) if prof else None,
+            "created_at":    f.created_at.isoformat() if f.created_at else None,
+            "is_new":        (seen_at is None or f.created_at > seen_at) if f.created_at else False,
         })
 
     # Ordina per data desc

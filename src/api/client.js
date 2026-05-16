@@ -326,6 +326,10 @@ export const removeShowcaseItem  = (showcase_id) => api.delete(`/showcase/${show
 // ── Profile ───────────────────────────────────────────────────────────────────
 export const fetchProfile = () => api.get('/profile').then(r => r.data)
 export const saveProfile = (data) => api.post('/profile', data).then(r => r.data)
+export const updatePrivacy = (isPrivate) => api.put('/profile/privacy', { is_private: isPrivate }).then(r => r.data)
+export const fetchFollowRequests = () => api.get('/friends/requests').then(r => r.data)
+export const acceptFollowRequest = (id) => api.post(`/friends/${id}/accept`).then(r => r.data)
+export const rejectFollowRequest = (id) => api.delete(`/friends/${id}`).then(r => r.data)
 
 export const uploadAvatar = (file) => {
   const fd = new FormData()

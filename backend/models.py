@@ -64,6 +64,9 @@ class User(Base):
     marketing_email      = Column(Boolean, default=False, nullable=False, server_default='false')
     marketing_phone      = Column(Boolean, default=False, nullable=False, server_default='false')
 
+    # ── Privacy ───────────────────────────────────────────────────────────────
+    is_private            = Column(Boolean, default=False, nullable=False, server_default='false')
+
     # ── Notifiche ─────────────────────────────────────────────────────────────
     notifications_seen_at = Column(DateTime(timezone=True), nullable=True)  # ultimo accesso notifiche
 
