@@ -4272,6 +4272,34 @@ async def get_notifications(
             "is_new":        (seen_at is None or f.created_at > seen_at) if f.created_at else False,
         })
 
+    # ── Commenti ai propri post ───────────────────────────────────────────────
+    if my_post_ids:
+        comments_res = await db.execute(
+            select(PostComment)
+            .where(PostComment.post_id.in_(my_post_ids), PostComment.user_id != current_user.id)
+            .order_by(PostComment.created_at.desc())
+            .limit(40)
+        )
+        for c in comments_res.scalars().all():
+            commenter_res = await db.execute(select(User).where(User.id == c.user_id))
+            commenter = commenter_res.scalar_one_or_none()
+            if not commenter: continue
+            prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == commenter.id))
+            prof = prof_res.scalar_one_or_none()
+            post_res = await db.execute(select(SocialPost).where(SocialPost.id == c.post_id))
+            post = post_res.scalar_one_or_none()
+            notifications.append({
+                "id":         f"comment_{c.id}",
+                "type":       "comment",
+                "actor":      commenter.username,
+                "actor_pic":  (prof.profile_picture_data or prof.profile_picture) if prof else None,
+                "post_id":    c.post_id,
+                "post_thumb": post.photo_url if post else None,
+                "comment":    c.content[:120] if c.content else "",
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+                "is_new":     (seen_at is None or c.created_at > seen_at) if c.created_at else False,
+            })
+
     # Ordina per data desc
     notifications.sort(key=lambda n: n["created_at"] or "", reverse=True)
     return notifications[:60]

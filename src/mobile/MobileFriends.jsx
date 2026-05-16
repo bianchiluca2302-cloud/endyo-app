@@ -5,6 +5,7 @@ import {
   searchUsers, followUser, unfollowUser, fetchFollowing,
   getUserPosts, deleteSocialPost, fetchUserFollowers, fetchUserFollowing,
   fetchNotifications, markNotificationsSeen,
+  acceptFollowRequest, rejectFollowRequest,
 } from '../api/client'
 import useAuthStore from '../store/authStore'
 import useWardrobeStore from '../store/wardrobeStore'
@@ -1782,77 +1783,142 @@ export default function MobileFriends() {
                   {language === 'en' ? 'No notifications yet' : 'Nessuna notifica ancora'}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                  {language === 'en' ? 'Likes and new followers will appear here' : 'I like e i nuovi follower appariranno qui'}
+                  {language === 'en' ? 'Likes, comments and new followers will appear here' : 'Like, commenti e nuovi follower appariranno qui'}
                 </div>
               </div>
             ) : (
               <div>
-                {notifications.map(n => (
-                  <div
-                    key={n.id}
-                    onClick={() => n.actor && setProfileUser(n.actor)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '13px 16px',
-                      borderBottom: '1px solid var(--border)',
-                      background: n.is_new ? 'var(--primary-dim)' : 'transparent',
-                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                      transition: 'background 0.2s',
-                    }}
-                  >
-                    {/* Avatar */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <Avatar src={n.actor_pic} username={n.actor} size={44} />
-                      {/* Icona tipo notifica */}
-                      <div style={{
-                        position: 'absolute', bottom: -2, right: -2,
-                        width: 18, height: 18, borderRadius: '50%',
-                        background: n.type === 'like' ? '#ef4444' : 'var(--primary)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: '2px solid var(--bg)',
-                      }}>
-                        {n.type === 'like' ? (
-                          <svg width={9} height={9} viewBox="0 0 24 24" fill="#fff" stroke="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                          </svg>
-                        ) : (
-                          <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
-                            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
-                          </svg>
+                {/* Richieste di follow in evidenza */}
+                {notifications.some(n => n.type === 'follow_request') && (
+                  <div style={{ padding: '10px 16px 4px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      {language === 'en' ? 'Follow requests' : 'Richieste di follow'}
+                    </div>
+                  </div>
+                )}
+
+                {notifications.map(n => {
+                  const isRequest = n.type === 'follow_request'
+                  const iconBg = n.type === 'like' ? '#ef4444' : n.type === 'comment' ? '#8b5cf6' : 'var(--primary)'
+
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => !isRequest && n.actor && setProfileUser(n.actor)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '13px 16px',
+                        borderBottom: '1px solid var(--border)',
+                        background: n.is_new ? 'var(--primary-dim)' : 'transparent',
+                        cursor: isRequest ? 'default' : 'pointer',
+                        WebkitTapHighlightColor: 'transparent',
+                        transition: 'background 0.2s',
+                      }}
+                    >
+                      {/* Avatar + icona tipo */}
+                      <div
+                        style={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}
+                        onClick={e => { e.stopPropagation(); n.actor && setProfileUser(n.actor) }}
+                      >
+                        <Avatar src={n.actor_pic} username={n.actor} size={44} />
+                        <div style={{
+                          position: 'absolute', bottom: -2, right: -2,
+                          width: 18, height: 18, borderRadius: '50%',
+                          background: iconBg,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: '2px solid var(--bg)',
+                        }}>
+                          {n.type === 'like' && (
+                            <svg width={9} height={9} viewBox="0 0 24 24" fill="#fff"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                          )}
+                          {n.type === 'comment' && (
+                            <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          )}
+                          {(n.type === 'follow' || n.type === 'follow_request') && (
+                            <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
+                              {isRequest
+                                ? <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7M18 14v6M15 17h6"/></>
+                                : <><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>
+                              }
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Testo */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, color: 'var(--text)', fontWeight: n.is_new ? 700 : 500, lineHeight: 1.3 }}>
+                          <strong>@{n.actor}</strong>{' '}
+                          {n.type === 'like'    && (language === 'en' ? 'liked your post' : 'ha messo like al tuo post')}
+                          {n.type === 'comment' && (language === 'en' ? 'commented on your post' : 'ha commentato il tuo post')}
+                          {n.type === 'follow'  && (language === 'en' ? 'started following you' : 'ha iniziato a seguirti')}
+                          {isRequest            && (language === 'en' ? 'wants to follow you' : 'vuole seguirti')}
+                        </div>
+                        {n.type === 'comment' && n.comment && (
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            "{n.comment}"
+                          </div>
+                        )}
+                        {n.created_at && (
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                            {new Date(n.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+                        {/* Bottoni accetta/rifiuta per follow_request */}
+                        {isRequest && (
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }} onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await acceptFollowRequest(n.friendship_id)
+                                  setNotifications(prev => prev.map(x =>
+                                    x.id === n.id ? { ...x, type: 'follow', is_new: false } : x
+                                  ))
+                                } catch {}
+                              }}
+                              style={{
+                                flex: 1, padding: '7px 0', borderRadius: 8,
+                                background: 'var(--primary)', border: 'none',
+                                color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                              }}
+                            >
+                              {language === 'en' ? 'Accept' : 'Accetta'}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await rejectFollowRequest(n.friendship_id)
+                                  setNotifications(prev => prev.filter(x => x.id !== n.id))
+                                } catch {}
+                              }}
+                              style={{
+                                flex: 1, padding: '7px 0', borderRadius: 8,
+                                background: 'var(--card)', border: '1px solid var(--border)',
+                                color: 'var(--text)', fontSize: 13, cursor: 'pointer',
+                              }}
+                            >
+                              {language === 'en' ? 'Decline' : 'Rifiuta'}
+                            </button>
+                          </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Testo */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: n.is_new ? 700 : 500 }}>
-                        <strong>@{n.actor}</strong>{' '}
-                        {n.type === 'like'
-                          ? (language === 'en' ? 'liked your post' : 'ha messo like al tuo post')
-                          : (language === 'en' ? 'started following you' : 'ha iniziato a seguirti')}
-                      </span>
-                      {n.created_at && (
-                        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
-                          {new Date(n.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </div>
+                      {/* Thumb post (like / comment) */}
+                      {(n.type === 'like' || n.type === 'comment') && n.post_thumb && (
+                        <img
+                          src={imgUrl(n.post_thumb)}
+                          alt=""
+                          style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      )}
+
+                      {/* Punto blu non letta */}
+                      {n.is_new && !isRequest && (
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
                       )}
                     </div>
-
-                    {/* Thumb post (solo per like) */}
-                    {n.type === 'like' && n.post_thumb && (
-                      <img
-                        src={imgUrl(n.post_thumb)}
-                        alt=""
-                        style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-                      />
-                    )}
-
-                    {/* Punto blu non letta */}
-                    {n.is_new && (
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
