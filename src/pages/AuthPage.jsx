@@ -1443,7 +1443,10 @@ export default function AuthPage() {
   const [linkData, setLinkData] = useState(null) // { email, google_name, credential }
 
   // Se aperto da browser mobile (non PWA standalone) → mostra istruzioni installazione
+  // window.Capacitor è iniettato dal runtime nativo → non mostrare la schermata di installazione
+  const isNativeApp = !!(window?.Capacitor?.isNativePlatform?.())
   const isMobileBrowser = (
+    !isNativeApp &&
     /android|iphone|ipad|ipod/i.test(navigator.userAgent) &&
     !window.matchMedia('(display-mode: standalone)').matches &&
     window.navigator.standalone !== true &&
