@@ -11,7 +11,12 @@ node_modules/
 dist/
 # Capacitor native projects
 android/
-ios/
+# iOS — tracciato ma senza dipendenze generate
+ios/App/Pods/
+ios/App/.build/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/DerivedData/
+ios/.DS_Store
 # Graphify
 graphify-out/cache/
 graphify-out/graph.html

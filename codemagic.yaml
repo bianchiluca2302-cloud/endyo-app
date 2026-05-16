@@ -1,0 +1,57 @@
+workflows:
+  ios-release:
+    name: iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.endyo
+      vars:
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_SCHEME: App
+        APP_STORE_CONNECT_ISSUER_ID: $APP_STORE_CONNECT_ISSUER_ID
+        APP_STORE_CONNECT_KEY_IDENTIFIER: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        APP_STORE_CONNECT_PRIVATE_KEY: $APP_STORE_CONNECT_PRIVATE_KEY
+      node: 20
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Build web
+        script: npm run build
+
+      - name: Capacitor sync iOS
+        script: npx cap sync ios
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Build iOS
+        script: |
+          xcode-project use-profiles
+          xcodebuild \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -archivePath "$CM_BUILD_DIR/App.xcarchive" \
+            archive
+
+      - name: Export IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --archive-path "$CM_BUILD_DIR/App.xcarchive"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
