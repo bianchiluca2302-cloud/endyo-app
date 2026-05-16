@@ -476,7 +476,7 @@ export default function MobileProfile() {
             background: 'var(--surface)',
             borderRadius: '20px 20px 0 0',
             padding: '24px 20px',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px + 24px)',
           }}>
             <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)', margin: '0 auto 20px' }} />
             <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
