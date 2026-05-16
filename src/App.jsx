@@ -21,6 +21,7 @@ import useWardrobeStore from './store/wardrobeStore'
 import useAuthStore from './store/authStore'
 import useSettingsStore, { applyTheme, ACCENT_COLORS, THEMES } from './store/settingsStore'
 import { authRefresh, authMe } from './api/client'
+import { initPushNotifications } from './utils/pushNotifications'
 import useIsMobile from './hooks/useIsMobile'
 import MobileTabBar from './mobile/MobileTabBar'
 import MobileWardrobe from './mobile/MobileWardrobe'
@@ -171,8 +172,8 @@ export default function App() {
     if (accessToken) {
       init()
       prefetchSocialFeed()
-      // Aggiorna user con piano aggiornato dal server (evita flash "free" nelle sezioni premium)
       authMe().then(me => updateUser(me)).catch(() => {})
+      initPushNotifications().catch(() => {})
     }
   }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps
 

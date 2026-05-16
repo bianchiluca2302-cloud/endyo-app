@@ -69,6 +69,7 @@ class User(Base):
 
     # ── Notifiche ─────────────────────────────────────────────────────────────
     notifications_seen_at = Column(DateTime(timezone=True), nullable=True)  # ultimo accesso notifiche
+    fcm_token             = Column(String(500), nullable=True)               # Firebase Cloud Messaging token
 
     created_at          = Column(DateTime(timezone=True), server_default=func.now())
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())

@@ -56,6 +56,7 @@ from auth import (
     SECRET_KEY,
 )
 from email_service import send_verification_email, send_reset_email, send_google_link_email, DEV_MODE as EMAIL_DEV_MODE
+from push_service import send_push
 
 logger = logging.getLogger(__name__)
 _bearer = HTTPBearer(auto_error=False)
@@ -2798,6 +2799,19 @@ async def upsert_profile(
     return {"ok": True}
 
 
+@app.put("/profile/fcm-token")
+async def update_fcm_token(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Registra/aggiorna il token FCM per le notifiche push."""
+    token = (data.get("token") or "").strip()
+    current_user.fcm_token = token or None
+    await db.commit()
+    return {"ok": True}
+
+
 @app.put("/profile/privacy")
 async def set_account_privacy(
     data: dict,
@@ -3274,11 +3288,25 @@ async def follow_user(
         follow = Friendship(requester_id=current_user.id, addressee_id=target.id, status="pending")
         db.add(follow)
         await db.commit()
+        if target.fcm_token:
+            await send_push(
+                target.fcm_token,
+                title="👤 Richiesta di follow",
+                body=f"@{current_user.username} vuole seguirti",
+                data={"type": "follow_request"},
+            )
         return {"ok": True, "pending": True, "message": f"Richiesta inviata a @{username}"}
 
     follow = Friendship(requester_id=current_user.id, addressee_id=target.id, status="following")
     db.add(follow)
     await db.commit()
+    if target.fcm_token:
+        await send_push(
+            target.fcm_token,
+            title="✅ Nuovo follower",
+            body=f"@{current_user.username} ha iniziato a seguirti",
+            data={"type": "follow"},
+        )
     return {"ok": True, "pending": False, "message": f"Ora segui @{username}"}
 
 
@@ -3389,6 +3417,15 @@ async def accept_follow_request(
         raise HTTPException(status_code=400, detail="Richiesta già gestita")
     f.status = "following"
     await db.commit()
+    requester_res = await db.execute(select(User).where(User.id == f.requester_id))
+    requester = requester_res.scalar_one_or_none()
+    if requester and requester.fcm_token:
+        await send_push(
+            requester.fcm_token,
+            title="✅ Richiesta accettata",
+            body=f"@{current_user.username} ha accettato la tua richiesta di follow",
+            data={"type": "follow_accepted"},
+        )
     return {"ok": True}
 
 
@@ -4538,8 +4575,20 @@ async def toggle_like(
         await db.commit()
         return {"liked": False}
     else:
+        post_res = await db.execute(select(SocialPost).where(SocialPost.id == post_id))
+        post = post_res.scalar_one_or_none()
         db.add(PostLike(post_id=post_id, user_id=current_user.id))
         await db.commit()
+        if post and post.user_id != current_user.id:
+            owner_res = await db.execute(select(User).where(User.id == post.user_id))
+            owner = owner_res.scalar_one_or_none()
+            if owner and owner.fcm_token:
+                await send_push(
+                    owner.fcm_token,
+                    title="❤️ Nuovo like",
+                    body=f"@{current_user.username} ha messo like al tuo post",
+                    data={"type": "like", "post_id": str(post_id)},
+                )
         return {"liked": True}
 
 
@@ -4587,10 +4636,23 @@ async def add_comment(
     if not content:
         raise HTTPException(status_code=400, detail="Commento vuoto")
 
+    post_obj_res = await db.execute(select(SocialPost).where(SocialPost.id == post_id))
+    post_obj = post_obj_res.scalar_one_or_none()
     comment = PostComment(post_id=post_id, user_id=current_user.id, content=content)
     db.add(comment)
     await db.commit()
     await db.refresh(comment)
+    if post_obj and post_obj.user_id != current_user.id:
+        owner_res = await db.execute(select(User).where(User.id == post_obj.user_id))
+        owner = owner_res.scalar_one_or_none()
+        if owner and owner.fcm_token:
+            preview = content[:60] + ("…" if len(content) > 60 else "")
+            await send_push(
+                owner.fcm_token,
+                title="💬 Nuovo commento",
+                body=f"@{current_user.username}: {preview}",
+                data={"type": "comment", "post_id": str(post_id)},
+            )
 
     prof_res = await db.execute(select(UserProfile).where(UserProfile.user_id == current_user.id))
     prof = prof_res.scalar_one_or_none()

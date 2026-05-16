@@ -140,6 +140,8 @@ _MIGRATIONS = [
     ("users", "travel_week_reset_at",         "TIMESTAMP WITH TIME ZONE"),
     # Account privato
     ("users", "is_private",                   "BOOLEAN NOT NULL DEFAULT FALSE"),
+    # Push notifications
+    ("users", "fcm_token",                    "VARCHAR(500)"),
 ]
 
 
