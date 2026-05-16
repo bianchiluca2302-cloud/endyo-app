@@ -1036,44 +1036,53 @@ export default function Settings() {
         </div>
 
         {/* Anteprima + applica icona launcher (solo Android nativo) */}
-        {isNativeApp && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 14px', background: 'var(--card)', borderRadius: 10,
-            border: '1px solid var(--border)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* Anteprima icona: sfondo accent + lettera */}
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: ACCENT_COLORS.find(c => c.id === settings.accentColor)?.hex || 'var(--primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, overflow: 'hidden',
-              }}>
-                <img src="/logo.png" alt="icon" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
-                  {t('iconChangeTitle')}
+        {isNativeApp && (() => {
+          const isLight = useSettingsStore.getState().isLightTheme()
+          const bgColor = isLight ? '#ffffff' : '#000000'
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 14px', background: 'var(--card)', borderRadius: 10,
+              border: '1px solid var(--border)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Anteprima icona: sfondo bianco/nero + logo colorato */}
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: bgColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, overflow: 'hidden',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+                }}>
+                  <img
+                    src={`/logo_${settings.accentColor}.png`}
+                    alt="icon"
+                    style={{ width: 36, height: 36, objectFit: 'contain' }}
+                  />
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                  {t('iconChangeMsg')}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+                    {t('iconChangeTitle')}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                    {t('iconChangeMsg')}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => switchLauncherIcon(settings.accentColor, !isLight)}
+                style={{
+                  padding: '8px 14px', borderRadius: 8,
+                  background: 'var(--primary)', border: 'none',
+                  color: '#fff', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', flexShrink: 0, marginLeft: 10,
+                }}
+              >
+                {t('iconChangeConfirm')}
+              </button>
             </div>
-            <button
-              onClick={() => switchLauncherIcon(settings.accentColor)}
-              style={{
-                padding: '8px 14px', borderRadius: 8,
-                background: 'var(--primary)', border: 'none',
-                color: '#fff', fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', flexShrink: 0, marginLeft: 10,
-              }}
-            >
-              {t('iconChangeConfirm')}
-            </button>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Temi */}
         <div style={{ padding: '12px 14px', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>

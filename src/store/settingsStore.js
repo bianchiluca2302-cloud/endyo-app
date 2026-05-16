@@ -146,11 +146,11 @@ export const STYLIST_TONES = [
 ]
 
 // ── Switcher icona launcher (solo Android nativo) ────────────────────────────
-export function switchLauncherIcon(accentId) {
+export function switchLauncherIcon(accentId, isDark) {
   if (!window?.Capacitor?.isNativePlatform?.()) return
   import('@capacitor/core').then(({ registerPlugin }) => {
     const IconSwitcher = registerPlugin('IconSwitcher')
-    IconSwitcher.setIcon({ accent: accentId }).catch(() => {})
+    IconSwitcher.setIcon({ accent: accentId, dark: !!isDark }).catch(() => {})
   }).catch(() => {})
 }
 
