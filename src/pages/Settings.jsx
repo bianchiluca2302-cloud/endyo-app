@@ -856,8 +856,6 @@ export default function Settings() {
   const [openSection, setOpenSection] = useState(location.state?.openSection ?? null)
   const toggleSection = (id) => setOpenSection(prev => prev === id ? null : id)
 
-  // Dialog conferma cambio icona launcher (solo Android nativo)
-  const [pendingIconAccent, setPendingIconAccent] = useState(null)
   const isNativeApp = !!(window?.Capacitor?.isNativePlatform?.())
 
   // Stato conferme a catena: null → 'outfits'/'garments'/'all'/'settings'/'logout'
@@ -1012,10 +1010,7 @@ export default function Settings() {
             {ACCENT_COLORS.map(c => (
               <button
                 key={c.id}
-                onClick={() => {
-                  updateSetting('accentColor', c.id)
-                  if (isNativeApp && c.id !== settings.accentColor) setPendingIconAccent(c.id)
-                }}
+                onClick={() => updateSetting('accentColor', c.id)}
                 title={c.label}
                 style={{
                   width: 34, height: 34, borderRadius: '50%',
@@ -1040,47 +1035,43 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Dialog conferma aggiornamento icona launcher */}
-        {pendingIconAccent && (
+        {/* Anteprima + applica icona launcher (solo Android nativo) */}
+        {isNativeApp && (
           <div style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '0 24px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 14px', background: 'var(--card)', borderRadius: 10,
+            border: '1px solid var(--border)',
           }}>
-            <div style={{
-              background: 'var(--surface)', borderRadius: 16, padding: '24px 20px',
-              border: '1px solid var(--border)', maxWidth: 320, width: '100%',
-              display: 'flex', flexDirection: 'column', gap: 16,
-            }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-                {t('iconChangeTitle')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Anteprima icona: sfondo accent + lettera */}
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: ACCENT_COLORS.find(c => c.id === settings.accentColor)?.hex || 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <span style={{ color: '#fff', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>E</span>
               </div>
-              <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                {t('iconChangeMsg')}
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => setPendingIconAccent(null)}
-                  style={{
-                    flex: 1, padding: '10px 0', borderRadius: 10,
-                    background: 'var(--card)', border: '1px solid var(--border)',
-                    color: 'var(--text)', fontSize: 14, cursor: 'pointer',
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={() => { switchLauncherIcon(pendingIconAccent); setPendingIconAccent(null) }}
-                  style={{
-                    flex: 1, padding: '10px 0', borderRadius: 10,
-                    background: 'var(--primary)', border: 'none',
-                    color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  {t('iconChangeConfirm')}
-                </button>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+                  {t('iconChangeTitle')}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                  {t('iconChangeMsg')}
+                </div>
               </div>
             </div>
+            <button
+              onClick={() => switchLauncherIcon(settings.accentColor)}
+              style={{
+                padding: '8px 14px', borderRadius: 8,
+                background: 'var(--primary)', border: 'none',
+                color: '#fff', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', flexShrink: 0, marginLeft: 10,
+              }}
+            >
+              {t('iconChangeConfirm')}
+            </button>
           </div>
         )}
 
