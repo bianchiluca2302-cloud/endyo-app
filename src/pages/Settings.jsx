@@ -1048,9 +1048,9 @@ export default function Settings() {
                 width: 44, height: 44, borderRadius: 12,
                 background: ACCENT_COLORS.find(c => c.id === settings.accentColor)?.hex || 'var(--primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
+                flexShrink: 0, overflow: 'hidden',
               }}>
-                <span style={{ color: '#fff', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>E</span>
+                <img src="/logo.png" alt="icon" style={{ width: 36, height: 36, objectFit: 'contain' }} />
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
