@@ -83,11 +83,13 @@ export function applyTheme(settings) {
   document.body.style.background = theme.bg
   document.body.style.color      = theme.text
 
-  // Status bar nativa (solo Capacitor)
+  // Status bar + navigation bar native (solo Capacitor)
   if (window?.Capacitor?.isNativePlatform?.()) {
     import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+      const style = theme.dark ? Style.Dark : Style.Light
       StatusBar.setBackgroundColor({ color: theme.bg }).catch(() => {})
-      StatusBar.setStyle({ style: theme.dark ? Style.Dark : Style.Light }).catch(() => {})
+      StatusBar.setStyle({ style }).catch(() => {})
+      StatusBar.setNavigationBarColor({ color: theme.bg }).catch(() => {})
     }).catch(() => {})
   }
 
