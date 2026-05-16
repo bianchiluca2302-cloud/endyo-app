@@ -83,6 +83,14 @@ export function applyTheme(settings) {
   document.body.style.background = theme.bg
   document.body.style.color      = theme.text
 
+  // Status bar nativa (solo Capacitor)
+  if (window?.Capacitor?.isNativePlatform?.()) {
+    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+      StatusBar.setBackgroundColor({ color: theme.bg }).catch(() => {})
+      StatusBar.setStyle({ style: theme.dark ? Style.Dark : Style.Light }).catch(() => {})
+    }).catch(() => {})
+  }
+
   const zoomMap = { sm: 1.0, md: 1.12, lg: 1.25 }
   const zoomVal = zoomMap[settings.textScale] ?? 1.12
   document.documentElement.style.zoom = zoomVal

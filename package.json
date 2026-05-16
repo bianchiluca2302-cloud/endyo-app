@@ -102,6 +102,7 @@
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
     "@capacitor/ios": "^8.3.4",
+    "@capacitor/status-bar": "^8.0.2",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@react-three/drei": "^9.105.0",
     "@react-three/fiber": "^8.16.0",
