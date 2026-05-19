@@ -507,6 +507,7 @@ def user_to_dict(u: User) -> dict:
         "id": u.id, "email": u.email, "username": u.username,
         "phone": u.phone, "is_verified": u.is_verified,
         "plan": u.plan or "free",
+        "special_badge": u.special_badge,
         "google_linked": bool(u.google_linked),
         "marketing_email": bool(u.marketing_email) if u.marketing_email is not None else False,
         "marketing_phone": bool(u.marketing_phone) if u.marketing_phone is not None else False,

@@ -38,8 +38,8 @@ function PlanBadge({ plan }) {
 
 /* ── SpecialBadge ────────────────────────────────────────────────────────────── */
 const SPECIAL_BADGE_CONFIG = {
-  tester:      { label: 'Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
-  chillington: { label: 'Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
+  tester:      { label: '🔧 Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
+  chillington: { label: '🏚️ Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
 }
 function SpecialBadge({ badge }) {
   if (!badge) return null

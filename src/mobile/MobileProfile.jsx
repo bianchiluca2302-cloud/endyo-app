@@ -48,10 +48,10 @@ function PlanBadge({ plan }) {
 
 /* ── SpecialBadge ────────────────────────────────────────────────────────────── */
 const SPECIAL_BADGE_CONFIG = {
-  tester:      { label: 'Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
-  chillington: { label: 'Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
+  tester:      { label: '🔧 Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
+  chillington: { label: '🏚️ Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
 }
-function SpecialBadge({ badge }) {
+function SpecialBadge({ badge, size = 9 }) {
   if (!badge) return null
   const keys = badge.split(',').map(s => s.trim()).filter(Boolean)
   return keys.map(k => {
@@ -59,9 +59,10 @@ function SpecialBadge({ badge }) {
     if (!cfg) return null
     return (
       <span key={k} style={{
-        fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
-        padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
+        fontSize: size, fontWeight: 700, letterSpacing: '0.03em',
+        padding: size > 9 ? '3px 10px' : '1.5px 6px', borderRadius: 99, flexShrink: 0,
         background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+        display: 'inline-flex', alignItems: 'center',
       }}>
         {cfg.label}
       </span>
@@ -386,19 +387,22 @@ export default function MobileProfile() {
                 {profile.bio}
               </div>
             )}
-            {isPremium && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                marginTop: 6, padding: '3px 10px', borderRadius: 99,
-                fontSize: 11, fontWeight: 700,
-                background: isPlus ? 'rgba(245,158,11,0.12)' : 'var(--primary-dim)',
-                border: `1px solid ${isPlus ? 'rgba(245,158,11,0.3)' : 'var(--primary-border)'}`,
-                color: isPlus ? '#f59e0b' : 'var(--primary-light)',
-              }}>
-                <CrownIcon />
-                {isPlus ? 'Plus' : 'Pro'}
-              </span>
-            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: isPremium || user?.special_badge ? 6 : 0 }}>
+              {isPremium && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 10px', borderRadius: 99,
+                  fontSize: 11, fontWeight: 700,
+                  background: isPlus ? 'rgba(245,158,11,0.12)' : 'var(--primary-dim)',
+                  border: `1px solid ${isPlus ? 'rgba(245,158,11,0.3)' : 'var(--primary-border)'}`,
+                  color: isPlus ? '#f59e0b' : 'var(--primary-light)',
+                }}>
+                  <CrownIcon />
+                  {isPlus ? 'Plus' : 'Pro'}
+                </span>
+              )}
+              <SpecialBadge badge={user?.special_badge} size={11} />
+            </div>
           </div>
         </div>
 
