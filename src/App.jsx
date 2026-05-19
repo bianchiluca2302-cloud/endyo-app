@@ -97,6 +97,9 @@ export default function App() {
   // Tutorial primo accesso
   const [showTutorial, setShowTutorial] = useState(false)
 
+  // Pre-prompt notifiche (mostrato una sola volta dopo il login su app nativa)
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false)
+
   // Rileva se l'app è aperta come PWA standalone (salvata alla home)
   const isPWA = window.matchMedia('(display-mode: standalone)').matches
              || window.navigator.standalone === true
@@ -173,7 +176,12 @@ export default function App() {
       init()
       prefetchSocialFeed()
       authMe().then(me => updateUser(me)).catch(() => {})
-      initPushNotifications().catch(() => {})
+      // Su app nativa mostra pre-prompt se non ancora chiesto, altrimenti registra direttamente
+      if (window?.Capacitor?.isNativePlatform?.()) {
+        const asked = localStorage.getItem('endyo_notif_asked')
+        if (!asked) setShowNotifPrompt(true)
+        else initPushNotifications().catch(() => {})
+      }
     }
   }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -336,6 +344,61 @@ export default function App() {
         {/* ── Route protette ───────────────────────────────────────────────────── */}
         <Route path="/*" element={
           <ProtectedRoute>
+            {/* ── Pre-prompt notifiche ─────────────────────────────────────────── */}
+            {showNotifPrompt && (
+              <div style={{
+                position: 'fixed', inset: 0, zIndex: 9000,
+                background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              }}>
+                <div style={{
+                  width: '100%', maxWidth: 480,
+                  background: 'var(--card)', borderRadius: '20px 20px 0 0',
+                  padding: '28px 24px calc(28px + env(safe-area-inset-bottom, 0px))',
+                  boxShadow: '0 -4px 40px rgba(0,0,0,0.25)',
+                  animation: 'slideUp 0.3s ease',
+                }}>
+                  <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
+                  <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>🔔</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', textAlign: 'center', marginBottom: 8 }}>
+                    {settings.language === 'en' ? 'Stay updated' : 'Resta aggiornato'}
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, marginBottom: 28 }}>
+                    {settings.language === 'en'
+                      ? 'Enable notifications to receive likes, comments and new followers in real time.'
+                      : 'Abilita le notifiche per ricevere like, commenti e nuovi follower in tempo reale.'}
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('endyo_notif_asked', '1')
+                      setShowNotifPrompt(false)
+                      initPushNotifications().catch(() => {})
+                    }}
+                    style={{
+                      width: '100%', padding: '15px', borderRadius: 14, border: 'none',
+                      background: accentHex, color: '#fff',
+                      fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                      marginBottom: 10,
+                    }}
+                  >
+                    {settings.language === 'en' ? 'Enable notifications' : 'Abilita notifiche'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('endyo_notif_asked', '1')
+                      setShowNotifPrompt(false)
+                    }}
+                    style={{
+                      width: '100%', padding: '13px', borderRadius: 14, border: '1px solid var(--border)',
+                      background: 'transparent', color: 'var(--text-muted)',
+                      fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    {settings.language === 'en' ? 'Not now' : 'Non adesso'}
+                  </button>
+                </div>
+              </div>
+            )}
             {isMobile ? (
               /* ── Layout MOBILE: tab bar + pagine ridisegnate da zero ─────────── */
               <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
