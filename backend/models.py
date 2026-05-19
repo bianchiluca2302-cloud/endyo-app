@@ -187,6 +187,9 @@ class UserProfile(Base):
     avatar_photo        = Column(String(500), nullable=True)
     face_photo_2        = Column(String(500), nullable=True)
 
+    # ── Bio pubblica ──────────────────────────────────────────────────────────
+    bio                 = Column(String(300), nullable=True)
+
     # ── Stile ─────────────────────────────────────────────────────────────────
     body_type           = Column(String(50), nullable=True)
     style_preferences   = Column(JSON, default=list)
