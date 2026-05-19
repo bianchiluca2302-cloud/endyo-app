@@ -1541,10 +1541,17 @@ export default function MobileFriends() {
     return () => obs.disconnect()
   }, [posts.length, hasMore, loading, loadFeed])
 
-  const { pullY, refreshing } = usePullToRefresh(feedScrollRef, async () => {
-    pageRef.current = 1
-    await loadFeed(1)
-  })
+  const { pullY, refreshing } = usePullToRefresh(
+    async () => {
+      if (tab === 'notifiche') {
+        await loadNotifications()
+      } else {
+        pageRef.current = 1
+        await loadFeed(1)
+      }
+    },
+    feedScrollRef
+  )
 
   useEffect(() => { try { sessionStorage.setItem('mf_tab', tab) } catch {} }, [tab])
 
