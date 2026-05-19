@@ -3255,19 +3255,29 @@ async def admin_set_badge(
         raise HTTPException(status_code=403, detail="Forbidden")
     body = await request.json()
     username = (body.get("username") or "").strip().lower()
-    badge = body.get("badge")  # None/null per rimuovere, "tester" / "chillington" per assegnare
+    # badge può essere: null (rimuovi), stringa singola o lista di stringhe
+    badge_raw = body.get("badge")
     if not username:
         raise HTTPException(status_code=400, detail="username required")
-    valid = {None, "tester", "chillington"}
-    if badge not in valid:
-        raise HTTPException(status_code=400, detail=f"badge non valido, usa: {[b for b in valid if b]}")
+    valid = {"tester", "chillington"}
+    if badge_raw is None:
+        badge_value = None
+    elif isinstance(badge_raw, list):
+        invalid = [b for b in badge_raw if b not in valid]
+        if invalid:
+            raise HTTPException(status_code=400, detail=f"badge non validi: {invalid}. Usa: {list(valid)}")
+        badge_value = ",".join(badge_raw) if badge_raw else None
+    else:
+        if badge_raw not in valid:
+            raise HTTPException(status_code=400, detail=f"badge non valido. Usa: {list(valid)}")
+        badge_value = badge_raw
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user.special_badge = badge
+    user.special_badge = badge_value
     await db.commit()
-    return {"ok": True, "username": username, "badge": badge}
+    return {"ok": True, "username": username, "badge": badge_value}
 
 
 # ── Ricerca utenti ────────────────────────────────────────────────────────────

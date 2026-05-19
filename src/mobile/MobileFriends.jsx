@@ -42,17 +42,21 @@ const SPECIAL_BADGE_CONFIG = {
   chillington: { label: 'Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
 }
 function SpecialBadge({ badge }) {
-  const cfg = badge ? SPECIAL_BADGE_CONFIG[badge] : null
-  if (!cfg) return null
-  return (
-    <span style={{
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
-      padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
-      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-    }}>
-      {cfg.label}
-    </span>
-  )
+  if (!badge) return null
+  const keys = badge.split(',').map(s => s.trim()).filter(Boolean)
+  return keys.map(k => {
+    const cfg = SPECIAL_BADGE_CONFIG[k]
+    if (!cfg) return null
+    return (
+      <span key={k} style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
+        padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
+        background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      }}>
+        {cfg.label}
+      </span>
+    )
+  })
 }
 
 /* ── SuggestedUsers — consiglia utenti basandosi sui tag stile dell'armadio ───── */
