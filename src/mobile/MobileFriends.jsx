@@ -36,6 +36,25 @@ function PlanBadge({ plan }) {
   )
 }
 
+/* ── SpecialBadge ────────────────────────────────────────────────────────────── */
+const SPECIAL_BADGE_CONFIG = {
+  tester:      { label: 'Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
+  chillington: { label: 'Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
+}
+function SpecialBadge({ badge }) {
+  const cfg = badge ? SPECIAL_BADGE_CONFIG[badge] : null
+  if (!cfg) return null
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, letterSpacing: '0.03em',
+      padding: '1.5px 6px', borderRadius: 99, flexShrink: 0,
+      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+    }}>
+      {cfg.label}
+    </span>
+  )
+}
+
 /* ── SuggestedUsers — consiglia utenti basandosi sui tag stile dell'armadio ───── */
 function SuggestedUsers({ language, garments, onSelectUser }) {
   const [users,     setUsers]     = useState([])
@@ -126,6 +145,7 @@ function SuggestedUsers({ language, garments, onSelectUser }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{u.username}</span>
                   <PlanBadge plan={u.plan} />
+                  <SpecialBadge badge={u.special_badge} />
                 </div>
                 {u.bio && (
                   <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -614,7 +634,11 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
         </button>
-        <div style={{ flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>@{username}</div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{username}</span>
+          <PlanBadge plan={data?.profile?.plan} />
+          <SpecialBadge badge={data?.profile?.special_badge} />
+        </div>
         {username !== currentUsername && (
           <button
             onClick={handleToggleFollow}
@@ -1370,6 +1394,7 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
                         @{u.username}
                       </span>
                       <PlanBadge plan={u.plan} />
+                      <SpecialBadge badge={u.special_badge} />
                     </div>
                     {u.bio && (
                       <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1430,6 +1455,7 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</span>
                             <PlanBadge plan={u.plan} />
+                            <SpecialBadge badge={u.special_badge} />
                           </div>
                           {u.bio && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio}</div>}
                         </div>

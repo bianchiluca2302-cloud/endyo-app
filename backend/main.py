@@ -3244,6 +3244,32 @@ async def admin_verify_user(
     return {"ok": True, "email": email, "verified": True}
 
 
+@app.post("/admin/set-badge")
+async def admin_set_badge(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Assegna o rimuove un badge speciale a un utente."""
+    secret = request.headers.get("X-Admin-Secret", "")
+    if secret != SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    body = await request.json()
+    username = (body.get("username") or "").strip().lower()
+    badge = body.get("badge")  # None/null per rimuovere, "tester" / "chillington" per assegnare
+    if not username:
+        raise HTTPException(status_code=400, detail="username required")
+    valid = {None, "tester", "chillington"}
+    if badge not in valid:
+        raise HTTPException(status_code=400, detail=f"badge non valido, usa: {[b for b in valid if b]}")
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.special_badge = badge
+    await db.commit()
+    return {"ok": True, "username": username, "badge": badge}
+
+
 # ── Ricerca utenti ────────────────────────────────────────────────────────────
 @app.get("/users/search")
 async def search_users(
@@ -3275,6 +3301,7 @@ async def search_users(
             "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
             "bio": prof.bio if prof else None,
             "plan": plan,
+            "special_badge": u.special_badge,
         })
     return out
 
@@ -3360,6 +3387,7 @@ async def list_following(
                 "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
                 "plan": plan,
                 "bio": getattr(prof, 'bio', None) if prof else None,
+                "special_badge": other.special_badge,
             })
     return out
 
@@ -3391,6 +3419,7 @@ async def list_followers(
                 "profile_picture": (prof.profile_picture_data or prof.profile_picture) if prof else None,
                 "plan": plan,
                 "bio": getattr(prof, 'bio', None) if prof else None,
+                "special_badge": other.special_badge,
             })
     return out
 
@@ -4492,6 +4521,9 @@ async def get_user_posts(
     posts = posts_res.scalars().all()
     built_posts = [await _build_post(p, current_user.id, db) for p in posts]
 
+    plan = target.plan or "free"
+    if plan == "premium_annual":      plan = "premium"
+    if plan == "premium_plus_annual": plan = "premium_plus"
     return {
         "user": {
             "username":        target.username,
@@ -4500,6 +4532,8 @@ async def get_user_posts(
             "followers_count": followers_count,
             "following_count": following_count,
             "posts_count":     len(built_posts),
+            "plan":            plan,
+            "special_badge":   target.special_badge,
         },
         "posts": built_posts,
     }

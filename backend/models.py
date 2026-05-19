@@ -64,6 +64,9 @@ class User(Base):
     marketing_email      = Column(Boolean, default=False, nullable=False, server_default='false')
     marketing_phone      = Column(Boolean, default=False, nullable=False, server_default='false')
 
+    # ── Badge speciale ────────────────────────────────────────────────────────
+    special_badge         = Column(String(50), nullable=True)                 # es. "tester", "chillington"
+
     # ── Privacy ───────────────────────────────────────────────────────────────
     is_private            = Column(Boolean, default=False, nullable=False, server_default='false')
 

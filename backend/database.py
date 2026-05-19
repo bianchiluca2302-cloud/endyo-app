@@ -144,6 +144,8 @@ _MIGRATIONS = [
     ("users", "is_private",                   "BOOLEAN NOT NULL DEFAULT FALSE"),
     # Push notifications
     ("users", "fcm_token",                    "VARCHAR(500)"),
+    # Badge speciale utente (tester, chillington, ecc.)
+    ("users", "special_badge",                "VARCHAR(50)"),
 ]
 
 
