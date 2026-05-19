@@ -638,11 +638,7 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
             <path d="M19 12H5M12 5l-7 7 7 7"/>
           </svg>
         </button>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{username}</span>
-          <PlanBadge plan={data?.profile?.plan} />
-          <SpecialBadge badge={data?.profile?.special_badge} />
-        </div>
+        <div style={{ flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{username}</div>
         {username !== currentUsername && (
           <button
             onClick={handleToggleFollow}
@@ -703,6 +699,13 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
                 </div>
               ))}
             </div>
+            {/* Badge piano + speciali sotto le stats */}
+            {(data?.profile?.plan && data.profile.plan !== 'free') || data?.profile?.special_badge ? (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
+                <PlanBadge plan={data?.profile?.plan} />
+                <SpecialBadge badge={data?.profile?.special_badge} />
+              </div>
+            ) : null}
           </div>
         </div>
 
