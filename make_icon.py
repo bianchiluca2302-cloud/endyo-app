@@ -47,6 +47,7 @@ def invert_rgb(img: Image.Image) -> Image.Image:
 
 
 def tint(img: Image.Image, hex_color: str, boost: float = 1.3) -> Image.Image:
+    """Tema SCURO: luminanza × accent su tutti i pixel."""
     r = int(hex_color[1:3], 16)
     g = int(hex_color[3:5], 16)
     b = int(hex_color[5:7], 16)
@@ -55,6 +56,26 @@ def tint(img: Image.Image, hex_color: str, boost: float = 1.3) -> Image.Image:
     rgba[:,:,0] = np.clip(lum * r * boost, 0, 255)
     rgba[:,:,1] = np.clip(lum * g * boost, 0, 255)
     rgba[:,:,2] = np.clip(lum * b * boost, 0, 255)
+    return Image.fromarray(rgba.astype(np.uint8), "RGBA")
+
+
+def tint_light(img: Image.Image, hex_color: str, bg_thresh: float = 0.78, boost: float = 1.5) -> Image.Image:
+    """Tema CHIARO: sfondo (alta luminanza) → bianco puro; logo (bassa luminanza) → accent."""
+    r = int(hex_color[1:3], 16)
+    g = int(hex_color[3:5], 16)
+    b = int(hex_color[5:7], 16)
+    rgba = np.array(img.convert("RGBA"), dtype=np.float32)
+    lum = (rgba[:,:,0]*0.299 + rgba[:,:,1]*0.587 + rgba[:,:,2]*0.114) / 255.0
+    bg_mask   = lum > bg_thresh
+    logo_mask = ~bg_mask
+    # Sfondo → bianco
+    rgba[bg_mask, 0] = 255
+    rgba[bg_mask, 1] = 255
+    rgba[bg_mask, 2] = 255
+    # Logo → accent tinted
+    rgba[logo_mask, 0] = np.clip(lum[logo_mask] * r * boost, 0, 255)
+    rgba[logo_mask, 1] = np.clip(lum[logo_mask] * g * boost, 0, 255)
+    rgba[logo_mask, 2] = np.clip(lum[logo_mask] * b * boost, 0, 255)
     return Image.fromarray(rgba.astype(np.uint8), "RGBA")
 
 
@@ -96,8 +117,10 @@ os.makedirs("public", exist_ok=True)
 # ── Genera tutte le varianti ───────────────────────────────────────────────────
 for color_id, hex_color in ACCENTS.items():
     for theme in ("light", "dark"):
-        base = original if theme == "light" else inverted
-        processed = tint(base, hex_color)
+        if theme == "light":
+            processed = tint_light(original, hex_color)
+        else:
+            processed = tint(inverted, hex_color)
 
         # Web preview 324 px
         web = make_canvas(processed, 324)
