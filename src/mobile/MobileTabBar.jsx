@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useAuthStore from '../store/authStore'
@@ -100,8 +100,18 @@ export default function MobileTabBar() {
   const lang       = useSettingsStore(s => s.language) || 'it'
   const navLocked  = useWardrobeStore(s => s.navLocked)
   const [lockMsg, setLockMsg] = useState(false)
+  const [, forceUpdate]      = useState(0)
   const navigate   = useNavigate()
   const location   = useLocation()
+
+  // Forza ricalcolo quando il viewport cambia altezza (tastiera/rientro da URL esterno)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const handler = () => forceUpdate(n => n + 1)
+    vv.addEventListener('resize', handler)
+    return () => vv.removeEventListener('resize', handler)
+  }, [])
 
   const goTab = (path, sessionKeys = []) => {
     if (location.pathname === path) {

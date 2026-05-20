@@ -142,7 +142,14 @@ export default function App() {
     if (window?.Capacitor?.isNativePlatform?.()) {
       import('@capacitor/core').then(({ App: CapApp }) => {
         CapApp.addListener('appStateChange', ({ isActive }) => {
-          if (isActive) applyTheme(useSettingsStore.getState())
+          if (isActive) {
+            applyTheme(useSettingsStore.getState())
+            // Forza il browser a ricalcolare env(safe-area-inset-bottom) dopo
+            // il ritorno da URL esterni (es. pagamento Stripe) che possono
+            // lasciare lo stato del viewport/tastiera in uno stato inconsistente.
+            window.dispatchEvent(new Event('resize'))
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 300)
+          }
         }).then(l => { appListener = l })
       }).catch(() => {})
     }
