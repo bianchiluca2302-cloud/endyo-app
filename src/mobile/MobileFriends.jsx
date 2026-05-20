@@ -36,10 +36,16 @@ function PlanBadge({ plan }) {
   )
 }
 
+/* Emoji-only plan badge — usato nella ricerca */
+function PlanEmoji({ plan }) {
+  if (!plan || plan === 'free') return null
+  return <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>👑</span>
+}
+
 /* ── SpecialBadge ────────────────────────────────────────────────────────────── */
 const SPECIAL_BADGE_CONFIG = {
-  tester:      { label: '🔧 Tester',      bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
-  chillington: { label: '🏚️ Chillington', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
+  tester:      { label: '🔧 Tester',      emoji: '🔧', bg: 'rgba(16,185,129,0.14)',  color: '#10b981', border: 'rgba(16,185,129,0.28)' },
+  chillington: { label: '🏚️ Chillington', emoji: '🏚️', bg: 'rgba(239,68,68,0.14)',   color: '#ef4444', border: 'rgba(239,68,68,0.28)' },
 }
 function SpecialBadge({ badge }) {
   if (!badge) return null
@@ -56,6 +62,16 @@ function SpecialBadge({ badge }) {
         {cfg.label}
       </span>
     )
+  })
+}
+
+/* Emoji-only special badge — usato nella ricerca */
+function SpecialEmoji({ badge }) {
+  if (!badge) return null
+  return badge.split(',').map(s => s.trim()).filter(Boolean).map(k => {
+    const cfg = SPECIAL_BADGE_CONFIG[k]
+    if (!cfg) return null
+    return <span key={k} style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{cfg.emoji}</span>
   })
 }
 
@@ -146,10 +162,10 @@ function SuggestedUsers({ language, garments, onSelectUser }) {
                 onClick={() => u.username && onSelectUser(u.username)}
                 style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', WebkitTapHighlightColor: 'transparent' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>@{u.username}</span>
-                  <PlanBadge plan={u.plan} />
-                  <SpecialBadge badge={u.special_badge} />
+                  <PlanEmoji plan={u.plan} />
+                  <SpecialEmoji badge={u.special_badge} />
                 </div>
                 {u.bio && (
                   <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1396,12 +1412,12 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
                 >
                   <Avatar src={u.profile_picture} username={u.username} size={42} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         @{u.username}
                       </span>
-                      <PlanBadge plan={u.plan} />
-                      <SpecialBadge badge={u.special_badge} />
+                      <PlanEmoji plan={u.plan} />
+                      <SpecialEmoji badge={u.special_badge} />
                     </div>
                     {u.bio && (
                       <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1459,10 +1475,10 @@ function SearchSheet({ onClose, onSelectUser, currentUser, language = 'it', garm
                           : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary),var(--primary-light))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>{(u.username || '?')[0].toUpperCase()}</div>
                         }
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</span>
-                            <PlanBadge plan={u.plan} />
-                            <SpecialBadge badge={u.special_badge} />
+                            <PlanEmoji plan={u.plan} />
+                            <SpecialEmoji badge={u.special_badge} />
                           </div>
                           {u.bio && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.bio}</div>}
                         </div>
