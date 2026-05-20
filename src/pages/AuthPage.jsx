@@ -453,7 +453,7 @@ function LoginForm({ onForgot, onRegister, onGoogleSuccess, onGoogleLinkRequired
     try {
       const data = await authLogin({ email, password, remember_me: rememberMe })
       setAuth(data.access_token, data.refresh_token, data.user, rememberMe)
-      navigate('/', { replace: true })
+      navigate('/wardrobe', { replace: true })
     } catch (err) {
       const detail = err.response?.data?.detail || t('authConnectionError')
       if (err.response?.status === 403) setNeedsVerify(true)
@@ -1529,7 +1529,7 @@ export default function AuthPage() {
   // mostra il picker dello username (solo per nuovi account Google).
   const handleGoogleSuccess = (user) => {
     if (user?.username) {
-      navigate('/', { replace: true })
+      navigate('/wardrobe', { replace: true })
     } else {
       setNeedsUsername(true)
     }
@@ -1542,7 +1542,7 @@ export default function AuthPage() {
 
   // Schermata scelta username — mostrata subito dopo Google OAuth per nuovi utenti
   if (needsUsername) {
-    return <UsernameSetupScreen onDone={() => navigate('/', { replace: true })} />
+    return <UsernameSetupScreen onDone={() => navigate('/wardrobe', { replace: true })} />
   }
 
   // Schermata collegamento account Google
@@ -1552,7 +1552,7 @@ export default function AuthPage() {
         email={linkData.email}
         googleName={linkData.google_name}
         credential={linkData.credential}
-        onDone={() => navigate('/', { replace: true })}
+        onDone={() => navigate('/wardrobe', { replace: true })}
         onCancel={() => setLinkData(null)}
       />
     )
