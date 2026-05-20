@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Component } from 'react'
 const logoUrl = './Endyoapp.png?v=4'
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
@@ -34,6 +34,39 @@ import { useT } from './i18n'
 const ROUTER_FUTURE = {
   v7_startTransition:  true,
   v7_relativeSplatPath: true,
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (!this.state.error) return this.props.children
+    const msg = this.state.error?.message || String(this.state.error)
+    const stack = this.state.error?.stack || ''
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: '#0d0d14', color: '#f1f5f9',
+        padding: 24, overflowY: 'auto', fontFamily: 'monospace', fontSize: 12,
+        zIndex: 99999,
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#f87171', marginBottom: 12 }}>
+          ⚠️ App Error
+        </div>
+        <div style={{ color: '#fca5a5', marginBottom: 16, fontSize: 14, lineHeight: 1.5 }}>
+          {msg}
+        </div>
+        <pre style={{ color: '#94a3b8', fontSize: 11, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+          {stack}
+        </pre>
+        <button
+          onClick={() => this.setState({ error: null })}
+          style={{ marginTop: 20, padding: '10px 20px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}
+        >
+          Riprova
+        </button>
+      </div>
+    )
+  }
 }
 
 // Converte hex → hue (0-360) per il filtro hue-rotate sul logo
@@ -315,6 +348,7 @@ export default function App() {
   }
 
   return (
+    <ErrorBoundary>
     <ToastProvider>
     <>
     {/* Blocca orizzontale su mobile: overlay fisso sopra tutto, NON smonta il router */}
@@ -443,6 +477,7 @@ export default function App() {
     </HashRouter>
     </>
     </ToastProvider>
+    </ErrorBoundary>
   )
 }
 
