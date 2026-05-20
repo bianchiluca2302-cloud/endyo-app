@@ -60,97 +60,97 @@
 			<key>icon_violet_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_violet_light</string></array>
+				<array><string>AlternateIcons/icon_violet_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_violet_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_violet_dark</string></array>
+				<array><string>AlternateIcons/icon_violet_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_blue_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_blue_light</string></array>
+				<array><string>AlternateIcons/icon_blue_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_blue_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_blue_dark</string></array>
+				<array><string>AlternateIcons/icon_blue_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_pink_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_pink_light</string></array>
+				<array><string>AlternateIcons/icon_pink_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_pink_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_pink_dark</string></array>
+				<array><string>AlternateIcons/icon_pink_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_green_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_green_light</string></array>
+				<array><string>AlternateIcons/icon_green_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_green_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_green_dark</string></array>
+				<array><string>AlternateIcons/icon_green_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_amber_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_amber_light</string></array>
+				<array><string>AlternateIcons/icon_amber_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_amber_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_amber_dark</string></array>
+				<array><string>AlternateIcons/icon_amber_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_red_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_red_light</string></array>
+				<array><string>AlternateIcons/icon_red_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_red_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_red_dark</string></array>
+				<array><string>AlternateIcons/icon_red_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_cyan_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_cyan_light</string></array>
+				<array><string>AlternateIcons/icon_cyan_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_cyan_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_cyan_dark</string></array>
+				<array><string>AlternateIcons/icon_cyan_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_orange_light</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_orange_light</string></array>
+				<array><string>AlternateIcons/icon_orange_light</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 			<key>icon_orange_dark</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
-				<array><string>icon_orange_dark</string></array>
+				<array><string>AlternateIcons/icon_orange_dark</string></array>
 				<key>UIPrerenderedIcon</key><false/>
 			</dict>
 		</dict>
