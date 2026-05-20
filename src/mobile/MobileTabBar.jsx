@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useWardrobeStore from '../store/wardrobeStore'
 import useAuthStore from '../store/authStore'
@@ -95,22 +95,37 @@ const tabLabel = { fontSize: 10, fontWeight: 500, lineHeight: 1 }
 
 /* ── Component ───────────────────────────────────────────────────────────────── */
 export default function MobileTabBar() {
-  const t          = useT()
-  const pb         = 'env(safe-area-inset-bottom, 12px)'
-  const lang       = useSettingsStore(s => s.language) || 'it'
+  const t    = useT()
+  const lang = useSettingsStore(s => s.language) || 'it'
+  const pb   = `${safeBottom}px`
   const navLocked  = useWardrobeStore(s => s.navLocked)
-  const [lockMsg, setLockMsg] = useState(false)
-  const [, forceUpdate]      = useState(0)
+  const [lockMsg, setLockMsg]     = useState(false)
+  const [safeBottom, setSafeBottom] = useState(0)
+  const measureRef = useRef(null)
   const navigate   = useNavigate()
   const location   = useLocation()
 
-  // Forza ricalcolo quando il viewport cambia altezza (tastiera/rientro da URL esterno)
-  useEffect(() => {
+  // Misura l'inset reale tramite DOM — più affidabile di env() su iOS WKWebView
+  // dopo il rientro da URL esterni (Stripe, ecc.) che alterano il viewport.
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (measureRef.current) setSafeBottom(measureRef.current.offsetHeight)
+    }
+    measure()
+    // Ritenta con delay: iOS browser chrome impiega qualche frame a sparire
+    const timers = [80, 250, 500, 900].map(ms => setTimeout(measure, ms))
+    const onResize = () => { measure(); setTimeout(measure, 200) }
+    const onVisible = () => { if (!document.hidden) { measure(); setTimeout(measure, 300) } }
     const vv = window.visualViewport
-    if (!vv) return
-    const handler = () => forceUpdate(n => n + 1)
-    vv.addEventListener('resize', handler)
-    return () => vv.removeEventListener('resize', handler)
+    if (vv) vv.addEventListener('resize', onResize)
+    window.addEventListener('resize', onResize)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      timers.forEach(clearTimeout)
+      if (vv) vv.removeEventListener('resize', onResize)
+      window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   const goTab = (path, sessionKeys = []) => {
@@ -129,9 +144,16 @@ export default function MobileTabBar() {
   }
 
   return (
+    <>
+    {/* Elemento invisibile che misura env(safe-area-inset-bottom) in pixel reali */}
+    <div ref={measureRef} style={{
+      position: 'fixed', bottom: 0, left: 0,
+      height: 'env(safe-area-inset-bottom, 0px)', width: 0,
+      visibility: 'hidden', pointerEvents: 'none', zIndex: -1,
+    }} />
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      height: 'calc(64px + env(safe-area-inset-bottom, 12px))',
+      height: `calc(64px + ${pb})`,
       background: 'var(--surface)',
       backdropFilter: 'blur(28px)',
       WebkitBackdropFilter: 'blur(28px)',
@@ -261,5 +283,6 @@ export default function MobileTabBar() {
       </div>
 
     </nav>
+    </>
   )
 }
