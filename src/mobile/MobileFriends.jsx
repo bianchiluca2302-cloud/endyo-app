@@ -39,7 +39,15 @@ function PlanBadge({ plan }) {
 /* Emoji-only plan badge — usato nella ricerca */
 function PlanEmoji({ plan }) {
   if (!plan || plan === 'free') return null
-  return <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>👑</span>
+  const isPlus = plan === 'premium_plus'
+  return (
+    <span style={{
+      fontSize: 11, lineHeight: 1, flexShrink: 0,
+      padding: '2px 5px', borderRadius: 99,
+      background: isPlus ? 'rgba(245,158,11,0.14)' : 'rgba(139,92,246,0.14)',
+      border: `1px solid ${isPlus ? 'rgba(245,158,11,0.28)' : 'var(--primary-border)'}`,
+    }}>👑</span>
+  )
 }
 
 /* ── SpecialBadge ────────────────────────────────────────────────────────────── */
@@ -71,7 +79,13 @@ function SpecialEmoji({ badge }) {
   return badge.split(',').map(s => s.trim()).filter(Boolean).map(k => {
     const cfg = SPECIAL_BADGE_CONFIG[k]
     if (!cfg) return null
-    return <span key={k} style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{cfg.emoji}</span>
+    return (
+      <span key={k} style={{
+        fontSize: 11, lineHeight: 1, flexShrink: 0,
+        padding: '2px 5px', borderRadius: 99,
+        background: cfg.bg, border: `1px solid ${cfg.border}`,
+      }}>{cfg.emoji}</span>
+    )
   })
 }
 
@@ -837,7 +851,13 @@ function UserProfileSheet({ username, currentUsername, onClose, language = 'it',
                 }}
               >
                 <Avatar src={u.profile_picture} username={u.username} size={42} />
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>@{u.username}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</span>
+                    <PlanEmoji plan={u.plan} />
+                    <SpecialEmoji badge={u.special_badge} />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
