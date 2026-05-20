@@ -97,10 +97,10 @@ const tabLabel = { fontSize: 10, fontWeight: 500, lineHeight: 1 }
 export default function MobileTabBar() {
   const t    = useT()
   const lang = useSettingsStore(s => s.language) || 'it'
+  const [safeBottom, setSafeBottom] = useState(0)
   const pb   = `${safeBottom}px`
   const navLocked  = useWardrobeStore(s => s.navLocked)
   const [lockMsg, setLockMsg]     = useState(false)
-  const [safeBottom, setSafeBottom] = useState(0)
   const measureRef = useRef(null)
   const navigate   = useNavigate()
   const location   = useLocation()
