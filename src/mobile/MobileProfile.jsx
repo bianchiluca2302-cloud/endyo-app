@@ -643,7 +643,7 @@ export default function MobileProfile() {
                 <input
                   value={redeemCode}
                   onChange={e => setRedeemCode(e.target.value.toUpperCase())}
-                  placeholder={en ? 'e.g. CHILLINGTON50' : 'es. CHILLINGTON50'}
+                  placeholder={en ? 'Enter code…' : 'Inserisci codice…'}
                   autoCapitalize="characters"
                   style={{
                     width: '100%', padding: '14px 16px', borderRadius: 14,
