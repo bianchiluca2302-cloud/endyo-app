@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import useWardrobeStore from '../store/wardrobeStore'
-import useSettingsStore from '../store/settingsStore'
-import { imgUrl, fetchFollowers, fetchFollowing } from '../api/client'
+import useSettingsStore, { ACCENT_COLORS } from '../store/settingsStore'
+import { imgUrl, fetchFollowers, fetchFollowing, redeemPromoCode } from '../api/client'
 
 /* ── Avatar ──────────────────────────────────────────────────────────────────── */
 function Avatar({ src, username, size = 72 }) {
@@ -322,6 +322,12 @@ const LogoutIcon = () => (
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
   </svg>
 )
+const GiftIcon = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>
+    <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+  </svg>
+)
 
 /* ── Main component ──────────────────────────────────────────────────────────── */
 export default function MobileProfile() {
@@ -331,10 +337,43 @@ export default function MobileProfile() {
   const profile   = useWardrobeStore(s => s.profile)
   const garments  = useWardrobeStore(s => s.garments)
   const outfits   = useWardrobeStore(s => s.outfits)
-  const language  = useSettingsStore(s => s.language) || 'it'
+  const language   = useSettingsStore(s => s.language) || 'it'
+  const accentColor = useSettingsStore(s => s.accentColor) || 'amber'
+  const accentHex  = (ACCENT_COLORS.find(c => c.id === accentColor) || ACCENT_COLORS[0]).hex
 
   const [followSheet,       setFollowSheet]       = useState(null)   // null | 'followers' | 'following'
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showRedeemSheet,   setShowRedeemSheet]   = useState(false)
+  const [redeemCode,        setRedeemCode]        = useState('')
+  const [redeemStatus,      setRedeemStatus]      = useState(null)   // null | 'loading' | 'success' | 'error'
+  const [redeemMessage,     setRedeemMessage]     = useState('')
+
+  const handleRedeem = async () => {
+    if (!redeemCode.trim()) return
+    setRedeemStatus('loading')
+    try {
+      const res = await redeemPromoCode(redeemCode.trim())
+      setRedeemStatus('success')
+      setRedeemMessage(en
+        ? `Code applied! +${res.reward?.upload_extra ?? 0} extra uploads unlocked.`
+        : `Codice applicato! +${res.reward?.upload_extra ?? 0} upload extra sbloccati.`)
+    } catch (err) {
+      setRedeemStatus('error')
+      const status = err?.response?.status
+      setRedeemMessage(status === 404
+        ? (en ? 'Code not found.' : 'Codice non trovato.')
+        : status === 409
+          ? (en ? 'Code already used.' : 'Codice già utilizzato.')
+          : (en ? 'Something went wrong.' : 'Qualcosa è andato storto.'))
+    }
+  }
+
+  const closeRedeemSheet = () => {
+    setShowRedeemSheet(false)
+    setRedeemCode('')
+    setRedeemStatus(null)
+    setRedeemMessage('')
+  }
 
   const isPremium = user?.plan && user.plan !== 'free'
   const isPlus    = user?.plan?.startsWith('premium_plus')
@@ -460,6 +499,12 @@ export default function MobileProfile() {
               onPress={() => navigate('/premium')}
               accent
             />
+            <MenuRow
+              icon={<GiftIcon />}
+              label={en ? 'Redeem code' : 'Riscatta codice'}
+              sublabel={en ? 'Enter a promo code' : 'Inserisci un codice promozionale'}
+              onPress={() => setShowRedeemSheet(true)}
+            />
           </div>
         </div>
 
@@ -551,6 +596,108 @@ export default function MobileProfile() {
           onClose={() => setFollowSheet(null)}
           onSelectUser={openUserProfile}
         />
+      )}
+
+      {/* ── Redeem code sheet ────────────────────────────────────────────────── */}
+      {showRedeemSheet && (
+        <>
+          <div
+            onClick={closeRedeemSheet}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 800 }}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 801,
+            background: 'var(--surface)',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px 20px',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px + 24px)',
+          }}>
+            <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--border)', margin: '0 auto 20px' }} />
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>
+              {en ? 'Redeem code' : 'Riscatta codice'}
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5, margin: '0 0 20px' }}>
+              {en ? 'Enter your promo code below.' : 'Inserisci il tuo codice promozionale qui sotto.'}
+            </p>
+
+            {redeemStatus === 'success' ? (
+              <div style={{
+                padding: '16px', borderRadius: 14, marginBottom: 16,
+                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                color: '#10b981', fontSize: 14, fontWeight: 500, lineHeight: 1.5,
+              }}>
+                {redeemMessage}
+              </div>
+            ) : redeemStatus === 'error' ? (
+              <div style={{
+                padding: '16px', borderRadius: 14, marginBottom: 16,
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                color: '#f87171', fontSize: 14, fontWeight: 500, lineHeight: 1.5,
+              }}>
+                {redeemMessage}
+              </div>
+            ) : null}
+
+            {redeemStatus !== 'success' && (
+              <>
+                <input
+                  value={redeemCode}
+                  onChange={e => setRedeemCode(e.target.value.toUpperCase())}
+                  placeholder={en ? 'e.g. CHILLINGTON50' : 'es. CHILLINGTON50'}
+                  autoCapitalize="characters"
+                  style={{
+                    width: '100%', padding: '14px 16px', borderRadius: 14,
+                    background: 'var(--card)', border: '1px solid var(--border)',
+                    color: 'var(--text)', fontSize: 16, fontWeight: 600,
+                    letterSpacing: '0.05em', outline: 'none', boxSizing: 'border-box',
+                    marginBottom: 12,
+                  }}
+                />
+                <button
+                  onClick={handleRedeem}
+                  disabled={redeemStatus === 'loading' || !redeemCode.trim()}
+                  style={{
+                    width: '100%', padding: 16, borderRadius: 14,
+                    background: accentHex, border: 'none',
+                    color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                    opacity: (redeemStatus === 'loading' || !redeemCode.trim()) ? 0.5 : 1,
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  {redeemStatus === 'loading'
+                    ? (en ? 'Applying…' : 'Applicazione…')
+                    : (en ? 'Apply' : 'Applica')}
+                </button>
+              </>
+            )}
+
+            {redeemStatus === 'success' && (
+              <button
+                onClick={closeRedeemSheet}
+                style={{
+                  width: '100%', padding: 16, borderRadius: 14,
+                  background: accentHex, border: 'none',
+                  color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {en ? 'Done' : 'Fatto'}
+              </button>
+            )}
+
+            <button
+              onClick={closeRedeemSheet}
+              style={{
+                width: '100%', padding: 14, borderRadius: 14, marginTop: 10,
+                background: 'var(--card)', border: '1px solid var(--border)',
+                color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {en ? 'Cancel' : 'Annulla'}
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

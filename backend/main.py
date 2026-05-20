@@ -42,7 +42,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone, date, timedelta
 
 from database import get_db, init_db
-from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, Brand, BrandProduct, BrandProductImpression, BrandProductFeedback, WearLog, SocialPost, PostLike, PostComment, SavedTravel
+from models import Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem, Brand, BrandProduct, BrandProductImpression, BrandProductFeedback, WearLog, SocialPost, PostLike, PostComment, SavedTravel, PromoRedemption
 from ai_service import analyze_garment, reenrich_garment, generate_outfit_recommendations, chat_with_stylist, complete_outfit, stream_chat_with_stylist
 from tryon_service import generate_tryon, generate_outfit_tryon, fashn_supported, get_fashn_key
 from bg_service import remove_background, remove_background_batch, preload_model_sync
@@ -3279,6 +3279,41 @@ async def admin_set_badge(
     user.special_badge = badge_value
     await db.commit()
     return {"ok": True, "username": username, "badge": badge_value}
+
+
+# ── Codici promo ─────────────────────────────────────────────────────────────
+PROMO_CODES = {
+    "CHILLINGTON50": {"upload_extra": 50},
+}
+
+@app.post("/promo/redeem")
+async def redeem_promo(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    code = (body.get("code") or "").strip().upper()
+    if not code:
+        raise HTTPException(400, "Codice mancante")
+    reward = PROMO_CODES.get(code)
+    if not reward:
+        raise HTTPException(404, "Codice non valido")
+    # Controlla se già usato da questo utente
+    existing = await db.execute(
+        select(PromoRedemption).where(
+            PromoRedemption.user_id == current_user.id,
+            PromoRedemption.code == code,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(409, "Hai già usato questo codice")
+    # Applica ricompensa
+    if reward.get("upload_extra"):
+        current_user.upload_extra = (current_user.upload_extra or 0) + reward["upload_extra"]
+    # Salva redemption
+    db.add(PromoRedemption(user_id=current_user.id, code=code))
+    await db.commit()
+    return {"ok": True, "code": code, "reward": reward}
 
 
 # ── Ricerca utenti ────────────────────────────────────────────────────────────

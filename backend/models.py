@@ -206,6 +206,16 @@ class UserProfile(Base):
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
 
 
+# ── Codici promo ───────────────────────────────────────────────────────────────
+class PromoRedemption(Base):
+    __tablename__ = "promo_redemptions"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    code        = Column(String(50), nullable=False)
+    redeemed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ── Brand ──────────────────────────────────────────────────────────────────────
 class Brand(Base):
     __tablename__ = "brands"

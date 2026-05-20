@@ -45,7 +45,7 @@ async def init_db():
     from models import (  # noqa — registra tutti i modelli in Base.metadata
         Garment, Outfit, UserProfile, User, Friendship, ShowcaseItem,
         BrandProductFeedback, Brand, BrandProduct, BrandProductImpression,
-        SocialPost, PostLike, PostComment, WearLog,
+        SocialPost, PostLike, PostComment, WearLog, PromoRedemption,
     )
     # Step 1: crea tutte le tabelle in una transazione dedicata.
     # Viene committata prima di eseguire le migrazioni: in PostgreSQL una
